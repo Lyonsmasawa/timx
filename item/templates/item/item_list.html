@@ -1,0 +1,29 @@
+<table>
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Item Name</th>
+            <th>Organization</th>
+            <th>Current Balance</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in items %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ item.item_name }}</td>
+            <td>{{ item.organization.organisation_name }}</td>
+            <td>{{ item.item_current_balance }}</td>
+            <td>
+                <a href="{% url 'item:item_detail' item.id %}">View</a>
+                <a href="{% url 'item:item_update' item.id %}">Edit</a>
+                <form method="POST" action="{% url 'item:item_delete' item.id %}">
+                    {% csrf_token %}
+                    <button type="submit">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

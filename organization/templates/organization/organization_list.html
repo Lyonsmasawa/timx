@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Organizations</h1>
+<a href="{% url 'organization:organization_create' %}" class="btn btn-primary mb-3">Add New Organization</a>
+<table class="table">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for org in organizations %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td><a href="{% url 'organization:organization_detail' org.id %}">{{ org.organization_name }}</a></td>  <!-- Link to detail -->
+            <td>{{ org.organization_email }}</td>
+            <td>{{ org.organization_phone }}</td>
+            <td>
+                <a href="{% url 'organization:organization_update' org.id %}" class="btn btn-warning btn-sm">Edit</a>
+                <form method="POST" action="{% url 'organization:organization_delete' org.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

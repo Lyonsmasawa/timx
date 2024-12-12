@@ -1,0 +1,31 @@
+<table>
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Item</th>
+            <th>Movement Type</th>
+            <th>Quantity</th>
+            <th>Description</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for inventory in inventories %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ inventory.item.item_name }}</td>
+            <td>{{ inventory.get_movement_type_display }}</td>
+            <td>{{ inventory.quantity }}</td>
+            <td>{{ inventory.description }}</td>
+            <td>
+                <a href="{% url 'inventory_update' inventory.id %}">Edit</a>
+                <a href="{% url 'inventory_detail' inventory.id %}">View</a>
+                <form method="POST" action="{% url 'inventory_delete' inventory.id %}">
+                    {% csrf_token %}
+                    <button type="submit">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

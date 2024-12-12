@@ -1,0 +1,31 @@
+<table>
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Organisation</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for customer in customers %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ customer.customer_name }}</td>
+            <td>{{ customer.customer_email }}</td>
+            <td>{{ customer.customer_phone }}</td>
+            <td>{{ customer.organisation.organisation_name }}</td>
+            <td>
+                <a href="{% url 'customer_update' customer.id %}">Edit</a>
+                <a href="{% url 'customer_detail' customer.id %}">View</a>
+                <form method="POST" action="{% url 'customer_delete' customer.id %}">
+                    {% csrf_token %}
+                    <button type="submit">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

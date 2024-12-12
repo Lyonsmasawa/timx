@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block title %}Customer Details{% endblock %}
+
+{% block content %}
+<h1>Customer Details</h1>
+<table class="table">
+    <tr>
+        <th>Name</th>
+        <td>{{ customer.customer_name }}</td>
+    </tr>
+    <tr>
+        <th>Email</th>
+        <td>{{ customer.customer_email }}</td>
+    </tr>
+    <tr>
+        <th>Phone</th>
+        <td>{{ customer.customer_phone }}</td>
+    </tr>
+    <tr>
+        <th>Address</th>
+        <td>{{ customer.customer_address }}</td>
+    </tr>
+</table>
+<a href="{% url 'customers:list' %}" class="btn btn-secondary">Back to List</a>
+{% endblock %}

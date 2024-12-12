@@ -1,0 +1,29 @@
+<table>
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Invoice Number</th>
+            <th>Receipt Number</th>
+            <th>Document Type</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for transaction in transactions %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ transaction.trader_invoice_number }}</td>
+            <td>{{ transaction.receipt_number }}</td>
+            <td>{{ transaction.document_type }}</td>
+            <td>
+                <a href="{% url 'transaction_detail' transaction.id %}">View</a>
+                <a href="{% url 'transaction_update' transaction.id %}">Edit</a>
+                <form method="POST" action="{% url 'transaction_delete' transaction.id %}">
+                    {% csrf_token %}
+                    <button type="submit">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
