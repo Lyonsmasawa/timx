@@ -1,97 +1,108 @@
-{% extends "base.html" %}
+{% extends "main.html" %}
 
 {% block content %}
-<h3>Organization: {{ organization.organization_name }}</h3>
+{% include 'res_nav.html' %}
 
-<!-- Nav tabs for switching between sections -->
-<ul class="nav nav-tabs" id="organizationTab" role="tablist">
+<div class="container-fluid py-3 pl-4 pr-4" style="min-height: 80vh;">
+    <h3>Organization: {{ organization.organization_name }}</h3>
 
-    <li class="nav-item" role="presentation">
-        <a class="nav-link active" id="customers-tab" data-bs-toggle="tab" href="#customers" role="tab"
-            aria-controls="customers" aria-selected="false">Customers</a>
-    </li>
-    <li class="nav-item" role="presentation">
-        <a class="nav-link" id="items-tab" data-bs-toggle="tab" href="#items" role="tab" aria-controls="items"
-            aria-selected="true">Items</a>
-    </li>
-    <li class="nav-item" role="presentation">
-        <a class="nav-link" id="transactions-tab" data-bs-toggle="tab" href="#transactions" role="tab"
-            aria-controls="transactions" aria-selected="false">Transactions</a>
-    </li>
-</ul>
+    <!-- Nav tabs for switching between sections -->
+    <ul class="nav nav-tabs" id="organizationTab" role="tablist">
 
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" id="customers-tab" data-bs-toggle="tab" href="#customers" role="tab"
+                aria-controls="customers" aria-selected="false">Customers</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" id="items-tab" data-bs-toggle="tab" href="#items" role="tab" aria-controls="items"
+                aria-selected="true">Items</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" id="invoices-tab" data-bs-toggle="tab" href="#invoices" role="tab"
+                aria-controls="invoices" aria-selected="false">Invoices</a>
+        </li>
 
-<div class="tab-content" id="organizationTabContent">
-    <!-- Customers tab -->
-    <div class="tab-pane fade show active" id="customers" role="tabpanel" aria-labelledby="customers-tab">
-        <h3></h3>
-        {% if customers %}
-        <ul class="list-group">
-            {% for customer in customers %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                    <strong>{{ customer.customer_name }}</strong> -
-                    {{ customer.customer_email }} -
-                    {{ customer.customer_phone }}
-                </div>
-                <div>
-                    <a href="{% url 'customer:customer_update' customer.id %}" class="btn btn-warning btn-sm">Edit</a>
-                    <form method="POST" action="{% url 'customer:customer_delete' customer.id %}"
-                        style="display:inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                    </form>
-                </div>
-            </li>
-            {% endfor %}
-        </ul>
-        {% else %}
-        <p>No customers found for this organization.</p>
-        {% endif %}
-        <a href="{% url 'customer:customer_create'  %}" class="btn btn-primary mt-3">Add New Customer</a>
-    </div>
+    </ul>
 
 
-    <!-- Items tab -->
-    <div class="tab-pane fade" id="items" role="tabpanel" aria-labelledby="items-tab">
-        <h3></h3>
-        {% if items %}
-        <ul class="list-group">
-            {% for item in items %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                    {{ item.item_name }} - {{ item.item_class_code }} - {{ item.item_tax_code }}
-                </div>
-                <div>
-                    <a href="{% url 'item:item_update' item.id %}" class="btn btn-warning btn-sm">Edit</a>
-                    <form method="POST" action="{% url 'item:item_delete' item.id %}" style="display:inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                    </form>
-                </div>
-            </li>
-            {% endfor %}
-        </ul>
-        {% else %}
-        <p>No items found for this organization.</p>
-        {% endif %}
-        <a href="{% url 'item:item_create' %}" class="btn btn-primary mt-3">Add New Item</a>
-    </div>
+    <div class="tab-content add-tab" id="organizationTabContent">
+        <!-- Customers tab -->
+        <div class="tab-pane fade show active" id="customers" role="tabpanel" aria-labelledby="customers-tab">
+            <h3></h3>
+            {% if customers %}
+            <ul class="list-group">
+                {% for customer in customers %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>{{ customer.customer_name }}</strong> -
+                        {{ customer.customer_email }} -
+                        {{ customer.customer_phone }}
+                    </div>
+                    <div>
 
-    <!-- Transactions tab -->
-    <div class="tab-pane fade" id="transactions" role="tabpanel" aria-labelledby="transactions-tab">
-        <h3></h3>Transactions</h3>
-        {% if transactions %}
-        <ul class="list-group">
-            {% for transaction in transactions %}
-            <li class="list-group-item">
-                {{ transaction.trader_invoice_number }} - {{ transaction.receipt_number }}
-            </li>
-            {% endfor %}
-        </ul>
-        {% else %}
-        <p>No transactions found for this organization.</p>
-        {% endif %}
+                        <a href="{% url 'customer:customer_update' customer.id %}"
+                            class="btn btn-warning btn-sm w-btn">View/Edit</a>
+
+                        <form style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm w-btn">Delete</button>
+                        </form>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>No customers found for this organization.</p>
+            {% endif %}
+            <a href="{% url 'customer:customer_create'  %}" class="btn btn-primary mt-3  w-btn">Add New Customer</a>
+        </div>
+
+
+        <!-- Items tab -->
+        <div class="tab-pane fade" id="items" role="tabpanel" aria-labelledby="items-tab">
+            <h3></h3>
+            {% if items %}
+            <ul class="list-group">
+                {% for item in items %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        {{ item.item_name }} - {{ item.item_class_code }} - {{ item.itemCd }}
+                    </div>
+                    <div>
+
+                        <a href="{% url 'item:item_update' item.id %}"
+                            class="btn btn-warning btn-sm w-btn">View/Edit</a>
+
+                        <form style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm w-btn">Delete</button>
+                        </form>
+                    </div>
+
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>No items found for this organization.</p>
+            {% endif %}
+            <a href="{% url 'item:item_create' %}" class="btn btn-primary mt-3  w-btn">Add New Item</a>
+        </div>
+
+        <!-- invoices tab -->
+        <div class="tab-pane fade" id="invoices" role="tabpanel" aria-labelledby="invoices-tab">
+            <h3></h3>invoices</h3>
+            {% if invoices %}
+            <ul class="list-group">
+                {% for transaction in invoices %}
+                <li class="list-group-item">
+                    {{ transaction.trader_invoice_number }} - {{ transaction.receipt_number }}
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>No invoices found for this organization.</p>
+            {% endif %}
+        </div>
     </div>
 </div>
 

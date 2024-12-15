@@ -1,5 +1,5 @@
 from django.db import models
-from common.models import BaseModel
+from commons.models import BaseModel
 from transaction.models import Transaction
 from item.models import Item
 

@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'crispy_forms',
     'accounts',
-    'common',
+    'commons',
     'organization',
     'transaction',
     'inventory',
@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'item',
     'sales_items',
     'corsheaders',
+    'bootstrap5',
 ]
 
 MIDDLEWARE = [
@@ -100,6 +101,9 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3001",  # React frontend
     "http://localhost:3002",  # React frontend
 ]
+
+ALLOWED_HOSTS = ['*']
+
 
 
 # Password validation
@@ -152,6 +156,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = '/accounts/login/'  # URL to redirect for login
 LOGIN_REDIRECT_URL = '/api/organization/'       # URL after successful login
 LOGOUT_REDIRECT_URL = '/accounts/login/'      # URL after successful logout
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Email settings for password reset (use a console backend for development)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

@@ -1,34 +1,69 @@
-{% extends "base.html" %}
+{% extends "main.html" %}
 
 {% block content %}
-<h1>Organizations</h1>
-<a href="{% url 'organization:organization_create' %}" class="btn btn-primary mb-3">Add New Organization</a>
-<table class="table">
-    <thead>
-        <tr>
-            <th>#</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for org in organizations %}
-        <tr>
-            <td>{{ forloop.counter }}</td>
-            <td><a href="{% url 'organization:organization_detail' org.id %}">{{ org.organization_name }}</a></td>  <!-- Link to detail -->
-            <td>{{ org.organization_email }}</td>
-            <td>{{ org.organization_phone }}</td>
-            <td>
-                <a href="{% url 'organization:organization_update' org.id %}" class="btn btn-warning btn-sm">Edit</a>
-                <form method="POST" action="{% url 'organization:organization_delete' org.id %}" style="display:inline;">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                </form>
-            </td>
-        </tr>
+{% include 'res_nav.html' %}
+<div class="container-fluid py-3 pl-4 pr-4" style="min-height: 80vh;">
+    <div class="d-flex top-l">
+        <h2><span style="color: darkgreen;">{{organizations.count}}</span> organization(s)</h2>
+        <a href="{% url 'organization:organization_create' %}" class="btn btn-primary mb-3 text-black add">+ Add New
+            Organization</a>
+    </div>
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li class="alert {{ message.tags }}">{{ message }}</li>
         {% endfor %}
-    </tbody>
-</table>
+    </ul>
+    {% endif %}
+    <hr>
+    <div style="padding: 1rem;">
+        <div class="row">
+            {% for org in organizations %}
+            <div class="col-lg-4">
+                <div class="card card-margin shadow-sm">
+                    <a href="{% url 'organization:organization_detail' org.id %}" class="a-style">
+                        <div class="card-header card-header-x weight-bold">
+                            <h5 class="card-title">{{ org.organization_name }}</h5>
+                            <p><span class="spanb">pin:</span>{{org.organization_pin}}</p>
+                        </div>
+                        <div class="card-body pt-2 pb-0 mb-0">
+                            <div class="widget-49">
+                                <div class="widget-49-title-wrapper">
+                                    <div class="widget-info">
+                                        <span class="widget-49-pro-title">{{org.organization.created_at}}</span>
+                                    </div>
+                                </div>
+                                <ul class="widget-points">
+                                    <li class="item"><span class="span">Pin:</span> {{org.organization_pin}} </li>
+                                    <li class="item"><span class="span">Email:</span> {{org.organization_email}}
+                                    </li>
+                                    <li class="item"><span class="span">Physical Adress:</span>
+                                        {{org.organization_physical_address}} </li>
+                                    <li class="item"><span class="span">Phone:</span> {{org.organization_phone}}
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </a>
+                    <div class="widget-btn">
+                        <p>
+                        <form>
+                            <a href="{% url 'organization:organization_update' org.id %}"
+                                class="btn btn-warning btn-sm w-btn">Edit</a>
+                        </form>
+                        </p>
+                        <p>
+                        <form method="POST" action="" style="display:inline; width:fit-content">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm w-btn">Delete</button>
+                        </form>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+        </div>
+    </div>
+</div>
 {% endblock %}

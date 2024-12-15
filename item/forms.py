@@ -5,7 +5,6 @@ class ItemForm(forms.ModelForm):
     class Meta:
         model = Item
         fields = [
-            "organization",
             "item_name",
             "origin_nation_code",
             "item_type_code",
