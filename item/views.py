@@ -1,10 +1,19 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
+from django.db import IntegrityError, transaction
+from django.urls import reverse
+from item_movement.models import ItemMovement
+from organization.models import Organization
 from .models import Item
 from .forms import ItemForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-
+from django.views import View
+from dal import autocomplete
+from commons.constants import (
+    COUNTRY_CHOICES, PRODUCT_TYPE_CHOICES, UNIT_CHOICES, PACKAGE_CHOICES, TAX_TYPE_CHOICES, TAXPAYER_STATUS_CHOICES
+)
+from commons.utils import get_choices_as_autocomplete
 # List Items
 
 
@@ -20,33 +29,105 @@ def item_list(request):
 
 
 @login_required
-def item_create(request):
-    organization = request.user.organizations.first()
+def item_create(request, pk):
+    organization = get_object_or_404(Organization, pk=pk)
 
-    if request.method == "POST":
-        form = ItemForm(request.POST)
-        if form.is_valid():
-            try:
-                item = form.save(commit=False)
-                item.organization = organization
+    try:
+        if request.method == "POST":
+            item_form = ItemForm(request.POST)
+
+            if item_form.is_valid():
+                try:
+                    item = item_form.save(commit=False)
+                    item.organization = organization
+                    item.save()
+
+                except IntegrityError as e:
+                    error_msg = str(e)
+
+                    unique_fields = {
+                        'item_name': 'The Item name must be unique.'
+                    }
+
+                    for field, message in unique_fields.items():
+                        if field in error_msg:
+                            return JsonResponse({
+                                'success': False,
+                                'errors': {field: [message]}
+                            })
+
+                    return JsonResponse({
+                        'success': False,
+                        'errors': {'general': 'An error occurred. Please try again.'}
+                    })
+
+                except Exception as e:
+                    # Catch any other errors
+                    return JsonResponse({
+                        'success': False,
+                        'errors': {'general': f'An error occurred: {str(e)}'}
+                    })
+
+                return JsonResponse({
+                    'success': True,
+                    'item_id': item.id,
+                    'item_name': item.item_name,
+                    'item_code': item.itemCd,
+                    'item_type_code': item.item_type_code,
+                    'item_tax_code': item.item_tax_code,
+                    'item_class_code': item.item_class_code,
+                    'item_current_balance': item.item_current_balance,
+                    'item_detail_url': reverse('item:item_update', args=[item.id]),
+                    'item_delete_url': reverse('item:item_delete', args=[item.id]),
+                })
+
+            return JsonResponse({'success': False, 'errors': item_form.errors})
+
+    except Exception as e:
+        print({str(e)})
+        return JsonResponse({'success': False, 'error': 'Invalid action.'})
+
+
+def update_item_quantity(request):
+    if request.method == 'POST':
+        item_id = request.POST.get('item_id')
+        quantity = request.POST.get('item_quantity')
+
+        try:
+            # Convert quantity to an integer
+            quantity = int(quantity)
+
+            if quantity <= 0:
+                return JsonResponse({"error": "Quantity must be a positive number."}, status=400)
+
+            # Use a transaction block
+            with transaction.atomic():
+                # Get the item
+                item = get_object_or_404(Item, id=item_id)
+
+                # Update item quantity
+                item.item_current_balance += quantity
                 item.save()
 
-                messages.success(request, "Item created successfully!")
-                return redirect('organization:organization_detail', pk=item.organization.id)
-            except Exception as e:
-                messages.error(request, f"An error occurred: {str(e)}")
-        else:
-            print(organization.id)
-            messages.error(
-                request, "There was an error with the form. Please check your input.")
+                # Create an item movement entry
+                ItemMovement.objects.create(
+                    item=item,
+                    movement_type='ADD',
+                    item_unit=quantity,
+                )
 
-    else:
-        form = ItemForm()
+            # If everything succeeds
+            return JsonResponse({'success': True, "message": "Quantity updated successfully"}, status=200)
 
-    return render(request, "item/item_form.html", {"form": form, "organization": organization})
+        except ValueError:
+            return JsonResponse({'success': False, "error": "Invalid quantity value."}, status=400)
 
+        except Exception as e:
+            return JsonResponse({'success': False, "error": str(e)}, status=400)
 
 # Item Detail
+
+
 @login_required
 def item_detail(request, pk):
     try:
@@ -79,39 +160,39 @@ def item_detail(request, pk):
 
 @login_required
 def item_update(request, pk):
-    # Get the organization of the current user
-    organization = request.user.organizations.first()
-
+    print(1111)
     try:
-        # Try to retrieve the item that belongs to the organization
-        item = Item.objects.get(pk=pk, organization=organization)
+        item = Item.objects.get(pk=pk)
     except Item.DoesNotExist:
-        messages.error(
-            request, "Item not found or you don't have permission to edit it.")
-        return redirect('organization:organization_detail', pk=organization.id)
+        return JsonResponse({'success': False, 'errors': {'general': [f"An error occurred: {str(e)}"]}})
 
     if request.method == "POST":
-        # Pass the existing item to the form for updating
-        form = ItemForm(request.POST, instance=item)
-        if form.is_valid():
+        # Create a dictionary to track updates
+        updates = {}
+
+        # Iterate through the submitted data and update only changed fields
+        for field, value in request.POST.items():
+            if field in ['csrfmiddlewaretoken']:
+                continue  # Skip CSRF token field
+
+            # Check if the submitted value is different from the current value
+            current_value = getattr(item, field, None)
+            if current_value != value and value.strip() != "":
+                updates[field] = value
+
+        if updates:
             try:
-                updated_item = form.save(commit=False)
-                updated_item.organization = organization  # Ensure organization is set
-                updated_item.save()
-
-                messages.success(request, "Item updated successfully!")
-                return redirect('organization:organization_detail', pk=updated_item.organization.id)
+                # Update the organization with the modified fields
+                for field, value in updates.items():
+                    setattr(item, field, value)
+                item.save()
+                return JsonResponse({'success': True, 'message': "Item updated successfully."})
             except Exception as e:
-                messages.error(request, f"An error occurred: {str(e)}")
+                return JsonResponse({'success': False, 'errors': {'general': [f"An error occurred: {str(e)}"]}})
         else:
-            messages.error(
-                request, "There was an error with the form. Please check your input.")
-    else:
-        # Pre-populate the form with the current item data
-        form = ItemForm(instance=item)
+            return JsonResponse({'success': True, 'message': "No changes detected."})
 
-    return render(request, "item/item_form.html", {"form": form, "organization": organization, "item": item})
-
+    return JsonResponse({'success': False, 'errors': {'general': ["Invalid request method."]}})
 
 # Delete Item
 
@@ -121,6 +202,63 @@ def item_delete(request, pk):
     try:
         item = get_object_or_404(Item, pk=pk)
         item.delete()
-        return redirect("item:item_list")
+        return JsonResponse({'success': True, 'message': "Item deleted successfully."})
+
     except Exception as e:
-        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+        return JsonResponse({'success': False, 'errors': {'general': ["Invalid request, Please try again!"]}})
+
+
+class CountryCodeAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        # Start with all country codes
+        queryset = Item.objects.all()
+
+        # Filter by user input (search term)
+        if self.q:
+            queryset = queryset.filter(origin_nation_code__icontains=self.q)
+
+        return queryset
+
+
+class ItemTypeCodeAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        # Start with all item type codes
+        queryset = Item.objects.all()
+
+        # Filter by user input (search term)
+        if self.q:
+            queryset = queryset.filter(item_type_code__icontains=self.q)
+
+        return queryset
+
+
+class QuantityUnitCodeAutocomplete(View):
+    def get(self, request, *args, **kwargs):
+        query = request.GET.get('q', "")
+        results = get_choices_as_autocomplete(UNIT_CHOICES, query)
+        print(results)
+        return JsonResponse({"results": results})
+
+
+class PackageUnitCodeAutocomplete(View):
+    def get(self, request, *args, **kwargs):
+        query = request.GET.get('q', "")
+        results = get_choices_as_autocomplete(PACKAGE_CHOICES, query)
+        print(results)
+        return JsonResponse({"results": results})
+
+
+class ItemClassCodeAutocomplete(View):
+    def get(self, request, *args, **kwargs):
+        query = request.GET.get('q', "")
+        results = get_choices_as_autocomplete(TAX_TYPE_CHOICES, query)
+        print(results)
+        return JsonResponse({"results": results})
+
+
+class ItemTaxCodeAutocomplete(View):
+    def get(self, request, *args, **kwargs):
+        query = request.GET.get('q', "")
+        results = get_choices_as_autocomplete(TAXPAYER_STATUS_CHOICES, query)
+        print(results)
+        return JsonResponse({"results": results})

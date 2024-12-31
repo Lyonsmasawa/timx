@@ -8,6 +8,7 @@ urlpatterns = [
     # Custom registration view
     path("register/", views.register, name="register"),
     path('login/', views.loginPage, name="login"),
+    path('', views.loginPage, name="login"),
 
     # Django's built-in authentication views
     path("login/", auth_views.LoginView.as_view(template_name="accounts/login.html"), name="login"),

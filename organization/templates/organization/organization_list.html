@@ -1,69 +1,440 @@
 {% extends "main.html" %}
+{% load bootstrap5 %}
 
 {% block content %}
 {% include 'res_nav.html' %}
-<div class="container-fluid py-3 pl-4 pr-4" style="min-height: 80vh;">
-    <div class="d-flex top-l">
-        <h2><span style="color: darkgreen;">{{organizations.count}}</span> organization(s)</h2>
-        <a href="{% url 'organization:organization_create' %}" class="btn btn-primary mb-3 text-black add">+ Add New
-            Organization</a>
-    </div>
-    {% if messages %}
-    <ul class="messages">
-        {% for message in messages %}
-        <li class="alert {{ message.tags }}">{{ message }}</li>
-        {% endfor %}
-    </ul>
-    {% endif %}
-    <hr>
-    <div style="padding: 1rem;">
-        <div class="row">
-            {% for org in organizations %}
-            <div class="col-lg-4">
-                <div class="card card-margin shadow-sm">
-                    <a href="{% url 'organization:organization_detail' org.id %}" class="a-style">
-                        <div class="card-header card-header-x weight-bold">
-                            <h5 class="card-title">{{ org.organization_name }}</h5>
-                            <p><span class="spanb">pin:</span>{{org.organization_pin}}</p>
-                        </div>
-                        <div class="card-body pt-2 pb-0 mb-0">
-                            <div class="widget-49">
-                                <div class="widget-49-title-wrapper">
-                                    <div class="widget-info">
-                                        <span class="widget-49-pro-title">{{org.organization.created_at}}</span>
-                                    </div>
-                                </div>
-                                <ul class="widget-points">
-                                    <li class="item"><span class="span">Pin:</span> {{org.organization_pin}} </li>
-                                    <li class="item"><span class="span">Email:</span> {{org.organization_email}}
-                                    </li>
-                                    <li class="item"><span class="span">Physical Adress:</span>
-                                        {{org.organization_physical_address}} </li>
-                                    <li class="item"><span class="span">Phone:</span> {{org.organization_phone}}
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </a>
-                    <div class="widget-btn">
-                        <p>
-                        <form>
-                            <a href="{% url 'organization:organization_update' org.id %}"
-                                class="btn btn-warning btn-sm w-btn">Edit</a>
-                        </form>
-                        </p>
-                        <p>
-                        <form method="POST" action="" style="display:inline; width:fit-content">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-danger btn-sm w-btn">Delete</button>
-                        </form>
-                        </p>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
+<div class="container-fluid p-0 pt-2 part-upper" style="min-height: 90vh;">
+    <div class="d-flex justify-content-between align-items-center py-1 px-4  part-upper">
+        <h3><strong class="">Organizations</strong></h3>
+        <div>
 
         </div>
     </div>
+    <div class="container-fluid px-5" style="min-height: 90vh; background-color: white;">
+        <div class="d-flex justify-content-between align-items-center p-0 pt-3">
+            <h3><span style="color: #000000;">{{ organizations.count }}</span> Organizations</h3>
+            <div>
+                <button type="button" class="btn add" data-toggle="modal" data-target="#organizationModal">
+                    + New Organization
+                </button>
+            </div>
+        </div>
+
+
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+            <li class="alert {{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        <hr class="hr-style" />
+        <div class="organization-list">
+            <table class="table table-striped">
+                <thead class="thead-dark">
+                    <tr>
+                        <th scope="col">Organization</th>
+                        <th scope="col">Email</th>
+                        <th scope="col">Physical Address</th>
+                        <th scope="col">Phone</th>
+                        <th scope="col">Created At</th>
+                        <th scope="col">Actions</th>
+                    </tr>
+                    <tr>
+                        <td style="font-size: 2px;">
+                            &nbsp;
+                        </td>
+                    </tr>
+                </thead>
+                <tbody class="org-list">
+                    {% for org in organizations %}
+                    <tr id="org-{{ org.id }}" class="align-items-center justify-center lines">
+                        <td class="td-header">
+                            <a href="{% url 'organization:organization_detail' org.id %}" class="a-style">
+                                <strong class="td_title">{{ org.organization_name }}</strong><br>
+                                &nbsp;Pin: <small class="td_span">{{ org.organization_pin }}</small>
+                            </a>
+                        </td>
+                        <td>{{ org.organization_email }}</td>
+                        <td>{{ org.organization_physical_address }}</td>
+                        <td>{{ org.organization_phone }}</td>
+                        <td>{{ org.created_at|date:"F j, Y" }}</td>
+
+                        <td>
+                            <div class="dropdown">
+                                <button class="btn btn-secondary btn-sm dropdown-toggle w-btn" type="button"
+                                    id="dropdownMenuButton-{{ org.id }}" data-bs-toggle="dropdown"
+                                    aria-expanded="false">
+                                    Actions
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton-{{ org.id }}">
+                                    <li>
+                                        <a href="{% url 'organization:organization_detail' org.id %}"
+                                            class="dropdown-item">View</a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class="dropdown-item" data-bs-toggle="modal"
+                                            data-bs-target="#editModal-{{ org.id }}">Edit</a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class="dropdown-item text-danger" data-bs-toggle="modal"
+                                            data-bs-target="#deleteModal-{{ org.id }}">Delete</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="font-size: 2px;">
+                            &nbsp;
+                        </td>
+                    </tr>
+                    <!-- Edit Modal -->
+                    <div class="modal fade" id="editModal-{{ org.id }}" tabindex="-1"
+                        aria-labelledby="editModalLabel-{{ org.id }}" aria-hidden="true">
+                        <div class="modal-dialog  modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="editModalLabel-{{ org.id }}">Edit Organization</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <!-- Add edit form here -->
+                                    <form id="editForm-{{ org.id }}" method="POST"
+                                        action="{% url 'organization:organization_update' org.id %}">
+                                        <div id="form-errors" class="alert alert-danger d-none">
+                                            <!-- Error messages will be inserted here -->
+                                        </div>
+                                        {% csrf_token %}
+                                        <div class="mb-3">
+                                            <label for="organizationName" class="form-label">Organization Name</label>
+                                            <input type="text" class="form-control" id="organizationName-{{ org.id }}"
+                                                name="organization_name" value="{{ org.organization_name }}">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="organizationEmail" class="form-label">Organization Email</label>
+                                            <input type="email" class="form-control" id="organizationEmail-{{ org.id }}"
+                                                name="organization_email" value="{{ org.organization_email }}">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="organizationAddress" class="form-label">Physical Address</label>
+                                            <input type="text" class="form-control"
+                                                id="organizationAddress-{{ org.id }}"
+                                                name="organization_physical_address"
+                                                value="{{ org.organization_physical_address }}">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="organizationPhone" class="form-label">Phone</label>
+                                            <input type="text" class="form-control" id="organizationPhone-{{ org.id }}"
+                                                name="organization_phone" value="{{ org.organization_phone }}">
+                                        </div>
+                                        <div class="text-center">
+                                            <button type="button" class="btn btn-primary w-btn"
+                                                onclick="submitEditForm('{{org.id}}')">
+                                                Save Changes
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Delete Modal -->
+                    <div class="modal fade" id="deleteModal-{{ org.id }}" tabindex="-1"
+                        aria-labelledby="deleteModalLabel-{{ org.id }}" aria-hidden="true">
+                        <div class="modal-dialog  modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title text-danger" id="deleteModalLabel-{{ org.id }}">Delete
+                                        Organization</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    Are you sure you want to delete <strong>{{ org.organization_name }}</strong>?
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn cancel" data-bs-dismiss="modal">Cancel</button>
+                                    <form method="POST" action="{% url 'organization:organization_delete' org.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn delete">Delete</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+
+
+        <!-- Add Organization Modal -->
+        <div class="modal fade modal-part" id="organizationModal" tabindex="-1" role="dialog"
+            aria-labelledby="organizationModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="organizationModalLabel">Add Organization</h5>
+                        <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close">
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="organizationForm" method="post" action="{% url 'organization:organization_list' %}">
+                            <div id="org-form-errors" class="alert alert-danger d-none">
+                                <!-- Error messages will be inserted here -->
+                            </div>
+                            {% csrf_token %}
+                            {{ form.media }}
+                            {% bootstrap_form form %}
+                            <div class="text-center">
+                                <button type="submit" class="btn w-btn">Save Organization</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
 </div>
+
+<!-- JavaScript for AJAX Submission -->
+<script>
+    function submitEditForm(orgId) {
+        const form = document.getElementById(`editForm-${orgId}`);
+        const formData = new FormData(form);
+
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        })
+            .then((response) => {
+                if (!response.ok) throw new Error('Failed to submit form.');
+                return response.json();
+            })
+            .then((data) => {
+                if (data.success) {
+                    location.reload();
+                } else if (data.errors) {
+                    // Show validation errors in the modal
+                    console.log('Errors:', data.errors);
+                    const errorDiv = document.getElementById('form-errors');
+                    errorDiv.classList.remove('d-none'); // Make the error div visible
+                    errorDiv.innerHTML = ''; // Clear previous errors
+
+                    // Loop through the errors and display them
+                    for (const field in data.errors) {
+                        data.errors[field].forEach(error => {
+                            const errorMessage = document.createElement('p');
+                            errorMessage.textContent = `${error}`;
+                            errorDiv.appendChild(errorMessage);
+                        });
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Handle error without alerting
+                const errorDiv = document.getElementById('form-errors');
+                errorDiv.classList.remove('d-none'); // Make the error div visible
+                errorDiv.innerHTML = '<p>An error occurred while saving the organization. Please try again.</p>';
+            });
+    }
+
+
+    function formatDate(createdAt) {
+        // Check if the input date is valid
+        const date = new Date(createdAt);
+
+        // If the date is invalid, return a fallback value
+        if (isNaN(date.getTime())) {
+            console.error('Invalid date:', createdAt);
+            return 'Invalid Date'; // You can customize this fallback
+        }
+
+        // If valid, format the date
+        const formattedDate = new Intl.DateTimeFormat('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        }).format(date);
+
+        return formattedDate;
+    }
+
+    document.getElementById('organizationForm').addEventListener('submit', function (e) {
+        e.preventDefault(); // Prevent default form submission
+        const form = e.target;
+        const formData = new FormData(form);
+
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest' // Indicate it's an AJAX request
+            }
+        })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to submit form.');
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Append the new organization dynamically to the list
+                    const organizationList = document.querySelector('.org-list');
+                    const newOrg = `
+                    <tr id="${data.organization_id}" class="align-items-center justify-center lines">
+                        <td class="td-header">
+                            <a href="${data.organization_detail_url}" class="a-style">
+                                <strong class="td_title">${data.organization_name}</strong><br>
+                                &nbsp;Pin: <small class="td_span">${data.organization_pin}</small>
+                            </a>
+                        </td>
+                        <td>${data.organization_email}</td>
+                        <td>${data.organization_physical_address}</td>
+                        <td>${data.organization_phone}</td>
+                        <td>${formatDate(data.organization_created_at)}</td>
+
+                        <td>
+                            <div class="dropdown">
+                                <button class="btn btn-secondary btn-sm dropdown-toggle w-btn" type="button"
+                                    id="dropdownMenuButton-${data.organization_id}" data-bs-toggle="dropdown"
+                                    aria-expanded="false">
+                                    Actions
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton-${data.organization_id}">
+                                    <li>
+                                        <a href="${data.organization_detail_url}"
+                                            class="dropdown-item">View</a>
+                                    </li>
+                                   
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="font-size: 2px;">
+                            &nbsp;
+                        </td>
+                    </tr>
+                    <!-- Edit Modal -->
+                    <div class="modal fade" id="editModal-${data.organization_id}" tabindex="-1"
+                        aria-labelledby="editModalLabel-${data.organization_id}" aria-hidden="true">
+                        <div class="modal-dialog  modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="editModalLabel-${data.organization_id}">Edit Organization</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <!-- Add edit form here -->
+                                    <form id="editForm-${data.organization_id}" method="POST"
+                                        action="${data.organization_update_url}">
+                                        <div id="form-errors" class="alert alert-danger d-none">
+                                            <!-- Error messages will be inserted here -->
+                                        </div>
+                                        {% csrf_token %}
+                                        <div class="mb-3">
+                                            <label for="organizationName" class="form-label">Organization Name</label>
+                                            <input type="text" class="form-control" id="organizationName-${data.organization_id}"
+                                                name="organization_name" value="${data.organization_name}">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="organizationEmail" class="form-label">Organization Email</label>
+                                            <input type="email" class="form-control" id="organizationEmail-${data.organization_id}"
+                                                name="organization_email" value="${data.organization_email}">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="organizationAddress" class="form-label">Physical Address</label>
+                                            <input type="text" class="form-control"
+                                                id="organizationAddress-${data.organization_id}"
+                                                name="organization_physical_address"
+                                                value="${data.organization_physical_address}">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="organizationPhone" class="form-label">Phone</label>
+                                            <input type="text" class="form-control" id="organizationPhone-${data.organization_id}"
+                                                name="organization_phone" value="${data.organization_phone}">
+                                        </div>
+                                        <div class="text-center">
+                                            <button type="button" class="btn btn-primary w-btn"
+                                                onclick="submitEditForm(${data.organization_id})">
+                                                Save Changes
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Delete Modal -->
+                    <div class="modal fade" id="deleteModal-${data.organization_id}" tabindex="-1"
+                        aria-labelledby="deleteModalLabel-${data.organization_id}" aria-hidden="true">
+                        <div class="modal-dialog  modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title text-danger" id="deleteModalLabel-${data.organization_id}">Delete
+                                        Organization</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    Are you sure you want to delete <strong>${data.organization_name}</strong>?
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn cancel"
+                                        data-bs-dismiss="modal">Cancel</button>
+                                    <form method="POST" action="${data.organization_delete_url}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn delete">Delete</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                    organizationList.insertAdjacentHTML('beforeend', newOrg);
+
+                    const closeButton = document.querySelector('.btn-close'); // Close button in the modal
+                    if (closeButton) {
+                        closeButton.click(); // Simulate click to close modal
+                    }
+                    form.reset();
+                } else if (data.errors) {
+                    // Show validation errors in the modal
+                    console.log('Errors:', data.errors);
+                    const errorDiv = document.getElementById('org-form-errors');
+                    errorDiv.classList.remove('d-none'); // Make the error div visible
+                    errorDiv.innerHTML = ''; // Clear previous errors
+
+                    // Loop through the errors and display them
+                    for (const field in data.errors) {
+                        data.errors[field].forEach(error => {
+                            const errorMessage = document.createElement('p');
+                            errorMessage.textContent = `${error}`;
+                            errorDiv.appendChild(errorMessage);
+                        });
+                    }
+                }
+            })
+
+            .catch(error => {
+                console.error('Error:', error);
+                // Handle error without alerting
+                const errorDiv = document.getElementById('org-form-errors');
+                errorDiv.classList.remove('d-none'); // Make the error div visible
+                errorDiv.innerHTML = '<p>An error occurred while saving the organization. Please try again.</p>';
+            });
+    });
+</script>
 {% endblock %}

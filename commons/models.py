@@ -1,28 +1,23 @@
 from django.db import models
+from django.contrib.auth.models import User
+from django_softdelete.models import SoftDeleteModel
 
 
-class BaseModel(models.Model):
+class BaseModel(SoftDeleteModel, models.Model):
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
+    created_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_%(class)s')
     updated_at = models.DateTimeField(auto_now=True, editable=False)
-    key = models.CharField(max_length=7, unique=True, editable=False)
+    updated_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_%(class)s')
 
     class Meta:
         abstract = True
 
-    def generate_unique_key(self, queryset):
-        """
-        Generate a unique key based on the sequence of existing keys.
-        Subclasses can pass the relevant queryset for context-specific uniqueness.
-        """
-        last_key = queryset.order_by(
-            "-key").values_list("key", flat=True).first()
-        next_key = int(last_key) + 1 if last_key else 1
-        return f"{next_key:07d}"
-
     def save(self, *args, **kwargs):
-        # Make sure the key is generated before saving
-        if not self.key:
-            raise NotImplementedError(
-                "Subclasses must implement their own unique key generation logic."
-            )
+        user = kwargs.pop('user', None)
+        if not self.created_by and user:
+            self.created_by = user
+        if user:
+            self.updated_by = user
         super().save(*args, **kwargs)

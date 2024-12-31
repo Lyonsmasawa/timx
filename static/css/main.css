@@ -11,9 +11,9 @@
 }
 
 html {
-    background: #EFEFBB;
-    background: -webkit-linear-gradient(to right, #D4D3DD, #ededd5);
-    background: linear-gradient(to right, #D4D3DD, #e9e9c8);
+    background: #9e9e9e;
+    background: -webkit-linear-gradient(to right, #D4D3DD, #d1d1d1);
+    background: linear-gradient(to right, #D4D3DD, #d1d1d1);
 }
 
 .admin {
@@ -84,7 +84,13 @@ html {
 
 .navlogo {
     font-weight: 900;
-    font-size: 2.3rem;
+    font-size: 1.5rem;
+    color: white !important;
+
+}
+
+.part-upper {
+    background-color: #e9e9e9;
 }
 
 .navbar-x {
@@ -92,12 +98,13 @@ html {
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    padding: 1rem 3rem 1rem 1rem;
-    background-color: #eaeaea !important;
+    padding: 0.7rem 1rem 0.5rem 2rem;
+    background-color: #354649 !important;
+    color: white !important;
 }
 
 .nav-item a {
-    color: #00251D !important;
+    color: black;
     font-weight: bold;
     font-size: 1.2rem;
 }
@@ -526,7 +533,22 @@ html {
     justify-content: space-between;
     /* padding: 1rem; */
     color: white;
-    background-color: #00251dd5;
+    background-color: #000000;
+}
+
+.td-header {
+    display: flex;
+    flex-direction: row;
+    padding-bottom: 0%;
+    align-items: center;
+    justify-content: space-between;
+    /* padding: 1rem; */
+    color: white !important;
+    background-color: #000000 !important;
+}
+
+.td-header a {
+    color: white !important;
 }
 
 .widget-points li {
@@ -534,7 +556,7 @@ html {
 }
 
 .span {
-    color: #00251D;
+    color: #000000;
     font-weight: 900;
 }
 
@@ -551,15 +573,17 @@ html {
 }
 
 .add {
-    font-weight: 600;
+    border-radius: 25px;
+    font-weight: 500;
+    padding: auto 15px;
     font-size: 1.3rem;
-    background-color: #00251D;
+    background-color: #000000;
     color: white !important;
 }
 
 .add:hover {
     background-color: white !important;
-    color: #00251D !important;
+    color: #000000 !important;
 }
 
 .widget-btn {
@@ -575,23 +599,33 @@ html {
 
 .widget-btn a {
     font-weight: 500;
-    color: #00251D;
+    color: #000000;
 }
 
 .w-btn {
     padding: 5px 15px;
-    color: #000;
+    background-color: #000;
+    color: white;
     font-size: 1.2rem;
 }
 
-.w-btn:hover{
-    background-color: #00251D;
+
+.i-btn {
+    padding: 5px 15px;
     color: white;
+    background-color: #000000;
+    font-size: 1.2rem;
+}
+
+
+.w-btn:hover {
+    color: #000000;
+    background-color: white;
 }
 
 .a-style {
     text-decoration: none;
-    color: #00251D;
+    color: #000000;
 }
 
 .a-style:hover {
@@ -599,5 +633,65 @@ html {
 }
 
 .add-tab {
-    padding: 1px  1rem;
+    padding: 1px 1rem;
+}
+
+.modal-part {
+    align-self: center;
+
+}
+
+.delete-item {
+    background-color: red !important;
+    color: white !important;
+}
+
+.modal-header {
+    background-color: #000;
+    color: white !important;
+}
+
+.btn-close {
+    background-color: white;
+}
+
+
+.thead-dark {
+    font-size: 1.4rem;
+}
+
+.thead-dark th {
+    font-weight: 900 !important;
+}
+
+.hr-style {
+    color: #000 !important;
+    background-color: #000000 !important;
+    height: 2rem !important;
+}
+
+.lines td {
+    align-items: center;
+    overflow-wrap: normal;
+    max-height: fit-content;
+}
+
+.td_title{
+    font-size: 1.3rem;
+}
+
+.td_span {
+    font-style: italic;
+    font-size: 0.8rem;
+    font-weight: 200;
+}
+
+.cancel {
+    background-color: rgb(230, 230, 230) ;
+    color: black;
+}
+
+.delete {
+    background-color: red;
+    color: white;
 }

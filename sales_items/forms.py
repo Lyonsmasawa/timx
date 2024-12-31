@@ -5,7 +5,6 @@ class SalesItemsForm(forms.ModelForm):
     class Meta:
         model = SalesItems
         fields = [
-            'transaction',
             'item',
             'item_description',
             'qty',

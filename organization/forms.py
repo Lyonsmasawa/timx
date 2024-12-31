@@ -1,6 +1,7 @@
 from django import forms
 from .models import Organization
 
+
 class OrganizationForm(forms.ModelForm):
     class Meta:
         model = Organization
@@ -22,3 +23,21 @@ class OrganizationForm(forms.ModelForm):
             "organization_name": {"required": "Organization name is required."},
             "organization_email": {"invalid": "Please enter a valid email address."},
         }
+
+    def save(self, commit=True, user=None):
+        # Save the organization without committing it to the database
+        organization = super().save(commit=False)
+
+        if user:
+            # Associate the organization with the user
+            organization.save()
+            organization.user.add(user)
+
+        return organization
+
+    def clean_organization_pin(self):
+        # Prevent manual updates to organization_pin via the form
+        instance = getattr(self, 'instance', None)
+        if instance and instance.pk:  # If updating an existing instance
+            return instance.organization_pin  # Return existing value
+        return self.cleaned_data.get('organization_pin', None)

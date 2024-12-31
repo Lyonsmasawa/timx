@@ -1,31 +1,453 @@
-<table>
-    <thead>
-        <tr>
-            <th>#</th>
-            <th>Item Description</th>
-            <th>Quantity</th>
-            <th>Rate</th>
-            <th>Line Total</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for sales_item in sales_items %}
-        <tr>
-            <td>{{ forloop.counter }}</td>
-            <td>{{ sales_item.item_description }}</td>
-            <td>{{ sales_item.qty }}</td>
-            <td>{{ sales_item.rate }}</td>
-            <td>{{ sales_item.line_total }}</td>
-            <td>
-                <a href="{% url 'sales_items_detail' sales_item.id %}">View</a>
-                <a href="{% url 'sales_items_update' sales_item.id %}">Edit</a>
-                <form method="POST" action="{% url 'sales_items_delete' sales_item.id %}">
-                    {% csrf_token %}
-                    <button type="submit">Delete</button>
-                </form>
-            </td>
-        </tr>
+{% extends 'main.html' %}
+{% load bootstrap5 %}
+
+{% block content %}
+{% include 'res_nav.html' %}
+<div class="container res-form" style="max-width: 90rem; min-height: 90vh;">
+
+    {{ form.media }}
+    <div class="container mt-3">
+        <h1>Create Invoice</h1>
+        <p>Please fill in the details below</p>
+
+        {% for message in messages %}
+        <div id="message-err">
+            <li class="">{{ message }}</li>
+        </div>
         {% endfor %}
-    </tbody>
-</table>
+
+        <div class="container mt-2">
+            <!-- Invoice Header -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h3>Invoice No. <span><input id="invoiceNumber" type="text" value="1000" class="p-1"
+                                style="max-width: 5rem; font-size: 1.5rem; "></span></h3>
+                </div>
+                <div class="col-md-6 text-end">
+                    <h4>Balance Due</h4>
+                    <h3 class="text-danger ">Ksh <span class="balance-due">0.00</span></h3>
+                </div>
+            </div>
+
+            <div id="message-errors" class="text-center text-danger p-3 m-0">
+                <ul>
+
+                </ul>
+            </div>
+
+            <!-- Customer and Invoice Details -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <label for="customerSelect" class="form-label">Select Customer</label>
+                    <select id="customerSelect" class="form-select">
+                        <option value="">-- Select Customer --</option>
+                        {% for customer in customers %}
+                        <option value="{{ customer.id }}" data-pin="{{customer.customer_pin}}"
+                            data-email="{{customer.customer_email}}">
+                            {{customer.customer_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="customer" class="form-label">Customer email</label>
+                    <input type="text" id="customer_email" class="form-control" readonly>
+                </div>
+                <div class="col-md-3">
+                    <label for="invoiceDate" class="form-label">Invoice Date</label>
+                    <input type="date" id="invoiceDate" class="form-control">
+                </div>
+                <div class="col-md-3">
+                    <label for="dueDate" class="form-label">Due Date</label>
+                    <input type="date" id="dueDate" class="form-control">
+                </div>
+            </div>
+
+            <div class="row mb-4">
+
+            </div>
+
+            <!-- Items Table -->
+            <h5>Items</h5>
+            <table id="itemsTable" class="table table-bordered mb-4">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Item</th>
+                        <th>Description</th>
+                        <th>Quantity</th>
+                        <th>Rate</th>
+                        <th>Discount</th>
+                        <th>Tax Code</th>
+                        <th>Line Total</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>
+                            <select id="itemSelect" class="form-select item-select">
+                                <option value="">-- Select item --</option>
+                                {% for item in items %}
+                                <option value="{{ item.id }}" data-tax-code="{{item.item_tax_code}}"
+                                    data-current-balance="{{ item.item_current_balance }}">
+                                    {{item.item_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td><input type="text" class="form-control"></td>
+                        <td><input type="number" class="form-control quantity" min="0">
+                        <td>
+                            <input type="number" class="form-control rate" min="0" step="1">
+                        </td>
+                        <td><input type="number" class="form-control discount" min="0" step="0.01"></td>
+                        <td>
+                            <select class="form-select tax-code-select">
+                                <option value="">-- Select tax type --</option>
+                                <option value="A">A-Exempt</option>
+                                <option value="B">B-16.00%</option>
+                                <option value="C">C-0%</option>
+                                <option value="D">D-Non-VAT</option>
+                                <option value="E">E-8%</option>
+                            </select>
+                        </td>
+                        <td><input type="text" class="form-control  line-total" readonly></td>
+                        <td><button class="btn btn-danger btn-sm delete-item ">Delete</button></td>
+                    </tr>
+                    <!-- Add more rows dynamically -->
+                </tbody>
+            </table>
+
+            <button id="addItemButton" class="mt-3 btn btn-sm w-btn i-btn">Add Item</button>
+
+            <!-- Footer Buttons -->
+            <div class="row">
+                <div class="col-md-12 text-end">
+                    <a href="javascript:history.back()" class="mt-3 btn btn-danger btn-sm w-btn">Cancel</a>
+                    <div id="csrf">
+                        {% csrf_token %}
+                    </div>
+                    <a href="{% url 'sales_items:sales_items_create' organization.id %}" class="invoiceUrl"></a>
+                    <button id="saveAndSendButton" class="mt-3 btn btn-danger btn-sm w-btn">Save and Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function validateInvoiceData(invoiceData) {
+        const errors = [];
+
+        // Validate invoice number
+        if (!invoiceData.invoiceNumber.trim()) {
+            errors.push('Invoice number is required.');
+        }
+
+        // Validate customer selection
+        if (!invoiceData.customerId.trim()) {
+            errors.push('Customer selection is required.');
+        }
+
+        // Validate dates
+        if (!invoiceData.invoiceDate.trim()) {
+            errors.push('Invoice date is required.');
+        }
+
+        if (!invoiceData.dueDate.trim()) {
+            errors.push('Due date is required.');
+        }
+
+        // Validate items
+        if (invoiceData.items.length === 0) {
+            errors.push('At least one item is required.');
+        } else {
+            invoiceData.items.forEach((item, index) => {
+                if (!item.itemId.trim()) {
+                    errors.push(`Item ${index + 1}: Item selection is required.`);
+                }
+                if (!item.quantity || item.quantity <= 0) {
+                    errors.push(`Item ${index + 1}: Quantity must be greater than 0.`);
+                }
+                if (!item.rate || item.rate < 0) {
+                    errors.push(`Item ${index + 1}: Rate must be 0 and above.`);
+                }
+            });
+        }
+
+        // Display errors in the message container
+        displayErrors(errors);
+        return errors;
+    }
+
+    function displayErrors(errors) {
+        const errorList = document.querySelector('#message-errors ul');
+        errorList.innerHTML = '';
+
+        if (errors.length > 0) {
+            errors.forEach(error => {
+                const li = document.createElement('li');
+                li.textContent = error;
+                errorList.appendChild(li);
+            });
+        } else {
+            document.querySelector('#message-errors ul').style.display = 'none';
+        }
+    }
+
+
+    function getItemsData() {
+        const items = [];
+        const rows = document.querySelectorAll('#itemsTable tbody tr');
+        rows.forEach(row => {
+            const itemData = {
+                itemId: row.querySelector('.item-select').value,
+                itemName: row.querySelector('.item-select').options[row.querySelector('.item-select').selectedIndex].text,
+                description: row.querySelector('input[type="text"]').value,
+                quantity: parseFloat(row.querySelector('.quantity').value) || 0,
+                rate: parseFloat(row.querySelector('.rate').value) || 0,
+                discount: parseFloat(row.querySelector('.discount').value) || 0,
+                taxCode: row.querySelector('.tax-code-select').value,
+                lineTotal: parseFloat(row.querySelector('.line-total').value) || 0
+            };
+            itemData?.quantity > 0 && items.push(itemData);
+        });
+        return items;
+    }
+
+    // Function to collect invoice data
+    function collectInvoiceData() {
+        return {
+            invoiceNumber: document.getElementById('invoiceNumber').value,
+            customerId: document.getElementById('customerSelect').value,
+            customerName: document.getElementById('customerSelect').options[document.getElementById('customerSelect').selectedIndex].text,
+            customerPin: customerSelect.options[customerSelect.selectedIndex]?.getAttribute('data-pin') || '',
+            customerEmail: document.getElementById('customer_email').value,
+            items: getItemsData(),
+            invoiceDate: document.getElementById('invoiceDate').value,
+            dueDate: document.getElementById('dueDate').value,
+            balanceDue: parseFloat(document.querySelector('.balance-due').textContent) || 0
+        };
+    }
+
+    document.getElementById('saveAndSendButton').addEventListener('click', function () {
+        const invoiceData = collectInvoiceData();
+
+        const errors = validateInvoiceData(invoiceData);
+
+        // If errors are found, return early and do not proceed with the post request
+        if (errors && errors.length > 0) {
+            return;
+        }
+
+        let relativeUrl = document.querySelector('.invoiceUrl')
+        let baseUrl = window.location.origin;
+        let url = new URL(relativeUrl, baseUrl).href;
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.getElementById('csrf').querySelector('input').value
+            },
+            body: JSON.stringify(invoiceData)
+        })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to submit form.');
+                return response.blob(); // Expect a blob (PDF)
+            })
+            .then(blob => {
+                // If the response is a valid blob, trigger the download
+                const link = document.createElement('a');
+                const objectUrl = URL.createObjectURL(blob);
+                link.href = objectUrl;
+                link.download = 'invoice.pdf';
+                link.click();
+                URL.revokeObjectURL(objectUrl);
+                window.location.reload(true);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Handle error by displaying an error message in the UI
+                const errorDiv = document.getElementById('message-errors');
+                errorDiv.classList.remove('d-none'); // Make the error div visible
+                errorDiv.innerHTML = '<p>An error occurred while saving the item. Please try again.</p>';
+            });
+
+        console.log('Invoice Data:', invoiceData);
+    });
+
+    document.getElementById('customerSelect').addEventListener('change', function () {
+        const selectedOption = this.options[this.selectedIndex];
+        const email = selectedOption.getAttribute('data-email');
+        document.getElementById('customer_email').value = email || '';
+    });
+
+
+    document.getElementById('itemsTable').addEventListener('change', function (e) {
+        if (e.target && e.target.classList.contains('item-select')) {
+            const selectedItem = e.target.options[e.target.selectedIndex];
+            const taxCode = selectedItem.getAttribute('data-tax-code');
+            const currentBalance = selectedItem.getAttribute('data-current-balance') || 0;
+            console.log(taxCode, selectedItem)
+
+            // Find the tax code select in the same row
+            const row = e.target.closest('tr');
+            const taxCodeSelect = row.querySelector('.tax-code-select');
+            const quantityInput = row.querySelector('.quantity');
+
+            if (taxCodeSelect) {
+                // Select the corresponding tax code in the dropdown
+                taxCodeSelect.value = taxCode || '';
+                quantityInput.setAttribute('max', currentBalance);
+
+            }
+        }
+
+        // Restrict quantity input based on max value
+        if (e.target && e.target.classList.contains('quantity')) {
+            const quantityInput = e.target;
+            const maxQuantity = quantityInput.getAttribute('max');
+
+            // If quantity entered exceeds max, set it to max value
+            if (parseFloat(quantityInput.value) > parseFloat(maxQuantity)) {
+                quantityInput.value = maxQuantity;
+            }
+        }
+    });
+
+    document.querySelector('#addItemButton').addEventListener('click', function () {
+        const table = document.getElementById('itemsTable').getElementsByTagName('tbody')[0];
+        const newRow = table.insertRow();
+
+        newRow.innerHTML = `
+            <td>${table.rows.length}</td>
+            <td>
+                <select id="itemSelect" class="form-select item-select">
+                    <option value="">-- Select item --</option>
+                    {% for item in items %}
+                    <option value="{{ item.id }}" data-tax-code="{{item.item_tax_code}}">
+                        {{item.item_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </td>
+            <td><input type="text" class="form-control"></td>
+            <td><input type="number" class="form-control quantity" min="1"></td>
+            <td><input type="number" class="form-control rate" min="0" step="0.01"></td>
+            <td><input type="number" class="form-control discount" min="0" step="0.01"></td>
+            <td>
+             <select class="form-select tax-code-select">
+                    <option value="">-- Select tax type --</option>
+                    <option value="A">A-Exempt</option>
+                    <option value="B">B-16.00%</option>
+                    <option value="C">C-0%</option>
+                    <option value="D">D-Non-VAT</option>
+                    <option value="E">E-8%</option>
+                </select></td>
+            <td><input type="text" class="form-control line-total" readonly></td>
+            <td><button class="btn btn-danger btn-sm delete-item">Delete</button></td>
+        `;
+    });
+
+
+    const TAX_RATES = {
+        A: 0,  // Exempt
+        B: 16, // 16.00%
+        C: 0,  // 0%
+        D: 0,  // Non-VAT
+        E: 8   // 8%
+    };
+
+    function calculateLineTotal(row) {
+        const quantity = parseFloat(row.querySelector('.quantity').value) || 0;
+        const rate = parseFloat(row.querySelector('.rate').value) || 0;
+        const discountInput = row.querySelector('.discount').value;
+        const taxCode = row.querySelector('.tax-code-select').value;
+        const taxRate = TAX_RATES[taxCode] || 0;
+
+        // Check if discount is a percentage
+        let discount = 0;
+        if (discountInput.includes('%')) {
+            // If discount is a percentage (e.g., "10%"), convert it to a decimal (e.g., 10% = 10)
+            discount = parseFloat(discountInput.replace('%', '')) * subtotal / 100;
+        } else if (discountInput.includes('.')) {
+            // If discount has a decimal point, treat it as already a percentage of the subtotal
+            discount = parseFloat(discountInput) * subtotal; // Treat it as already divided by 100
+        } else {
+            // If no decimal point and no %, treat it as a fixed amount (e.g., "10")
+            discount = parseFloat(discountInput) || 0;
+        }
+        console.log(taxRate, taxCode, discount, rate, quantity)
+
+        // Calculate subtotal and apply discount
+        const subtotal = quantity * rate;
+        const discountedSubtotal = subtotal - discount;
+
+        // Calculate tax
+        const tax = (discountedSubtotal * taxRate) / 100;
+
+        // Calculate line total
+        let lineTotal = discountedSubtotal + tax;
+
+        // Update line total field
+        const lineTotalField = row.querySelector('.line-total');
+        if (quantity == 0 && quantity == 0.00) {
+            lineTotal = 0;
+        }
+        if (lineTotalField) {
+            lineTotalField.value = lineTotal.toFixed(2);
+        }
+
+        return lineTotal;
+    }
+
+    function calculateBalanceDue() {
+        const rows = document.querySelectorAll('#itemsTable tbody tr');
+        let total = 0;
+
+        rows.forEach(row => {
+            total += calculateLineTotal(row);
+        });
+
+        // Update balance due
+        document.querySelector('.balance-due').textContent = total.toFixed(2) || 0;
+    }
+
+
+    document.querySelector('#itemsTable').addEventListener('change', function (e) {
+        // Check if the event target is an input or select element in the table
+        if (e.target && (e.target.closest('td') || e.target.classList.contains('tax-code-select'))) {
+            console.log('Change detected in the row');
+
+            // Find the closest row (<tr>) for the changed element
+            const row = e.target.closest('tr');
+
+            if (row) {
+                console.log(1111);
+                // Recalculate the line total and balance due
+                calculateLineTotal(row);
+                calculateBalanceDue();
+            }
+        }
+    });
+
+
+    document.getElementById('itemsTable').addEventListener('click', function (e) {
+        if (e.target.classList.contains('delete-item')) {
+            const row = e.target.closest('tr');
+            row.remove();
+            calculateBalanceDue();
+
+            // Update row numbers
+            const rows = document.querySelectorAll('#itemsTable tbody tr');
+            rows.forEach((row, index) => {
+                row.querySelector('td:first-child').textContent = index + 1;
+            });
+
+        }
+    });
+</script>
+
+
+{% endblock content %}

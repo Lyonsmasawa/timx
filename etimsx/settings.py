@@ -33,6 +33,8 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'jazzmin',
+    'dal',
+    'dal_select2',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -45,7 +47,7 @@ INSTALLED_APPS = [
     'commons',
     'organization',
     'transaction',
-    'inventory',
+    'item_movement',
     'customer',
     'item',
     'sales_items',
@@ -104,8 +106,7 @@ CORS_ALLOWED_ORIGINS = [
 
 ALLOWED_HOSTS = ['*']
 
-
-
+DEFAULT_FROM_EMAIL = "lyonsmasawa@gmail.com"
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 

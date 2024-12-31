@@ -1,109 +1,1223 @@
 {% extends "main.html" %}
+{% load bootstrap5 %}
 
 {% block content %}
 {% include 'res_nav.html' %}
 
-<div class="container-fluid py-3 pl-4 pr-4" style="min-height: 80vh;">
-    <h3>Organization: {{ organization.organization_name }}</h3>
+<div class="container-fluid p-0 pt-2 part-upper" style="height: 100%;">
+    <div class="d-flex justify-content-between align-items-center py-0 pt-3 px-4  part-upper">
+        <!-- Nav tabs for switching between sections -->
+        <ul class="nav nav-tabs" id="organizationTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <a class="nav-link  active" id="customers-tab" data-bs-toggle="tab" href="#customers" role="tab"
+                    aria-controls="customers" aria-selected="false">Customers</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" id="items-tab" data-bs-toggle="tab" href="#items" role="tab" aria-controls="items"
+                    aria-selected="true">Items</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" id="sales-tab" data-bs-toggle="tab" href="#sales" role="tab" aria-controls="sales"
+                    aria-selected="false">Sales</a>
+            </li>
 
-    <!-- Nav tabs for switching between sections -->
-    <ul class="nav nav-tabs" id="organizationTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" id="analytics-tab" data-bs-toggle="tab" href="#analytics" role="tab"
+                    aria-controls="analytics" aria-selected="false">Analytics</a>
+            </li>
+        </ul>
+        <h4 class="text-muted weight-bold">Organization: {{ organization.organization_name }}</h4>
 
-        <li class="nav-item" role="presentation">
-            <a class="nav-link active" id="customers-tab" data-bs-toggle="tab" href="#customers" role="tab"
-                aria-controls="customers" aria-selected="false">Customers</a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" id="items-tab" data-bs-toggle="tab" href="#items" role="tab" aria-controls="items"
-                aria-selected="true">Items</a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" id="invoices-tab" data-bs-toggle="tab" href="#invoices" role="tab"
-                aria-controls="invoices" aria-selected="false">Invoices</a>
-        </li>
-
-    </ul>
-
-
-    <div class="tab-content add-tab" id="organizationTabContent">
-        <!-- Customers tab -->
-        <div class="tab-pane fade show active" id="customers" role="tabpanel" aria-labelledby="customers-tab">
-            <h3></h3>
-            {% if customers %}
-            <ul class="list-group">
-                {% for customer in customers %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
+    </div>
+    <div class="container-fluid py-3 " style="min-height: 90vh; background-color:white;">
+        <div class="tab-content add-tab" id="organizationTabContent">
+            <!-- Customers tab -->
+            <div class="tab-pane fade show active" id="customers" role="tabpanel" aria-labelledby="customers-tab">
+                <h3></h3>
+                <div class="d-flex justify-content-between align-items-center p-0 pt-1">
+                    <h3><span style="color: #000000;">{{ customers.count }}</span> Customers</h3>
                     <div>
-                        <strong>{{ customer.customer_name }}</strong> -
-                        {{ customer.customer_email }} -
-                        {{ customer.customer_phone }}
+                        <button type="button" class="btn add" data-toggle="modal" data-bs-toggle="modal"
+                            data-bs-target="#createCustomerModal">
+                            + New Customer
+                        </button>
                     </div>
+                </div>
+                <hr class="hr-style" />
+                <ul class="list-group customer-list"></ul>
+                {% if customers %}
+                <table class="table table-striped">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Customer</th>
+                            <th scope="col">Phone</th>
+                            <th scope="col">Email</th>
+                            <th scope="col">Address</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 2px;">
+                                &nbsp;
+                            </td>
+                        </tr>
+                    </thead>
+                    <tbody class="cust-list">
+                        {% for customer in customers %}
+                        <tr id="customer-{{ customer.id }}" class="align-items-center justify-center lines">
+                            <td>{{forloop.counter}}</td>
+
+                            <td class="td-header ">
+                                <a class="a-style">
+                                    <strong class="td_title">{{ customer.customer_name }}</strong><br>
+                                    &nbsp;Pin: <small class="td_span">{{ customer.customer_pin }}</small>
+                                </a>
+                            </td>
+                            <td>{{ customer.customer_phone }}</td>
+                            <td>{{ customer.customer_email }}</td>
+                            <td>{{ customer.customer_address }}</td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-secondary btn-sm dropdown-toggle w-btn" type="button"
+                                        id="dropdownMenuButton-{{ customer.id }}" data-bs-toggle="dropdown"
+                                        aria-expanded="false">
+                                        Actions
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton-{{ customer.id }}">
+                                        <li>
+                                            <a href="#" class="dropdown-item" data-bs-toggle="modal"
+                                                data-bs-target="#editModal-{{ customer.id }}">Edit</a>
+                                        </li>
+                                        <li>
+                                            <a href="#" class="dropdown-item text-danger" data-bs-toggle="modal"
+                                                data-bs-target="#deleteModal-{{ customer.id }}">Delete</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 2px;">
+                                &nbsp;
+                            </td>
+                        </tr>
+
+                        <!-- Edit Modal -->
+                        <div class="modal fade" id="editModal-{{ customer.id }}" tabindex="-1"
+                            aria-labelledby="editModalLabel-{{ customer.id }}" aria-hidden="true">
+                            <div class="modal-dialog  modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="editModalLabel-{{ customer.id }}">Edit Customer</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <!-- Add edit form here -->
+                                        <form id="editForm-{{ customer.id }}" method="POST"
+                                            action="{% url 'customer:customer_update' customer.id %}">
+                                            <div id="cust-edit-form-errors" class="alert alert-danger d-none">
+                                                <!-- Error messages will be inserted here -->
+                                            </div>
+                                            {% csrf_token %}
+                                            <div class="mb-3">
+                                                <label for="customerName" class="form-label">Customer Name</label>
+                                                <input type="text" class="form-control"
+                                                    id="customerName-{{ customer.id }}" name="customer_name"
+                                                    value="{{ customer.customer_name }}">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="customerEmail" class="form-label">Customer Email</label>
+                                                <input type="email" class="form-control"
+                                                    id="customerEmail-{{ customer.id }}" name="customer_email"
+                                                    value="{{ customer.customer_email }}">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="customerAddress" class="form-label">Customer Address</label>
+                                                <input type="text" class="form-control"
+                                                    id="customerAddress-{{ customer.id }}" name="customer_address"
+                                                    value="{{ customer.customer_address }}">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="customerPhone" class="form-label">Customer Phone</label>
+                                                <input type="text" class="form-control"
+                                                    id="customerPhone-{{ customer.id }}" name="customer_phone"
+                                                    value="{{ customer.customer_phone }}">
+                                            </div>
+                                            <div class="text-center">
+                                                <button type="button" class="btn btn-primary w-btn"
+                                                    onclick="submitEditForm(event, '{{customer.id}}')">
+                                                    Save Changes
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Delete Modal -->
+                        <div class="modal fade" id="deleteModal-{{ customer.id }}" tabindex="-1"
+                            aria-labelledby="deleteModalLabel-{{ customer.id }}" aria-hidden="true">
+                            <div class="modal-dialog  modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title text-danger" id="deleteModalLabel-{{ customer.id }}">
+                                            Delete Customer </h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                    </div>
+                                    <div id="delete-form-errors" class="alert alert-danger d-none">
+                                        <!-- Error messages will be inserted here -->
+                                    </div>
+                                    <div class="modal-body">
+                                        Are you sure you want to delete <strong>{{ customer.customer_name }}</strong>?
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn cancel" data-bs-dismiss="modal">Cancel</button>
+                                        <form method="POST" action="{% url 'customer:customer_delete' customer.id %}"
+                                            id="deleteForm-{{ customer.id }}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn delete"
+                                                onclick="submitDeleteForm(event, '{{customer.id}}')">
+                                                Delete</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p>No customers found for this organization.</p>
+                {% endif %}
+
+            </div>
+
+
+            <!-- Items tab -->
+            <div class="tab-pane fade " id="items" role="tabpanel" aria-labelledby="items-tab">
+                <h3></h3>
+                <div class="d-flex justify-content-between align-items-center p-0 pt-1">
+                    <h3><span style="color: #000000;">{{ items.count }}</span> Items</h3>
                     <div>
+                        <button type="button" class="btn add" data-toggle="modal" data-bs-toggle="modal"
+                            data-bs-target="#createItemModal">
+                            + New Item
+                        </button>
 
-                        <a href="{% url 'customer:customer_update' customer.id %}"
-                            class="btn btn-warning btn-sm w-btn">View/Edit</a>
-
-                        <form style="display:inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-danger btn-sm w-btn">Delete</button>
-                        </form>
                     </div>
-                </li>
-                {% endfor %}
-            </ul>
-            {% else %}
-            <p>No customers found for this organization.</p>
-            {% endif %}
-            <a href="{% url 'customer:customer_create'  %}" class="btn btn-primary mt-3  w-btn">Add New Customer</a>
-        </div>
+                </div>
+                <hr class="hr-style" />
+                <ul class="list-group item-list"></ul>
+                {% if items %}
+                <table class="table table-striped">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Item</th>
+                            <th scope="col">Type</th>
+                            <th scope="col">Class</th>
+                            <th scope="col">Tax</th>
+                            <th scope="col">Balance</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 2px;">
+                                &nbsp;
+                            </td>
+                        </tr>
+                    </thead>
+                    <tbody class="it-list">
+                        {% for item in items %}
+                        <tr id="item-{{ item.id }}" class="align-items-center justify-center lines">
+                            <td>{{forloop.counter}}</td>
+                            <td class="td-header">
+                                <a class="a-style">
+                                    <strong class="td_title">{{ item.item_name }}</strong><br>
+                                    &nbsp;Pin: <small class="td_span">{{ item.itemCd }}</small>
+                                </a>
+                            </td>
+                            <td>{{ item.item_type_code }}</td>
+                            <td>{{ item.item_class_code }}</td>
+                            <td>{{ item.item_tax_code }}</td>
+                            <td>{{ item.item_current_balance }}</td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-secondary btn-sm dropdown-toggle w-btn" type="button"
+                                        id="dropdownMenuButton-{{ item.id }}" data-bs-toggle="dropdown"
+                                        aria-expanded="false">
+                                        Actions
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton-{{ item.id }}">
+                                        <li>
+                                            <button class="btn btn-info btn-sm w-btn" data-bs-toggle="modal"
+                                                data-bs-target="#updateQuantityModal" data-item-id="{{ item.id }}"
+                                                data-item-name="{{ item.item_name }}"
+                                                data-item-quantity="{{ item.item_quantity }}">
+                                                Update Quantity
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <a href="#" class="dropdown-item" data-bs-toggle="modal"
+                                                data-bs-target="#editModalItem-{{ item.id }}">Edit</a>
+                                        </li>
+                                        <li>
+                                            <a href="#" class="dropdown-item text-danger" data-bs-toggle="modal"
+                                                data-bs-target="#deleteModalItem-{{ item.id }}">Delete</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 2px;">
+                                &nbsp;
+                            </td>
+                        </tr>
 
 
-        <!-- Items tab -->
-        <div class="tab-pane fade" id="items" role="tabpanel" aria-labelledby="items-tab">
-            <h3></h3>
-            {% if items %}
-            <ul class="list-group">
-                {% for item in items %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <!-- Update Quantity Modal -->
+                        <div class="modal fade" id="updateQuantityModal" tabindex="-1"
+                            aria-labelledby="updateQuantityModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered  modal-part">
+                                <div class="modal-content">
+                                    <form id="updateQuantityForm" method="POST"
+                                        action="{% url 'item:update_quantity' %}">
+
+                                        {% csrf_token %}
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="updateQuantityModalLabel">Update Quantity</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
+                                        </div>
+                                        <div id="item-update-form-errors" class="alert alert-danger d-none">
+                                            <!-- Error messages will be inserted here -->
+                                        </div>
+                                        <div class="modal-body">
+                                            <input type="hidden" id="itemId" name="item_id">
+                                            <div class="mb-3">
+                                                <label for="itemName" class="form-label">Item Name</label>
+                                                <input type="text" id="itemName" class="form-control" readonly>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="itemQuantity" class="form-label">Quantity</label>
+                                                <input type="number" id="itemQuantity" name="item_quantity"
+                                                    class="form-control" required>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn cancel"
+                                                data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-primary w-btn">Update Quantity</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Edit Modal -->
+                        <div class="modal fade" id="editModalItem-{{ item.id }}" tabindex="-1"
+                            aria-labelledby="editModalLabelItem-{{ item.id }}" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered modal-part">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="editModalLabelItem-{{ item.id }}">Edit Item</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form method="POST" action="{% url 'item:item_update' item.id %}"
+                                            id="updateItemForm-{{ item.id }}">
+                                            {% csrf_token %}
+                                            <div id="item-edit-form-errors" class="alert alert-danger d-none">
+                                                <!-- Error messages will be inserted here -->
+                                            </div>
+                                            <div class="row g-3">
+                                                <!-- Item Name -->
+                                                <div class="col-md-6">
+                                                    <label for="itemName" class="form-label">Item Name</label>
+                                                    <input type="text" class="form-control" id="itemName"
+                                                        name="item_name" value="{{ item.item_name }}">
+                                                </div>
+
+                                                <!-- Origin Nation Code -->
+                                                <div class="col-md-6">
+                                                    <label for="originNationCode" class="form-label">Origin Nation
+                                                        Code</label>
+                                                    <select id="originNationCode" name="origin_nation_code"
+                                                        class="form-select">
+                                                        {% for code, label in COUNTRY_CHOICES %}
+                                                        <option value="{{ code }}">
+                                                            {{ label }}
+                                                        </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+
+                                                <!-- Item Type Code -->
+                                                <div class="col-md-6">
+                                                    <label for="itemTypeCode" class="form-label">Item Type Code</label>
+                                                    <select id="itemTypeCode" name="item_type_code" class="form-select">
+                                                        {% for code, label in PRODUCT_TYPE_CHOICES %}
+                                                        <option value="{{ code }}">
+                                                            {{ label }}
+                                                        </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+
+                                                <!-- Quantity Unit Code -->
+                                                <div class="col-md-6">
+                                                    <label for="quantityUnitCode" class="form-label">Quantity Unit
+                                                        Code</label>
+                                                    <select id="quantityUnitCode" name="quantity_unit_code"
+                                                        class="form-select">
+                                                        {% for code, label in UNIT_CHOICES %}
+                                                        <option value="{{ code }}">
+                                                            {{ label }}
+                                                        </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+
+                                                <!-- Package Unit Code -->
+                                                <div class="col-md-6">
+                                                    <label for="packageUnitCode" class="form-label">Package Unit
+                                                        Code</label>
+                                                    <select id="packageUnitCode" name="package_unit_code"
+                                                        class="form-select">
+                                                        {% for code, label in PACKAGE_CHOICES %}
+                                                        <option value="{{ code }}">
+                                                            {{ label }}
+                                                        </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+
+                                                <!-- Item Class Code -->
+                                                <div class="col-md-6">
+                                                    <label for="itemClassCode" class="form-label">Item Class
+                                                        Code</label>
+                                                    <select id="itemClassCode" name="item_class_code"
+                                                        class="form-select">
+                                                        {% for code, label in TAXPAYER_STATUS_CHOICES %}
+                                                        <option value="{{ code }}">
+                                                            {{ label }}
+                                                        </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+
+                                                <!-- Item Tax Code -->
+                                                <div class="col-md-6">
+                                                    <label for="itemTaxCode" class="form-label">Item Tax Code</label>
+                                                    <select id="itemTaxCode" name="item_tax_code" class="form-select">
+                                                        {% for code, label in TAX_TYPE_CHOICES %}
+                                                        <option value="{{ code }}">
+                                                            {{ label }}
+                                                        </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+
+                                                <!-- Item Opening Balance -->
+                                                <div class="col-md-6">
+                                                    <label for="itemOpeningBalance" class="form-label">Opening
+                                                        Balance</label>
+                                                    <input type="number" class="form-control" id="itemOpeningBalance"
+                                                        name="item_opening_balance" step="0.01"
+                                                        value="{{ item.item_opening_balance }}">
+                                                </div>
+
+                                                <!-- Item Current Balance -->
+                                                <div class="col-md-6">
+                                                    <label for="itemCurrentBalance" class="form-label">Current
+                                                        Balance</label>
+                                                    <input type="number" class="form-control" id="itemCurrentBalance"
+                                                        name="item_current_balance" step="0.01"
+                                                        value="{{ item.item_current_balance }}">
+                                                </div>
+
+                                                <!-- Item System ID -->
+                                                <div class="col-md-6">
+                                                    <label for="itemSystemId" class="form-label">System ID</label>
+                                                    <input type="text" class="form-control" id="itemSystemId"
+                                                        name="item_system_id" value="{{ item.item_system_id }}">
+                                                </div>
+
+                                                <!-- Item System Name -->
+                                                <div class="col-md-6">
+                                                    <label for="itemSystemName" class="form-label">System Name</label>
+                                                    <input type="text" class="form-control" id="itemSystemName"
+                                                        name="item_system_name" value="{{ item.item_system_name }}">
+                                                </div>
+                                            </div>
+
+                                            <div class="text-center mt-5">
+                                                <button type="button" class="btn btn-primary w-btn"
+                                                    onclick="submitUpdateItemForm(event, '{{item.id}}')">Save
+                                                    Changes</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Delete Modal -->
+                        <div class="modal fade" id="deleteModalItem-{{ item.id }}" tabindex="-1"
+                            aria-labelledby="deleteModalLabelItem-{{ item.id }}" aria-hidden="true">
+                            <div class="modal-dialog  modal-dialog-centered  modal-part">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title text-danger" id="deleteModalLabelItem-{{ item.id }}">
+                                            Delete Item</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        Are you sure you want to delete <strong>{{ item.item_name }}</strong>?
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn cancel" data-bs-dismiss="modal">Cancel</button>
+                                        <form method="POST" action="{% url 'item:item_delete' item.id %}"
+                                            id="deleteItemForm-{{ item.id }}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn delete"
+                                                onclick="submitDeleteItemForm(event, '{{item.id}}')">
+                                                Delete</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p>No items found for this organization.</p>
+                {% endif %}
+            </div>
+
+            <!-- sales tab -->
+            <div class="tab-pane fade" id="sales" role="tabpanel" aria-labelledby="sales-tab">
+                <h3></h3>
+                <div class="d-flex justify-content-between align-items-center p-0 pt-1">
+                    <h3><span style="color: #000000;">{{ transactions.count }}</span> Sales Transactions</h3>
                     <div>
-                        {{ item.item_name }} - {{ item.item_class_code }} - {{ item.itemCd }}
+                        <a type="button" class="btn add"
+                            href="{% url 'sales_items:sales_items_create' organization.id  %}">Add Sale</a>
                     </div>
-                    <div>
+                </div>
+                <hr class="hr-style" />
+                <ul class="list-group sales-list"></ul>
+                {% if transactions %}
+                <table class="table table-striped">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Customer</th>
+                            <th scope="col">Customer Phone</th>
+                            <th scope="col">Receipt Number</th>
+                            <th scope="col">Trader Invoice Number</th>
+                            <th scope="col">Download</th>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 2px;">
+                                &nbsp;
+                            </td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in transactions %}
+                        <tr id="transaction-{{ transaction.id }}" class="align-items-center justify-center lines">
+                            <td>{{forloop.counter}}</td>
+                            <td class="td-header">
+                                <a class="a-style">
+                                    <strong class="td_title">{{ transaction.customer.customer_name }}</strong>
+                                    <br>
+                                    &nbsp;Pin: <small class="td_span">{{ transaction.customer.customer_pin }}</small>
+                                </a>
+                            </td>
+                            <td>{{ transaction.customer.customer_phone }}</td>
+                            <td>{{ transaction.receipt_number }}</td>
+                            <td>{{ transaction.trader_invoice_number }}</td>
+                            <td>
+                                {% if transaction.document_path %}
+                                <a href="{{ transaction.document_path.url }}" download>
+                                    <button class="btn btn-secondary btn-sm w-btn" type="button"
+                                        id="dropdownMenuButton-{{ item.id }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="white"
+                                            class="bi bi-arrow-down-circle" viewBox="0 0 16 16" style="fill: white;">
+                                            <path fill-rule="evenodd"
+                                                d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8m15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8.5 4.5a.5.5 0 0 0-1 0v5.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293z" />
+                                        </svg>Download PDF
+                                    </button>
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 2px;">
+                                &nbsp;
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p>No sales found for this organization.</p>
+                {% endif %}
+            </div>
 
-                        <a href="{% url 'item:item_update' item.id %}"
-                            class="btn btn-warning btn-sm w-btn">View/Edit</a>
-
-                        <form style="display:inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-danger btn-sm w-btn">Delete</button>
-                        </form>
+            <!-- Analytics tab -->
+            <div class="tab-pane fade" id="analytics" role="tabpanel" aria-labelledby="analytics-tab">
+                <h3></h3>
+                <!-- Inventory Overview Chart -->
+                <div class="widget-box sample-widget">
+                    <div class="widget-header">
+                        <h2>Inventory Overview</h2>
                     </div>
+                    <div class="widget-content">
+                        <div id="inventory_overview">
+                            {{ inventory_overview_chart|safe }}
+                        </div>
+                    </div>
+                </div>
 
-                </li>
-                {% endfor %}
-            </ul>
-            {% else %}
-            <p>No items found for this organization.</p>
-            {% endif %}
-            <a href="{% url 'item:item_create' %}" class="btn btn-primary mt-3  w-btn">Add New Item</a>
-        </div>
-
-        <!-- invoices tab -->
-        <div class="tab-pane fade" id="invoices" role="tabpanel" aria-labelledby="invoices-tab">
-            <h3></h3>invoices</h3>
-            {% if invoices %}
-            <ul class="list-group">
-                {% for transaction in invoices %}
-                <li class="list-group-item">
-                    {{ transaction.trader_invoice_number }} - {{ transaction.receipt_number }}
-                </li>
-                {% endfor %}
-            </ul>
-            {% else %}
-            <p>No invoices found for this organization.</p>
-            {% endif %}
+                <!-- Sales Overview Chart -->
+                <div class="widget-box sample-widget mt-4">
+                    <div class="widget-header">
+                        <h2>Sales Overview</h2>
+                    </div>
+                    <div class="widget-content">
+                        <div id="sales_overview">
+                            {{ sales_overview_chart|safe }}
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<!-- Customer Creation Modal -->
+<div class="modal fade" id="createCustomerModal" tabindex="-1" aria-labelledby="customerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered  modal-part">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="customerModalLabel">Add Customer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body  p-4">
+                <form method="POST" id="customerForm" action="{%  url 'customer:customer_create' organization.id %}">
+                    <div id="cust-form-errors" class="alert alert-danger d-none">
+                        <!-- Error messages will be inserted here -->
+                    </div>
+                    {% csrf_token %}
+                    <input type="hidden" name="action_name" value="create_customer">
+                    {{ form.media }}
+                    {% bootstrap_form customer_form %}
+                    <div class="text-center">
+                        <button type="submit" class="mt-3 btn btn-danger btn-sm w-btn">Save Customer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Item Creation Modal -->
+<div class="modal fade" id="createItemModal" tabindex="-1" aria-labelledby="itemModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered  modal-part">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="itemModalLabel">Add Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form method="POST" id="itemForm" action="{% url 'item:item_create' organization.id %}">
+                    <div id="item-form-errorss" class="alert alert-danger d-none">
+                        <!-- Error messages will be inserted here -->
+                    </div>
+                    {% csrf_token %}
+                    <input type="hidden" name="action_name" value="create_item">
+                    {{ form.media }}
+
+                    <div class="form-row">
+                        {% for field in item_form %}
+                        {% if forloop.counter0|divisibleby:2 %}
+                        <!-- Start a new row for every pair of fields -->
+                        <div class="row">
+                            {% endif %}
+
+                            <div class="col-md-6">
+                                {% bootstrap_field field %}
+                            </div>
+
+                            {% if forloop.counter|divisibleby:2 or forloop.last %}
+                        </div> <!-- End of row -->
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    <div class="text-center">
+                        <button type="submit" class="mt-3 btn btn-danger btn-sm w-btn">Save Item</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts-->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const organizationTab = document.getElementById('organizationTab');
+
+        // Restore active tab from localStorage
+        const activeTabId = localStorage.getItem('activeTabId');
+        if (activeTabId) {
+            const activeTab = document.getElementById(activeTabId);
+            if (activeTab) {
+                const tabTrigger = new bootstrap.Tab(activeTab);
+                tabTrigger.show(); // Activate the stored tab
+            }
+        }
+
+        // Save the active tab to localStorage on tab change
+        organizationTab.addEventListener('shown.bs.tab', function (event) {
+            const activeTabId = event.target.id; // ID of the newly activated tab
+            localStorage.setItem('activeTabId', activeTabId);
+        });
+    });
+
+    function submitEditForm(e, customerId) {
+        e.preventDefault(); // Prevent default form submission
+        const form = document.getElementById(`editForm-${customerId}`);
+        const formData = new FormData(form);
+
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        })
+            .then((response) => {
+                if (!response.ok) throw new Error('Failed to submit form.');
+                return response.json();
+            })
+            .then((data) => {
+                if (data.success) {
+                    window.location.reload();
+                } else if (data.errors) {
+                    // Show validation errors in the modal
+                    console.log('Errors:', data.errors);
+                    const errorDiv = document.getElementById('cust-edit-form-errors');
+                    errorDiv.classList.remove('d-none'); // Make the error div visible
+                    errorDiv.innerHTML = ''; // Clear previous errors
+
+                    // Loop through the errors and display them
+                    for (const field in data.errors) {
+                        data.errors[field].forEach(error => {
+                            const errorMessage = document.createElement('p');
+                            errorMessage.textContent = `${error}`;
+                            errorDiv.appendChild(errorMessage);
+                        });
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Handle error without alerting
+                const errorDiv = document.getElementById('cust-edit-form-errors');
+                errorDiv.classList.remove('d-none'); // Make the error div visible
+                errorDiv.innerHTML = '<p>An error occurred while saving the customer. Please try again.</p>';
+            });
+    }
+
+    function submitDeleteForm(e, customerId) {
+        e.preventDefault(); // Prevent default form submission
+        const form = document.getElementById(`deleteForm-${customerId}`);
+        const formData = new FormData(form);
+
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        })
+            .then((response) => {
+                if (!response.ok) throw new Error('Failed to submit form.');
+                return response.json();
+            })
+            .then((data) => {
+                if (data.success) {
+                    window.location.reload();;
+                } else if (data.errors) {
+                    // Show validation errors in the modal
+                    console.log('Errors:', data.errors);
+                    const errorDiv = document.getElementById('delete-form-errors');
+                    errorDiv.classList.remove('d-none'); // Make the error div visible
+                    errorDiv.innerHTML = ''; // Clear previous errors
+
+                    // Loop through the errors and display them
+                    for (const field in data.errors) {
+                        data.errors[field].forEach(error => {
+                            const errorMessage = document.createElement('p');
+                            errorMessage.textContent = `${error}`;
+                            errorDiv.appendChild(errorMessage);
+                        });
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Handle error without alerting
+                const errorDiv = document.getElementById('delete-form-errors');
+                errorDiv.classList.remove('d-none'); // Make the error div visible
+                errorDiv.innerHTML = '<p>An error occurred while deleting the customer. Please try again.</p>';
+            });
+    }
+
+    function submitDeleteItemForm(e, itemId) {
+        e.preventDefault(); // Prevent default form submission
+        const form = document.getElementById(`deleteItemForm-${itemId}`);
+        const formData = new FormData(form);
+
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        })
+            .then((response) => {
+                if (!response.ok) throw new Error('Failed to submit form.');
+                return response.json();
+            })
+            .then((data) => {
+                if (data.success) {
+                    window.location.reload();
+                } else if (data.errors) {
+                    // Show validation errors in the modal
+                    console.log('Errors:', data.errors);
+                    const errorDiv = document.getElementById('delete-item-form-errors');
+                    errorDiv.classList.remove('d-none'); // Make the error div visible
+                    errorDiv.innerHTML = ''; // Clear previous errors
+
+                    // Loop through the errors and display them
+                    for (const field in data.errors) {
+                        data.errors[field].forEach(error => {
+                            const errorMessage = document.createElement('p');
+                            errorMessage.textContent = `${error}`;
+                            errorDiv.appendChild(errorMessage);
+                        });
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Handle error without alerting
+                const errorDiv = document.getElementById('delete-item-form-errors');
+                errorDiv.classList.remove('d-none'); // Make the error div visible
+                errorDiv.innerHTML = '<p>An error occurred while deleting the item. Please try again.</p>';
+            });
+    }
+
+
+    function submitUpdateItemForm(e, itemId) {
+        e.preventDefault(); // Prevent default form submission
+        const form = document.getElementById(`updateItemForm-${itemId}`);
+        const formData = new FormData(form);
+
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        })
+            .then((response) => {
+                if (!response.ok) throw new Error('Failed to submit form.');
+                return response.json();
+            })
+            .then((data) => {
+                if (data.success) {
+                    window.location.reload();
+                } else if (data.errors) {
+                    // Show validation errors in the modal
+                    console.log('Errors:', data.errors);
+                    const errorDiv = document.getElementById('item-edit-form-errors');
+                    errorDiv.classList.remove('d-none'); // Make the error div visible
+                    errorDiv.innerHTML = ''; // Clear previous errors
+
+                    // Loop through the errors and display them
+                    for (const field in data.errors) {
+                        data.errors[field].forEach(error => {
+                            const errorMessage = document.createElement('p');
+                            errorMessage.textContent = `${error}`;
+                            errorDiv.appendChild(errorMessage);
+                        });
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Handle error without alerting
+                const errorDiv = document.getElementById('item-edit-form-errors');
+                errorDiv.classList.remove('d-none'); // Make the error div visible
+                errorDiv.innerHTML = '<p>An error occurred while saving the item. Please try again.</p>';
+            });
+    }
+
+    function formatDate(createdAt) {
+        // Check if the input date is valid
+        const date = new Date(createdAt);
+
+        // If the date is invalid, return a fallback value
+        if (isNaN(date.getTime())) {
+            console.error('Invalid date:', createdAt);
+            return 'Invalid Date'; // You can customize this fallback
+        }
+
+        // If valid, format the date
+        const formattedDate = new Intl.DateTimeFormat('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        }).format(date);
+
+        return formattedDate;
+    }
+
+    document.getElementById('customerForm').addEventListener('submit', function (e) {
+        e.preventDefault(); // Prevent default form submission
+        const form = e.target;
+        const formData = new FormData(form);
+        console.log(form.action);
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest' // Indicate it's an AJAX request
+            }
+        })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to submit form.');
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+
+                    // Append the new customer dynamically to the list
+                    const customerList = document.querySelector('.cust-list');
+                    const newCustomer = `
+                        <tr id="customer-${data.customer_id}" class="align-items-center justify-center lines">
+                            <td>{{forloop.counter}}</td>
+
+                            <td class="td-header ">
+                                <a class="a-style">
+                                    <strong class="td_title">${data.customer_name}</strong><br>
+                                    &nbsp;Pin: <small class="td_span">${data.customer_pin}</small>
+                                </a>
+                            </td>
+                            <td>${data.customer_phone}</td>
+                            <td>${data.customer_email}</td>
+                            <td>${data.customer_address}</td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-secondary btn-sm dropdown-toggle w-btn" type="button"
+                                        id="dropdownMenuButton-${data.customer_id}" data-bs-toggle="dropdown"
+                                        aria-expanded="false">
+                                        Actions
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton-${data.customer_id}">
+                                       
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 2px;">
+                                &nbsp;
+                            </td>
+                        </tr>
+
+                        <!-- Edit Modal -->
+                        <div class="modal fade" id="editModal-${data.customer_id}" tabindex="-1"
+                            aria-labelledby="editModalLabel-${data.customer_id}" aria-hidden="true">
+                            <div class="modal-dialog  modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="editModalLabel-${data.customer_id}">Edit Customer</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <!-- Add edit form here -->
+                                        <form id="editForm-${data.customer_id}" method="POST"
+                                            action="${data.customer_update_url}">
+                                            <div id="form-errors" class="alert alert-danger d-none">
+                                                <!-- Error messages will be inserted here -->
+                                            </div>
+                                            {% csrf_token %}
+                                            <div class="mb-3">
+                                                <label for="customerName" class="form-label">Customer Name</label>
+                                                <input type="text" class="form-control"
+                                                    id="customerName-${data.customer_id}" name="customer_name"
+                                                    value="${data.customer_name}">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="customerEmail" class="form-label">Customer Email</label>
+                                                <input type="email" class="form-control"
+                                                    id="customerEmail-${data.customer_id}" name="customer_email"
+                                                    value="${data.customer_email}">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="customerAddress" class="form-label">Customer Address</label>
+                                                <input type="text" class="form-control"
+                                                    id="customerAddress-${data.customer_id}" name="customer_address"
+                                                    value="${data.customer_address}">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="customerPhone" class="form-label">Customer Phone</label>
+                                                <input type="text" class="form-control"
+                                                    id="customerPhone-${data.customer_id}" name="customer_phone"
+                                                    value="${data.customer_phone}">
+                                            </div>
+                                            <div class="text-center">
+                                                <button type="button" class="btn btn-primary w-btn"
+                                                    onclick="submitEditForm${data.customer_id}">
+                                                    Save Changes
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Delete Modal -->
+                        <div class="modal fade" id="deleteModal-${data.customer_id}" tabindex="-1"
+                            aria-labelledby="deleteModalLabel-${data.customer_id}" aria-hidden="true">
+                            <div class="modal-dialog  modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title text-danger" id="deleteModalLabel-${data.customer_id}">
+                                            Delete Customer </h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        Are you sure you want to delete <strong>${data.customer_name}</strong>?
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn cancel" data-bs-dismiss="modal">Cancel</button>
+                                        <form method="POST" action="${data.customer_delete_url}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn delete">Delete</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    customerList && customerList.insertAdjacentHTML('beforeend', newCustomer);
+
+                    const closeButton = document.querySelector('.btn-close'); // Close button in the modal
+                    if (closeButton) {
+                        closeButton.click(); // Simulate click to close modal
+                    }
+                    // Reset the form and hide the modal
+                    form.reset();
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('createCustomerModal'));
+                    modal.hide();
+                    window.location.reload();
+
+                } else if (data.errors) {
+                    // Show validation errors in the modal
+                    const errorDiv = document.getElementById('cust-form-errors');
+                    errorDiv.classList.remove('d-none'); // Make the error div visible
+                    errorDiv.innerHTML = ''; // Clear previous errors
+
+                    // Loop through the errors and display them
+                    for (const field in data.errors) {
+                        data.errors[field].forEach(error => {
+                            console.log(error);
+                            const errorMessage = document.createElement('p');
+                            errorMessage.textContent = `${error}`;
+                            errorDiv.appendChild(errorMessage);
+                        });
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Handle error without alerting
+                const errorDiv = document.getElementById('cust-form-errors');
+                errorDiv.classList.remove('d-none'); // Make the error div visible
+                errorDiv.innerHTML = '<p>An error occurred while saving the customer. Please try again.</p>';
+            });
+    });
+
+    document.getElementById('itemForm').addEventListener('submit', function (e) {
+        e.preventDefault(); // Prevent default form submission
+        const form = e.target;
+        const formData = new FormData(form);
+
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest' // Indicate it's an AJAX request
+            },
+        }).then((response) => {
+            if (!response.ok) throw new Error('Failed to submit form.');
+            return response.json();
+        }).then((data) => {
+            if (data.success) {
+                window.location.reload();
+                // Append the new item dynamically to the list
+                const itemList = document.querySelector('.it-list');
+                const newItem = `
+                     <tr id="item-${data.item_id}" class="align-items-center justify-center lines">
+                            <td>{{forloop.counter}}</td>
+
+                            <td class="td-header ">
+                                <a class="a-style">
+                                    <strong class="td_title">${data.item_name}</strong><br>
+                                    &nbsp;Pin: <small class="td_span">${data.item_code}</small>
+                                </a>
+                            </td>
+                            <td>${data.item_type_code}</td>
+                            <td>${data.item_class_code}</td>
+                            <td>${data.item_tax_code}</td>
+                            <td>${data.item_current_balance}</td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-secondary btn-sm dropdown-toggle w-btn" type="button"
+                                        id="dropdownMenuButton-${data.item_id}" data-bs-toggle="dropdown"
+                                        aria-expanded="false">
+                                        Actions
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton-${data.item_id}">
+                                       
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 2px;">
+                                &nbsp;
+                            </td>
+                        </tr>
+                    `;
+                itemList && itemList.insertAdjacentHTML('beforeend', newItem);
+
+                const closeButton = document.querySelector('.btn-close'); // Close button in the modal
+                if (closeButton) {
+                    closeButton.click(); // Simulate click to close modal
+                }
+                form.reset();
+                window.location.reload();
+
+            } else if (data.errors) {
+                // Show validation errors in the modal
+                const errorDiv = document.getElementById('item-form-errorss');
+                errorDiv.classList.remove('d-none'); // Make the error div visible
+                errorDiv.innerHTML = ''; // Clear previous errors
+
+                // Loop through the errors and display them
+                for (const field in data.errors) {
+                    data.errors[field].forEach(error => {
+                        const errorMessage = document.createElement('p');
+                        errorMessage.textContent = `${error}`;
+                        errorDiv.appendChild(errorMessage);
+                    });
+                }
+            }
+        }).catch(error => {
+            console.error('Error:', error);
+            // Handle error without alerting
+            const errorDiv = document.getElementById('item-form-errorss');
+            errorDiv.classList.remove('d-none'); // Make the error div visible
+            errorDiv.innerHTML = '<p>An error occurred while saving the item. Please try again.</p>';
+        });
+    });
+
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const updateQuantityModal = document.getElementById('updateQuantityModal');
+        const itemIdInput = document.getElementById('itemId');
+        const itemNameInput = document.getElementById('itemName');
+        const itemQuantityInput = document.getElementById('itemQuantity');
+
+        updateQuantityModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const itemId = button.getAttribute('data-item-id');
+            const itemName = button.getAttribute('data-item-name');
+            const itemQuantity = button.getAttribute('data-item-quantity');
+
+            // Populate the modal inputs
+            itemIdInput.value = itemId;
+            itemNameInput.value = itemName;
+            itemQuantityInput.value = itemQuantity;
+        });
+
+        // Form submission handling
+        const updateQuantityForm = document.getElementById('updateQuantityForm');
+        updateQuantityForm.addEventListener('submit', function (e) {
+            console.log('<p>An error occurred while loading the item. Please try again.</p>');
+
+            e.preventDefault(); // Prevent default form submission
+
+            const formData = new FormData(updateQuantityForm);
+
+            // Send the form data via AJAX
+            fetch(updateQuantityForm.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed to submit form.');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    } else if (data.errors) {
+                        // Show validation errors in the modal
+                        const errorDiv = document.getElementById('item-edit-form-errors');
+                        errorDiv.classList.remove('d-none'); // Make the error div visible
+                        errorDiv.innerHTML = ''; // Clear previous errors
+
+                        // Loop through the errors and display them
+                        for (const field in data.errors) {
+                            data.errors[field].forEach(error => {
+                                console.log(error);
+                                const errorMessage = document.createElement('p');
+                                errorMessage.textContent = `${error}`;
+                                errorDiv.appendChild(errorMessage);
+                            });
+                        }
+                    }
+                }).catch(error => {
+                    console.error('Error:', error);
+                    // Handle error without alerting
+                    const errorDiv = document.getElementById('item-edit-form-errors');
+                    errorDiv.classList.remove('d-none'); // Make the error div visible
+                    errorDiv.innerHTML = '<p>An error occurred while saving the item. Please try again.</p>';
+                });
+        });
+    });
+</script>
 
 {% endblock %}

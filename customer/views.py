@@ -1,5 +1,9 @@
+from django.db import IntegrityError
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
+from django.urls import reverse
+
+from organization.models import Organization
 from .models import Customer
 from .forms import CustomerForm
 from django.contrib import messages
@@ -19,32 +23,62 @@ def customer_list(request):
 
 
 @login_required
-def customer_create(request):
-    organization = request.user.organizations.first() or None
+def customer_create(request, pk):
+    organization = get_object_or_404(Organization, pk=pk)
 
-    if request.method == "POST":
-        form = CustomerForm(request.POST)
-        if form.is_valid():
-            try:
-                customer = form.save(commit=False)
-                # Set the organization (assuming a user can have one organization)
-                customer.organization = organization
-                print(customer)
-                # Save the customer
-                customer.save()
-                messages.success(request, "Customer created successfully.")
-                return redirect('organization:organization_detail', pk=customer.organization.id)
-            except Exception as e:
-                messages.error(request, f"An error occurred: {str(e)}")
-        else:
-            messages.error(
-                request, "Invalid data submitted. Please fix the errors.")
-    else:
-        form = CustomerForm()
+    try:
+        if request.method == "POST":
+            customer_form = CustomerForm(request.POST)
+            if customer_form.is_valid():
+                try:
+                    customer = customer_form.save(commit=False)
+                    customer.organization = organization
+                    customer.save()
+                except IntegrityError as e:
+                    error_msg = str(e)
 
-    # Render the form and pass the messages to the template
-    return render(request, "customer/customer_form.html", {"form": form, "organization": organization})
+                    unique_fields = {
+                        'customer_pin': 'The customer`s pin must be unique.',
+                        'customer_email': 'The customer`s email must be unique.',
+                        'customer_phone': 'The customer`s phone must be unique.',
+                    }
 
+                    for field, message in unique_fields.items():
+                        if field in error_msg:
+                            return JsonResponse({
+                                'success': False,
+                                'errors': {field: [message]}
+                            })
+
+                    return JsonResponse({
+                        'success': False,
+                        'errors': {'general': 'An error occurred. Please try again.'}
+                    })
+
+                except Exception as e:
+                    # Catch any other errors
+                    return JsonResponse({
+                        'success': False,
+                        'errors': {'general': f'An error occurred: {str(e)}'}
+                    })
+
+                return JsonResponse({
+                    'success': True,
+                    'customer_id': customer.id,
+                    'customer_pin': customer.customer_pin,
+                    'customer_name': customer.customer_name,
+                    'customer_email': customer.customer_email,
+                    'customer_address': customer.customer_address,
+                    'customer_phone': customer.customer_phone,
+                    'customer_update_url': reverse('customer:customer_update', args=[customer.id]),
+                    'customer_delete_url': reverse('customer:customer_delete', args=[customer.id]),
+                })
+
+            return JsonResponse({'success': False, 'errors': customer_form.errors})
+
+    except Exception as e:
+        print({str(e)})
+        return JsonResponse({'success': False, 'error': 'Invalid action.'})
 # Detail View
 
 
@@ -53,7 +87,7 @@ def customer_detail(request, pk):
     try:
         # Get the customer object
         customer = get_object_or_404(Customer, pk=pk)
-        
+
         # Pass customer data to the template
         return render(request, "customer/customer_detail.html", {
             "customer": customer,
@@ -69,46 +103,47 @@ def customer_detail(request, pk):
             "message": f"An error occurred: {str(e)}"
         })
 
-# Update Customer
+
 @login_required
 def customer_update(request, pk):
-    organization = request.user.organizations.first() or None
     customer = get_object_or_404(Customer, pk=pk)
 
     if request.method == "POST":
-        form = CustomerForm(request.POST, instance=customer)
-        if form.is_valid():
+        # Create a dictionary to track updates
+        updates = {}
+
+        # Iterate through the submitted data and update only changed fields
+        for field, value in request.POST.items():
+            if field in ['csrfmiddlewaretoken']:
+                continue  # Skip CSRF token field
+
+            # Check if the submitted value is different from the current value
+            current_value = getattr(customer, field, None)
+            if current_value != value and value.strip() != "":
+                updates[field] = value
+
+        if updates:
             try:
-                # Save the updated customer
-                form.save()
-
-                # Add success message and render the updated form
-                messages.success(request, "Customer updated successfully.")
-                return render(request, "customer/customer_form.html", {"form": form, "organization": organization})
+                # Update the organization with the modified fields
+                for field, value in updates.items():
+                    setattr(customer, field, value)
+                customer.save()
+                return JsonResponse({'success': True, 'message': "Customer updated successfully."})
             except Exception as e:
-                # If any error occurs, show an error message
-                messages.error(request, f"An error occurred: {str(e)}")
-                return render(request, "customer/customer_form.html", {"form": form, "organization": organization})
-
+                return JsonResponse({'success': False, 'errors': {'general': [f"An error occurred: {str(e)}"]}})
         else:
-            # If form is not valid, show the errors
-            messages.error(request, "Invalid data submitted.")
-            return render(request, "customer/customer_form.html", {"form": form, "organization": organization})
+            return JsonResponse({'success': True, 'message': "No changes detected."})
 
-    else:
-        # If it's a GET request, just show the form with the existing data
-        form = CustomerForm(instance=customer)
+    return JsonResponse({'success': False, 'errors': {'general': ["Invalid request method."]}})
 
-    return render(request, "customer/customer_form.html", {"form": form, "organization": organization})
 
 # Delete Customer
-
-
 @login_required
 def customer_delete(request, pk):
     try:
         customer = get_object_or_404(Customer, pk=pk)
         customer.delete()
-        return redirect("customer:customer_list")
+        return JsonResponse({'success': True, 'message': "Customer deleted successfully."})
     except Exception as e:
-        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+        return JsonResponse({'success': False, 'errors': {'general': ["Invalid request method."]}})
+    

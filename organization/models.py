@@ -3,12 +3,12 @@ from django.db.models.signals import pre_save
 from django.dispatch import receiver
 from commons.models import BaseModel
 from django.contrib.auth.models import User
+from commons.utils import generate_organization_pin
 
 
 class Organization(BaseModel):
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="organizations")  # Link to user
-    organization_name = models.CharField(max_length=50)
+    user = models.ManyToManyField(User,  related_name="organizations")
+    organization_name = models.CharField(max_length=50, unique=True)
     organization_pin = models.CharField(
         max_length=50,  unique=True)
     organization_email = models.EmailField(max_length=50)
@@ -19,16 +19,10 @@ class Organization(BaseModel):
         return self.organization_name
 
     def save(self, *args, **kwargs):
-        if not self.key:
-            # Generate the key unique to the user's organizations
-            self.key = self.generate_unique_key(
-                Organization.objects.filter(user=self.user)
-            )
-            
-         # Prevent editing of organization_pin for existing records
+        # Prevent editing of organization_pin for existing records
         if self.pk is not None:
             original = Organization.objects.get(pk=self.pk)
             if original.organization_pin != self.organization_pin:
                 raise ValueError("Organization PIN cannot be edited.")
-            
-        super().save(*args, **kwargs)
+
+        super().save(*args, **kwargs)  # Call the parent save method

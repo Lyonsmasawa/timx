@@ -1,5 +1,7 @@
 from django import forms
 from .models import Customer
+from django.core.exceptions import ValidationError
+
 
 class CustomerForm(forms.ModelForm):
     class Meta:
@@ -14,7 +16,7 @@ class CustomerForm(forms.ModelForm):
         widgets = {
             "customer_name": forms.TextInput(attrs={"class": "form-control"}),
             "customer_pin": forms.TextInput(attrs={"class": "form-control"}),
-            "customer_address": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+            "customer_address": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
             "customer_phone": forms.TextInput(attrs={"class": "form-control"}),
             "customer_email": forms.EmailInput(attrs={"class": "form-control"}),
         }
