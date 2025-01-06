@@ -20,11 +20,12 @@
             <!-- Invoice Header -->
             <div class="row mb-4">
                 <div class="col-md-6">
-                    <h3>Invoice No. <span><input id="invoiceNumber" type="text" value="1000" class="p-1"
+                    <h3>Invoice No. <span><input id="invoiceNumber" readonly disabled type="text"
+                                value="{{ invoice_number }}" class="p-1"
                                 style="max-width: 5rem; font-size: 1.5rem; "></span></h3>
                 </div>
                 <div class="col-md-6 text-end">
-                    <h4>Balance Due</h4>
+                    <h4>Total Amount</h4>
                     <h3 class="text-danger ">Ksh <span class="balance-due">0.00</span></h3>
                 </div>
             </div>
@@ -36,29 +37,29 @@
             </div>
 
             <!-- Customer and Invoice Details -->
-            <div class="row mb-4">
-                <div class="col-md-3">
-                    <label for="customerSelect" class="form-label">Select Customer</label>
-                    <select id="customerSelect" class="form-select">
-                        <option value="">-- Select Customer --</option>
-                        {% for customer in customers %}
-                        <option value="{{ customer.id }}" data-pin="{{customer.customer_pin}}"
-                            data-email="{{customer.customer_email}}">
-                            {{customer.customer_name }}</option>
-                        {% endfor %}
-                    </select>
+            <div class="row align-center mb-4">
+                <div class="col-md-9 d-flex align-items-center justify-center gap-3">
+                    <div class="flex-1">
+                        <label for="customerSelect" class="form-label">Select Customer</label>
+                        <select id="customerSelect" class="form-select">
+                            <option value="">-- Select Customer --</option>
+                            {% for customer in customers %}
+                            <option value="{{ customer.id }}" data-pin="{{customer.customer_pin}}"
+                                data-email="{{customer.customer_email}}">
+                                {{customer.customer_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="flex-4">
+                        <label for="customer" class="form-label">Customer email</label>
+                        <input type="text" id="customer_email" class="form-control" readonly>
+                    </div>
                 </div>
-                <div class="col-md-3">
-                    <label for="customer" class="form-label">Customer email</label>
-                    <input type="text" id="customer_email" class="form-control" readonly>
-                </div>
+
                 <div class="col-md-3">
                     <label for="invoiceDate" class="form-label">Invoice Date</label>
                     <input type="date" id="invoiceDate" class="form-control">
-                </div>
-                <div class="col-md-3">
-                    <label for="dueDate" class="form-label">Due Date</label>
-                    <input type="date" id="dueDate" class="form-control">
                 </div>
             </div>
 
@@ -97,7 +98,7 @@
                             </select>
                         </td>
                         <td><input type="text" class="form-control"></td>
-                        <td><input type="number" class="form-control quantity" min="0">
+                        <td><input type="number" class="form-control quantity" min="0" step="1">
                         <td>
                             <input type="number" class="form-control rate" min="0" step="1">
                         </td>
@@ -136,6 +137,12 @@
     </div>
 </div>
 <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const today = new Date();
+        const formattedDate = today.toISOString().split('T')[0];
+        document.getElementById('invoiceDate').value = formattedDate;
+    });
+
     function validateInvoiceData(invoiceData) {
         const errors = [];
 
@@ -152,10 +159,6 @@
         // Validate dates
         if (!invoiceData.invoiceDate.trim()) {
             errors.push('Invoice date is required.');
-        }
-
-        if (!invoiceData.dueDate.trim()) {
-            errors.push('Due date is required.');
         }
 
         // Validate items
@@ -225,7 +228,6 @@
             customerEmail: document.getElementById('customer_email').value,
             items: getItemsData(),
             invoiceDate: document.getElementById('invoiceDate').value,
-            dueDate: document.getElementById('dueDate').value,
             balanceDue: parseFloat(document.querySelector('.balance-due').textContent) || 0
         };
     }
@@ -289,7 +291,8 @@
             const selectedItem = e.target.options[e.target.selectedIndex];
             const taxCode = selectedItem.getAttribute('data-tax-code');
             const currentBalance = selectedItem.getAttribute('data-current-balance') || 0;
-            console.log(taxCode, selectedItem)
+            // console.log(selectedItem, currentBalance)
+            // console.log(taxCode, selectedItem)
 
             // Find the tax code select in the same row
             const row = e.target.closest('tr');
@@ -326,14 +329,14 @@
                 <select id="itemSelect" class="form-select item-select">
                     <option value="">-- Select item --</option>
                     {% for item in items %}
-                    <option value="{{ item.id }}" data-tax-code="{{item.item_tax_code}}">
+                    <option value="{{ item.id }}" data-tax-code="{{item.item_tax_code}}" data-current-balance="{{ item.item_current_balance }}">
                         {{item.item_name }}
                     </option>
                     {% endfor %}
                 </select>
             </td>
             <td><input type="text" class="form-control"></td>
-            <td><input type="number" class="form-control quantity" min="1"></td>
+            <td><input type="number" class="form-control quantity" min="0" step="1"></td>
             <td><input type="number" class="form-control rate" min="0" step="0.01"></td>
             <td><input type="number" class="form-control discount" min="0" step="0.01"></td>
             <td>
@@ -447,6 +450,8 @@
 
         }
     });
+
+
 </script>
 
 

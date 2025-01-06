@@ -92,6 +92,8 @@ def update_item_quantity(request):
     if request.method == 'POST':
         item_id = request.POST.get('item_id')
         quantity = request.POST.get('item_quantity')
+        movement_type = request.POST.get('movement_type')
+        movement_reason = request.POST.get('movement_reason')
 
         try:
             # Convert quantity to an integer
@@ -100,19 +102,33 @@ def update_item_quantity(request):
             if quantity <= 0:
                 return JsonResponse({"error": "Quantity must be a positive number."}, status=400)
 
+            if movement_type not in ['ADD', 'REMOVE']:
+                return JsonResponse({"error": "Invalid movement type."}, status=400)
+            
+            # Default movement_reason for both ADD and REMOVE if None
+            if not movement_reason:
+                movement_reason = "Stock Movement"
+
             # Use a transaction block
             with transaction.atomic():
                 # Get the item
                 item = get_object_or_404(Item, id=item_id)
 
-                # Update item quantity
-                item.item_current_balance += quantity
+                # Update item quantity based on movement type
+                if movement_type == 'ADD':
+                    item.item_current_balance += quantity
+                elif movement_type == 'REMOVE':
+                    if item.item_current_balance < quantity:
+                        return JsonResponse({"error": "Cannot remove more than the current balance."}, status=400)
+                    item.item_current_balance -= quantity
+
                 item.save()
 
                 # Create an item movement entry
                 ItemMovement.objects.create(
                     item=item,
-                    movement_type='ADD',
+                    movement_type=movement_type,
+                    movement_reason=movement_reason,
                     item_unit=quantity,
                 )
 
@@ -124,7 +140,6 @@ def update_item_quantity(request):
 
         except Exception as e:
             return JsonResponse({'success': False, "error": str(e)}, status=400)
-
 # Item Detail
 
 
@@ -262,3 +277,5 @@ class ItemTaxCodeAutocomplete(View):
         results = get_choices_as_autocomplete(TAXPAYER_STATUS_CHOICES, query)
         print(results)
         return JsonResponse({"results": results})
+
+

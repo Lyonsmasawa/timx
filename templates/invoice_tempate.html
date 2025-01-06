@@ -1,10 +1,13 @@
-{% load static %}
 <!DOCTYPE html>
-<html>
+<html style="min-width: 100vw; min-height: 90vh;">
 
 <head>
     <title>Invoice</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Arial', sans-serif;
             margin: 0;
@@ -13,20 +16,22 @@
         }
 
         .invoice-container {
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
+            width: 100vw;
+            min-height: 100vh;
+            margin: 0 0;
             background: #fff;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 0px;
+            display: flex;
+            justify-content: space-between;
+            flex-direction: column;
         }
 
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 2px solid #083613;
-            padding-bottom: 10px;
+            border-bottom: 3px solid #083613;
+            padding-bottom: 40px;
         }
 
         .header .company-info {
@@ -39,7 +44,7 @@
         }
 
         .invoice-details {
-            margin-top: 20px;
+            margin-top: 30px;
             display: flex;
             justify-content: space-between;
             font-size: 0.9rem;
@@ -62,7 +67,7 @@
         .invoice-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 40px;
         }
 
         .invoice-table th,
@@ -82,7 +87,7 @@
         }
 
         .summary {
-            margin-top: 20px;
+            margin-top: 30px;
             text-align: right;
         }
 
@@ -90,25 +95,40 @@
             font-size: 1.1rem;
         }
 
-        .tax-summary {
-            margin-top: 30px;
+        .tax-summary-table {
             width: 100%;
+            font-weight: 500;
             border-collapse: collapse;
-        }
-
-        .tax-summary th,
-        .tax-summary td {
-            border: 1px solid #ddd;
-            padding: 8px;
+            margin-top: 100px;
+            font-size: 13px;
             text-align: left;
         }
 
-        .tax-summary th {
+        .tax-summary-table th,
+        .tax-summary-table td {
+            font-weight: 500;
+            padding: 8px;
+        }
+
+        .tax-summary-table th {
+            background-color: #f9f9f9;
+            text-align: left;
+        }
+
+        .tax-summary-table td {
+            text-align: left;
+        }
+
+        .tax-summary-table tr:hover {
             background-color: #e9ecef;
         }
 
+        .tax-summary-table td:first-child {
+            text-align: left;
+        }
+
         footer {
-            margin-top: 40px;
+            margin-top: 100px;
             text-align: center;
             font-size: 0.8rem;
             color: #555;
@@ -118,106 +138,108 @@
 
 <body>
     <div class="invoice-container">
-        <div class="header">
-            <div class="company-info">
-                <p><strong>{{ organization.organization_name }}</strong></p>
-                <p>{{ organization.organization_physical_address}}</p>
-                <p>VAT Registration No. {{organization.organization_pin}}</p>
-            </div>
-            <img src="{% static 'images/logo.png' %}" alt="Etims Logo">
+        <div class="upper">
+            <div class="header">
+                <div class="company-info">
+                    <p><strong>{{ organization.organization_name }}</strong></p>
+                    <p>{{ organization.organization_physical_address}}</p>
+                    <p>VAT Registration No. {{organization.organization_pin}}</p>
+                </div>
+                <img src="../static/images/etimx.png" alt="Etims Logo">
 
+            </div>
+
+            <div class="invoice-details">
+                <div class="section">
+                    <h4>Bill To</h4>
+                    <p><strong>{{ customer_name }}</strong></p>
+                    <p>{{ customer_email }}</p>
+                    <p>KRA Pin No. {{ customer_pin }}</p>
+                </div>
+                <div class="section">
+                    <h4>{{ document_type }} Details</h4>
+                    <p><strong>{{ document_type }} No:</strong> {{ document_number }}</p>
+                    <p><strong>Date:</strong> {{ document_date }}</p>
+                </div>
+            </div>
+
+            <table class="invoice-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Item</th>
+                        <th>Description</th>
+                        <th>Quantity</th>
+                        <th>Rate</th>
+                        <th>Discount</th>
+                        <th>Line Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ item.name }}</td>
+                        <td>{{ item.description }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.rate }}</td>
+                        <td>{{ item.discount }}</td>
+                        <td>{{ item.line_total }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="summary">
+                <p><strong>Total Amount:</strong> <span id="total-due" style="color: #083613;">Ksh {{total_due}}</span>
+                </p>
+            </div>
         </div>
 
-        <div class="invoice-details">
-            <div class="section">
-                <h4>Bill To</h4>
-                <p><strong>{{ customer_name }}</strong></p>
-                <p>{{ customer_email }}</p>
-                <p>KRA Pin No. {{ customer_pin }}</p>
-            </div>
-            <div class="section">
-                <h4>Invoice Details</h4>
-                <p><strong>Invoice No:</strong> {{ invoice_number }}</p>
-                <p><strong>Date:</strong>{{ invoice_date }}</p>
-                <p><strong>Due Date:</strong>{{ invoice_due_date }}</p>
-            </div>
-        </div>
-
-        <table class="invoice-table">
+        <table class="tax-summary-table">
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th>Item</th>
-                    <th>Description</th>
-                    <th>Quantity</th>
-                    <th>Rate</th>
-                    <th>Discount</th>
-                    <th>Line Total</th>
+                    <th>Tax Class</th>
+                    <th>A-Exempt</th>
+                    <th>B-VAT 16%</th>
+                    <th>C-Zero Rated</th>
+                    <th>E-VAT 8%</th>
+                    <th>D-Non VAT</th>
                 </tr>
             </thead>
             <tbody>
-                {% for item in items %}
                 <tr>
-                    <td>{{ forloop.counter }}</td>
-                    <td>{{ item.name }}</td>
-                    <td>{{ item.description }}</td>
-                    <td>{{ item.quantity }}</td>
-                    <td>{{ item.rate }}</td>
-                    <td>{{ item.discount }}</td>
-                    <td>{{ item.line_total }}</td>
+                    <td>Taxable Amount (KES)</td>
+                    <td>{{ tax_summary.A.taxable_amount|floatformat:2 }}</td>
+                    <td>{{ tax_summary.B.taxable_amount|floatformat:2 }}</td>
+                    <td>{{ tax_summary.C.taxable_amount|floatformat:2 }}</td>
+                    <td>{{ tax_summary.E.taxable_amount|floatformat:2 }}</td>
+                    <td>{{ tax_summary.D.taxable_amount|floatformat:2 }}</td>
                 </tr>
-                {% endfor %}
+                <tr>
+                    <td>Tax Rate (%)</td>
+                    <td>{{ tax_summary.A.tax_rate }}</td>
+                    <td>{{ tax_summary.B.tax_rate }}</td>
+                    <td>{{ tax_summary.C.tax_rate }}</td>
+                    <td>{{ tax_summary.E.tax_rate }}</td>
+                    <td>{{ tax_summary.D.tax_rate }}</td>
+                </tr>
+                <tr>
+                    <td>Tax Amount (KES)</td>
+                    <td>{{ tax_summary.A.tax_amount|floatformat:2 }}</td>
+                    <td>{{ tax_summary.B.tax_amount|floatformat:2 }}</td>
+                    <td>{{ tax_summary.C.tax_amount|floatformat:2 }}</td>
+                    <td>{{ tax_summary.E.tax_amount|floatformat:2 }}</td>
+                    <td>{{ tax_summary.D.tax_amount|floatformat:2 }}</td>
+                </tr>
             </tbody>
         </table>
 
-        <div class="summary">
-            <p><strong>Balance Due:</strong> <span id="total-due" style="color: #083613;">Ksh {{total_due}}</span></p>
-        </div>
-
+        <footer>
+            Thank you for your business. For inquiries, contact us at {{organization.organization_email}}
+        </footer>
     </div>
 
-    <footer>
-        Thank you for your business. For inquiries, contact us at {{organization.organization_email}}
-    </footer>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const items = JSON.parse('{{ items|escapejs }}'); 
-            console.log(items);
-    
-            const TAX_RATES = {
-                A: 0,   // Exempt
-                B: 16,  // 16.00%
-                C: 0,   // 0%
-                D: 0,   // Non-VAT
-                E: 8    // 8%
-            };
-    
-            let subtotal = 0;
-            let totalDiscount = 0;
-            let totalTax = 0;
-    
-            items.forEach(item => {
-                const itemSubtotal = item.quantity * item.rate;
-                const itemDiscount = item.discount;
-                const discountedSubtotal = itemSubtotal - itemDiscount;
-    
-                const taxRate = TAX_RATES[item.tax_code] || 0;
-                const itemTax = (discountedSubtotal * taxRate) / 100;
-    
-                subtotal += itemSubtotal;
-                totalDiscount += itemDiscount;
-                totalTax += itemTax;
-            });
-    
-            const totalDue = subtotal - totalDiscount + totalTax;
-    
-            document.getElementById("subtotal").textContent = `Ksh ${subtotal.toFixed(2)}`;
-            document.getElementById("total-tax").textContent = `Ksh ${totalTax.toFixed(2)}`;
-            document.getElementById("total-discount").textContent = `Ksh ${totalDiscount.toFixed(2)}`;
-            document.getElementById("total-due").textContent = `Ksh ${totalDue.toFixed(2)}`;
-        });
-    </script>
 </body>
 
 </html>

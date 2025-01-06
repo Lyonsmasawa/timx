@@ -108,8 +108,8 @@ def sales_items_create(request, pk):
                 print(sales_items_list)
 
                 # Step 3: Generate the PDF Invoice and get the file path
-                pdf_path = generate_invoice(
-                    organization, transaction, customer, sales_items_list, invoice_data)
+                pdf_path = generate_transaction_pdf(
+                    organization, transaction, customer, sales_items_list, invoice_data, "invoice")
 
                 # Open and send the PDF as a response to auto-download
                 with open(pdf_path, "rb") as pdf_file:
@@ -119,7 +119,7 @@ def sales_items_create(request, pk):
                     return response
 
         except Exception as e:
-            messages.error(request, f"An error occurred: {str(e)}")
+            # messages.error(request, f"An error occurred: {str(e)}")
             return JsonResponse({"error": str(e)}, status=500)
 
     else:  # GET method
@@ -127,15 +127,134 @@ def sales_items_create(request, pk):
         customers = Customer.objects.filter(organization=organization)
         transaction_form = TransactionForm()
         sales_items_form = SalesItemsForm()
+
+        # Calculate the invoice number based on transactions count
+        invoice_number = Transaction.objects.filter(
+            organization=organization
+        ).count() + 1
+
+        # Format the invoice number as 4 digits
+        formatted_invoice_number = str(invoice_number).zfill(4)
+
+        print(formatted_invoice_number)
+
         return render(request, 'sales_items/sales_items_form.html', {
             'organization': organization,
             'transaction_form': transaction_form,
             'sales_items_form': sales_items_form,
             'customers': customers,
-            'items': items
+            'items': items,
+            'invoice_number': formatted_invoice_number,
         })
 
 # Sales Item Detail
+
+
+def sales_items_create_note(request, organization_id, transaction_id):
+    organization = get_object_or_404(Organization, pk=organization_id)
+
+    if request.method == 'POST':
+        try:
+            credit_note_data = json.loads(request.body.decode('utf-8'))
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, "errors": {"general": ["Invalid JSON data"]}})
+
+        try:
+            transaction_ = Transaction.objects.get(
+                id=transaction_id, organization=organization)
+        except Transaction.DoesNotExist:
+            return JsonResponse({'success': False, "errors":  {"general": ["Transaction not found"]}})
+
+        print(credit_note_data)
+
+        errors = {
+            "success": False,
+            "errors": {}
+        }
+
+        try:
+            with transaction_mode.atomic():
+                credit_note_items = []
+                # Process each credit note item
+                for item in credit_note_data['items']:
+                    try:
+                        sales_item = transaction_.sales_items.get(
+                            id=item['salesItemId'])
+
+                        # Validate the quantity
+                        credit_note_quantity = float(
+                            item['creditNoteQuantity'])
+                        if credit_note_quantity <= 0:
+                            errors["errors"][item['salesItemId']] = (
+                                [f"{sales_item.item.item_name} Quantity must be greater than zero."]
+                            )
+                        elif credit_note_quantity > float(sales_item.qty):
+                            errors["errors"][item['salesItemId']] = (
+                                [f"{sales_item.item.item_name} Quantity cannot exceed available quantity ({sales_item.qty})."]
+                            )
+                    except SalesItems.DoesNotExist:
+                        errors["errors"][item['salesItemId']] = (
+                            [f"Sales item with ID {item['salesItemId']} not found."]
+                        )
+
+                # If there are errors, return them
+                if errors["errors"]:
+                    return JsonResponse({"success": errors["success"], "errors": errors["errors"]})
+
+                # Generate Credit Note Invoice Number
+                credit_note_number = Transaction.objects.filter(
+                    organization=organization).count() + 1
+                formatted_credit_note_number = f"{str(credit_note_number).zfill(4)}"
+
+                # Create a new Credit Note transaction
+                credit_note_transaction = Transaction.objects.create(
+                    organization=organization,
+                    customer=transaction_.customer,
+                    receipt_number=formatted_credit_note_number,
+                    document_type="credit_note",
+                    created_by=request.user,
+                    reason=item.get('creditNoteReason', 'Other')
+                )
+
+                # Process each credit note item
+                for item in credit_note_data['items']:
+                    sales_item = transaction_.sales_items.get(
+                        id=item['salesItemId'])
+                    credit_note_reason = item.get('creditNoteReason', 'Other')
+                    credit_note_quantity = float(item['creditNoteQuantity'])
+                    item_obj = sales_item.item
+
+                    # Collect data for the Credit Note PDF
+                    credit_note_items.append({
+                        "transaction": transaction_,
+                        "item": sales_item.item,
+                        "item_description": sales_item.item_description,
+                        "qty": credit_note_quantity,
+                        "rate": sales_item.rate,
+                        "discount_rate": sales_item.discount_rate,
+                        "discount_amount": sales_item.discount_amount,
+                        "tax_code": sales_item.tax_code,
+                        "line_total": float(credit_note_quantity) * float(sales_item.rate),
+                        "reason": credit_note_reason
+                    })
+
+                # Generate PDF for Credit Note
+                pdf_path = generate_transaction_pdf(
+                    organization, credit_note_transaction, transaction_.customer, credit_note_items, credit_note_data, "credit_note")
+
+                # Open and send the PDF as a response to auto-download
+                with open(pdf_path, "rb") as pdf_file:
+                    response = HttpResponse(
+                        pdf_file.read(), content_type='application/pdf'
+                    )
+                    response[
+                        'Content-Disposition'] = f'attachment; filename="credit_note_{formatted_credit_note_number}.pdf"'
+                    return response
+
+        except Exception as e:
+            return JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
+
+    return JsonResponse({"error": "GET method not allowed for this endpoint."}, status=405)
 
 
 def sales_items_detail(request, pk):
@@ -195,33 +314,74 @@ def sales_items_delete(request, pk):
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
 
-def generate_invoice(organization, transaction, customer, sales_items_list, invoice_data):
-    print(sales_items_list)
+def generate_transaction_pdf(organization, transaction, customer, sales_items_list, transaction_data, document_type):
+    """
+    Generates a PDF for both Invoices and Credit Notes dynamically using the same template.
+    """
+    document_label = "Invoice" if document_type == "invoice" else "Credit Note"
 
-    # Extract relevant fields from SalesItems objects
-    items_data = [
-        {
-            "description": item.item_description or "Item",
-            "name": item.item.item_name or "Item",
-            "quantity": item.qty or 0,
-            "rate": item.rate or 0,
-            "discount": item.discount_amount or 0,
-            "tax_code": item.tax_code or None,
-            "line_total": item.line_total or 0,
-        }
-        for item in sales_items_list
-    ]
+    print(sales_items_list, transaction_data)
 
+    # Define tax rates
+    TAX_RATES = {
+        "A": 0,   # Exempt
+        "B": 16,  # VAT 16%
+        "C": 0,   # Zero-rated
+        "D": 0,   # Non-VAT
+        "E": 8    # VAT 8%
+    }
+
+    # Initialize tax summary
+    tax_summary = {code: {"taxable_amount": 0, "tax_rate": TAX_RATES[code], "tax_amount": 0} for code in TAX_RATES.keys()}
+
+    # Process items (Unifies invoice & credit note logic)
+    items_data = []
+    total_due = 0
+
+    for item in sales_items_list:
+        # Handle both object-based and dictionary-based data
+        item_description = item.get("item_description", "Item") if isinstance(item, dict) else item.item_description
+        item_name = item.get("item").item_name if isinstance(item, dict) else item.item.item_name
+        quantity = float(item.get("qty", 0)) if isinstance(item, dict) else float(item.qty)
+        rate = float(item.get("rate", 0)) if isinstance(item, dict) else float(item.rate)
+        discount = float(item.get("discount_amount", 0)) if isinstance(item, dict) else float(item.discount_amount)
+        tax_code = item.get("tax_code", None) if isinstance(item, dict) else item.tax_code
+        line_total = float(item.get("line_total", 0)) if isinstance(item, dict) else float(item.line_total)
+
+        # Ensure tax code is valid
+        if tax_code and tax_code in TAX_RATES:
+            taxable_amount = line_total  # Tax is applied on the line total
+            tax_amount = (taxable_amount * TAX_RATES[tax_code]) / 100
+
+            # Update tax summary
+            tax_summary[tax_code]["taxable_amount"] += taxable_amount
+            tax_summary[tax_code]["tax_amount"] += tax_amount
+
+        # Append to items_data for rendering in template
+        items_data.append({
+            "description": item_description,
+            "name": item_name,
+            "quantity": quantity,
+            "rate": rate,
+            "discount": discount,
+            "tax_code": tax_code,
+            "line_total": line_total
+        })
+
+        total_due += line_total
+
+    # Context data (Unified for both invoices and credit notes)
     context = {
         'organization': organization,
-        'invoice_number': transaction.receipt_number,
-        'invoice_date': invoice_data['invoiceDate'],
-        'invoice_due_date': invoice_data['dueDate'],
+        'document_number': transaction.receipt_number,
+        'document_date': transaction_data.get('invoiceDate', timezone.now().strftime('%Y-%m-%d')),
         'customer_name': customer.customer_name,
         'customer_email': customer.customer_email,
         'customer_pin': customer.customer_pin,
         'items': items_data,
-        'total_due': invoice_data['balanceDue']
+        'total_due': transaction_data.get('balanceDue', total_due),
+        'document_type': document_label,  # Displays "Invoice" or "Credit Note"
+        'tax_summary': tax_summary  # ✅ Pass the tax summary to the template
     }
 
     html_content = render_to_string(

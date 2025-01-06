@@ -140,9 +140,15 @@ def organization_detail(request, pk):
     try:
         organization = get_object_or_404(Organization, pk=pk)
         # Querysets for related objects
-        items = Item.objects.filter(organization=organization)
-        customers = Customer.objects.filter(organization=organization)
-        transactions = Transaction.objects.filter(organization=organization)
+        items = Item.objects.filter(organization=organization).order_by('-created_at')
+        customers = Customer.objects.filter(organization=organization).order_by('-created_at')
+        
+        # Separate invoices and credit notes
+        invoices = Transaction.objects.filter(
+            organization=organization, document_type="invoice").order_by('-created_at')
+        credit_notes = Transaction.objects.filter(
+            organization=organization, document_type="credit_note").order_by('-created_at')
+
         if request.method == 'POST':
             action_name = request.POST.get('action_name')
 
@@ -159,26 +165,14 @@ def organization_detail(request, pk):
             sales_items_form = SalesItemsForm()
 
         print(items)
-        
-        # Aggregate total sales data per organization
-        sales_data = SalesItems.objects.values('transaction__organization__organization_name') \
-            .annotate(total_sales=Sum('line_total')) \
-            .order_by('-total_sales')
 
-        # Prepare data for the chart
-        organization_names = [entry['transaction__organization__organization_name'] for entry in sales_data]
-        total_sales = [entry['total_sales'] for entry in sales_data]
-
-        # Create a bar chart for total sales per organization
-        sales_bar_chart = go.Bar(x=organization_names, y=total_sales)
-        sales_overview_chart = go.Figure(data=[sales_bar_chart])
-        
         # Render the page for regular requests
         return render(request, "organization/organization_detail.html", {
             "organization": organization,
             "items": items,
             "customers": customers,
-            "transactions": transactions,
+            "invoices": invoices,
+            "credit_notes": credit_notes,
             "item_form": item_form,
             "customer_form": customer_form,
             "transaction_form": transaction_form,
@@ -189,7 +183,6 @@ def organization_detail(request, pk):
             'PACKAGE_CHOICES': PACKAGE_CHOICES,
             'TAXPAYER_STATUS_CHOICES': TAXPAYER_STATUS_CHOICES,
             'TAX_TYPE_CHOICES': TAX_TYPE_CHOICES,
-            'sales_overview_chart': sales_overview_chart.to_html(full_html=False, default_height='500px', default_width='700px'),
         })
 
     except Exception as e:
@@ -201,7 +194,8 @@ def organization_detail(request, pk):
             "organization": organization,
             "items": items,
             "customers": customers,
-            "transactions": transactions,
+            "invoices": [],
+            "credit_notes": [],  
             "item_form": ItemForm(),
             "customer_form": CustomerForm(),
             "transaction_form": TransactionForm(),

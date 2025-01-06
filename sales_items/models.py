@@ -4,7 +4,7 @@ from transaction.models import Transaction
 from item.models import Item
 
 class SalesItems(BaseModel):
-    transaction = models.ForeignKey(Transaction, on_delete=models.DO_NOTHING)
+    transaction = models.ForeignKey(Transaction, on_delete=models.DO_NOTHING, related_name='sales_items')
     item = models.ForeignKey(Item, on_delete=models.DO_NOTHING)
     item_description = models.CharField(max_length=200)
     qty = models.DecimalField(max_digits=10, decimal_places=2)

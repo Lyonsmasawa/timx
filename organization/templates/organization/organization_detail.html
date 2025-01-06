@@ -22,8 +22,8 @@
             </li>
 
             <li class="nav-item" role="presentation">
-                <a class="nav-link" id="analytics-tab" data-bs-toggle="tab" href="#analytics" role="tab"
-                    aria-controls="analytics" aria-selected="false">Analytics</a>
+                <a class="nav-link" id="credit-note-tab" data-bs-toggle="tab" href="#credit-note" role="tab"
+                    aria-controls="credit-note" aria-selected="false">Credit Note</a>
             </li>
         </ul>
         <h4 class="text-muted weight-bold">Organization: {{ organization.organization_name }}</h4>
@@ -259,10 +259,7 @@
                                                 Update Quantity
                                             </button>
                                         </li>
-                                        <li>
-                                            <a href="#" class="dropdown-item" data-bs-toggle="modal"
-                                                data-bs-target="#editModalItem-{{ item.id }}">Edit</a>
-                                        </li>
+
                                         <li>
                                             <a href="#" class="dropdown-item text-danger" data-bs-toggle="modal"
                                                 data-bs-target="#deleteModalItem-{{ item.id }}">Delete</a>
@@ -281,11 +278,10 @@
                         <!-- Update Quantity Modal -->
                         <div class="modal fade" id="updateQuantityModal" tabindex="-1"
                             aria-labelledby="updateQuantityModalLabel" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered  modal-part">
+                            <div class="modal-dialog modal-dialog-centered modal-part">
                                 <div class="modal-content">
                                     <form id="updateQuantityForm" method="POST"
                                         action="{% url 'item:update_quantity' %}">
-
                                         {% csrf_token %}
                                         <div class="modal-header">
                                             <h5 class="modal-title" id="updateQuantityModalLabel">Update Quantity</h5>
@@ -302,6 +298,22 @@
                                                 <input type="text" id="itemName" class="form-control" readonly>
                                             </div>
                                             <div class="mb-3">
+                                                <label for="movementType" class="form-label">Movement Type</label>
+                                                <select id="movementType" name="movement_type" class="form-select"
+                                                    required>
+                                                    <option value="">-- Select Movement Type --</option>
+                                                    <option value="ADD">Add Stock</option>
+                                                    <option value="REMOVE">Reduce Stock</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="movementReason" class="form-label">Movement Reason</label>
+                                                <select id="movementReason" name="movement_reason" class="form-select"
+                                                    required>
+                                                    <option value="">-- Select Movement Reason --</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
                                                 <label for="itemQuantity" class="form-label">Quantity</label>
                                                 <input type="number" id="itemQuantity" name="item_quantity"
                                                     class="form-control" required>
@@ -316,6 +328,7 @@
                                 </div>
                             </div>
                         </div>
+
 
                         <!-- Edit Modal -->
                         <div class="modal fade" id="editModalItem-{{ item.id }}" tabindex="-1"
@@ -426,8 +439,8 @@
                                                 <div class="col-md-6">
                                                     <label for="itemOpeningBalance" class="form-label">Opening
                                                         Balance</label>
-                                                    <input type="number" class="form-control" id="itemOpeningBalance"
-                                                        name="item_opening_balance" step="0.01"
+                                                    <input type="number" class="form-control" readonly disabled
+                                                        id="itemOpeningBalance" name="item_opening_balance" step="0.01"
                                                         value="{{ item.item_opening_balance }}">
                                                 </div>
 
@@ -435,8 +448,8 @@
                                                 <div class="col-md-6">
                                                     <label for="itemCurrentBalance" class="form-label">Current
                                                         Balance</label>
-                                                    <input type="number" class="form-control" id="itemCurrentBalance"
-                                                        name="item_current_balance" step="0.01"
+                                                    <input type="number" readonly disabled class="form-control"
+                                                        id="itemCurrentBalance" name="item_current_balance" step="0.01"
                                                         value="{{ item.item_current_balance }}">
                                                 </div>
 
@@ -505,7 +518,7 @@
             <div class="tab-pane fade" id="sales" role="tabpanel" aria-labelledby="sales-tab">
                 <h3></h3>
                 <div class="d-flex justify-content-between align-items-center p-0 pt-1">
-                    <h3><span style="color: #000000;">{{ transactions.count }}</span> Sales Transactions</h3>
+                    <h3><span style="color: #000000;">{{ invoices.count }}</span> Sales invoices</h3>
                     <div>
                         <a type="button" class="btn add"
                             href="{% url 'sales_items:sales_items_create' organization.id  %}">Add Sale</a>
@@ -513,14 +526,14 @@
                 </div>
                 <hr class="hr-style" />
                 <ul class="list-group sales-list"></ul>
-                {% if transactions %}
+                {% if invoices %}
                 <table class="table table-striped">
                     <thead class="thead-dark">
                         <tr>
                             <th scope="col">#</th>
                             <th scope="col">Customer</th>
                             <th scope="col">Customer Phone</th>
-                            <th scope="col">Receipt Number</th>
+                            <th scope="col">Invoice Number</th>
                             <th scope="col">Trader Invoice Number</th>
                             <th scope="col">Download</th>
                         </tr>
@@ -531,32 +544,50 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for transaction in transactions %}
-                        <tr id="transaction-{{ transaction.id }}" class="align-items-center justify-center lines">
+                        {% for invoice in invoices %}
+                        <tr id="invoice-{{ invoice.id }}" class="align-items-center justify-center lines">
                             <td>{{forloop.counter}}</td>
                             <td class="td-header">
                                 <a class="a-style">
-                                    <strong class="td_title">{{ transaction.customer.customer_name }}</strong>
+                                    <strong class="td_title">{{ invoice.customer.customer_name }}</strong>
                                     <br>
-                                    &nbsp;Pin: <small class="td_span">{{ transaction.customer.customer_pin }}</small>
+                                    &nbsp;Pin: <small class="td_span">{{ invoice.customer.customer_pin }}</small>
                                 </a>
                             </td>
-                            <td>{{ transaction.customer.customer_phone }}</td>
-                            <td>{{ transaction.receipt_number }}</td>
-                            <td>{{ transaction.trader_invoice_number }}</td>
+                            <td>{{ invoice.customer.customer_phone }}</td>
+                            <td>{{ invoice.receipt_number }}</td>
+                            <td>{{ invoice.trader_invoice_number }}</td>
                             <td>
-                                {% if transaction.document_path %}
-                                <a href="{{ transaction.document_path.url }}" download>
-                                    <button class="btn btn-secondary btn-sm w-btn" type="button"
-                                        id="dropdownMenuButton-{{ item.id }}">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="white"
-                                            class="bi bi-arrow-down-circle" viewBox="0 0 16 16" style="fill: white;">
-                                            <path fill-rule="evenodd"
-                                                d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8m15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8.5 4.5a.5.5 0 0 0-1 0v5.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293z" />
-                                        </svg>Download PDF
+                                <div class="d-flex align-items-center">
+                                    {% if invoice.document_path %}
+                                    <a href="{{ invoice.document_path.url }}" download>
+                                        <button class="btn btn-secondary btn-sm w-btn me-2" type="button"
+                                            id="dropdownMenuButton-{{ item.id }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="white"
+                                                class="bi bi-arrow-down-circle" viewBox="0 0 16 16"
+                                                style="fill: white;">
+                                                <path fill-rule="evenodd"
+                                                    d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8m15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8.5 4.5a.5.5 0 0 0-1 0v5.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293z" />
+                                            </svg>Download PDF
+                                        </button>
+                                    </a>
+
+                                    <!-- Add Credit Note Button -->
+                                    <button class="btn btn-primary btn-sm w-btn" type="button"
+                                        id="addCreditNoteButton-{{ invoice.id }}" data-bs-toggle="modal"
+                                        data-bs-target="#addCreditNoteModal-{{ invoice.id }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="white"
+                                            class="bi bi-plus-circle" viewBox="0 0 16 16" style="fill: white;">
+                                            <path
+                                                d="M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zm0 1a6 6 0 1 0 0 12A6 6 0 0 0 8 2z" />
+                                            <path
+                                                d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
+                                        </svg> CR
                                     </button>
-                                </a>
-                                {% endif %}
+                                    {% endif %}
+
+                                </div>
+
                             </td>
                         </tr>
                         <tr>
@@ -564,6 +595,116 @@
                                 &nbsp;
                             </td>
                         </tr>
+
+
+                        <!-- Add Credit Note Modal -->
+                        <div class="modal fade" id="addCreditNoteModal-{{ invoice.id }}" tabindex="-1"
+                            aria-labelledby="addCreditNoteModalLabel-{{ invoice.id }}" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered custom-modal-width">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="addCreditNoteModalLabel-{{ invoice.id }}">Add
+                                            Credit Note</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form id="addCreditNoteForm-{{ invoice.id }}" method="POST"
+                                            action="{% url 'sales_items:sales_items_create_note' organization.id invoice.id  %}">
+                                            {% csrf_token %}
+                                            <div id="cr-form-errors-{{ invoice.id }}" class="alert alert-danger d-none">
+                                                <!-- Error messages will be inserted here -->
+                                            </div>
+                                            <div class="row gap-3">
+                                                <!-- Customer Details -->
+                                                <div class="col-md-3">
+                                                    <div class="col">
+                                                        <label for="customerName-{{ invoice.id }}"
+                                                            class="form-label">Customer Name</label>
+                                                        <input type="text" id="customerName-{{ invoice.id }}"
+                                                            class="form-control" name="customer_name"
+                                                            value="{{ invoice.customer.customer_name|default:'' }}"
+                                                            readonly>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="customerPhone-{{ invoice.id }}"
+                                                            class="form-label">Customer Phone</label>
+                                                        <input type="text" id="customerPhone-{{ invoice.id }}"
+                                                            class="form-control" name="customer_phone"
+                                                            value="{{ invoice.customer.customer_phone|default:'' }}"
+                                                            readonly>
+                                                    </div>
+
+                                                    <div class="mb-3">
+                                                        <label for="customerEmail-{{ invoice.id }}"
+                                                            class="form-label">Customer Email</label>
+                                                        <input type="text" id="customerEmail-{{ invoice.id }}"
+                                                            class="form-control" name="customer_email"
+                                                            value="{{ invoice.customer.customer_email|default:'' }}"
+                                                            readonly>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-8">
+                                                    <!-- Item Details -->
+                                                    {% for sales_item in invoice.sales_items.all %}
+                                                    <div class="row justify-content-between">
+                                                        <div class="col-md-3">
+                                                            <label for="itemDetails-{{ invoice.id }}"
+                                                                class="form-label">Item Details</label>
+                                                            <input type="text" id="itemDetails-{{ invoice.id }}"
+                                                                class="form-control"
+                                                                value="{{ sales_item.item.item_name }}" readonly>
+                                                            <input type="text"
+                                                                id="salesItemId-{{ invoice.id }}-{{ sales_item.id }}"
+                                                                class="form-control" value="{{ sales_item.id }}"
+                                                                name="salesItemId" hidden>
+                                                        </div>
+
+                                                        <!-- Editable Quantity -->
+                                                        <div class="col-md-4">
+                                                            <label for="creditNoteQuantity-{{ invoice.id }}"
+                                                                class="form-label">Quantity</label>
+                                                            <input type="number"
+                                                                id="creditNoteQuantity-{{ invoice.id }}"
+                                                                name="credit_note_quantity" class="form-control" min="1"
+                                                                max="{{ sales_item.qty }}" value="0" required>
+                                                            <small class="form-text text-muted">Max allowed:
+                                                                {{ sales_item.qty }}</small>
+                                                        </div>
+
+                                                        <!-- Reason -->
+                                                        <div class="col-md-4">
+                                                            <label for="creditNoteReason-{{ invoice.id }}"
+                                                                class="form-label">Reason</label>
+                                                            <select id="creditNoteReason-{{ invoice.id }}"
+                                                                name="credit_note_reason" class="form-select " required>
+                                                                <option value="refund">Refund</option>
+                                                                <option value="replace">Replace</option>
+                                                                <option value="exchange">Exchange</option>
+                                                                <option value="defective">Defective</option>
+                                                                <option value="other">Other</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+
+
+                                            <!-- Modal Footer -->
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary"
+                                                    data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" onclick="submitCrForm(event, '{{invoice.id}}')"
+                                                    class="btn btn-primary">Add Credit
+                                                    Note</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -572,33 +713,80 @@
                 {% endif %}
             </div>
 
-            <!-- Analytics tab -->
-            <div class="tab-pane fade" id="analytics" role="tabpanel" aria-labelledby="analytics-tab">
+            <!-- credit-note tab -->
+            <div class="tab-pane fade" id="credit-note" role="tabpanel" aria-labelledby="credit-note-tab">
                 <h3></h3>
-                <!-- Inventory Overview Chart -->
-                <div class="widget-box sample-widget">
-                    <div class="widget-header">
-                        <h2>Inventory Overview</h2>
-                    </div>
-                    <div class="widget-content">
-                        <div id="inventory_overview">
-                            {{ inventory_overview_chart|safe }}
-                        </div>
-                    </div>
-                </div>
+                <div class="d-flex justify-content-between align-items-center p-0 pt-1">
+                    <h3><span style="color: #000000;">{{ credit_notes.count }}</span> Credit notes</h3>
 
-                <!-- Sales Overview Chart -->
-                <div class="widget-box sample-widget mt-4">
-                    <div class="widget-header">
-                        <h2>Sales Overview</h2>
-                    </div>
-                    <div class="widget-content">
-                        <div id="sales_overview">
-                            {{ sales_overview_chart|safe }}
-                        </div>
-                    </div>
                 </div>
+                <hr class="hr-style" />
+                <ul class="list-group sales-list"></ul>
+                {% if credit_notes %}
+                <table class="table table-striped">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Customer</th>
+                            <th scope="col">Customer Phone</th>
+                            <th scope="col">CR Number</th>
+                            <th scope="col">Download</th>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 2px;">
+                                &nbsp;
+                            </td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for credit_note in credit_notes %}
+                        <tr id="credit_note-{{ credit_note.id }}" class="align-items-center justify-center lines">
+                            <td>{{forloop.counter}}</td>
+                            <td class="td-header">
+                                <a class="a-style">
+                                    <strong class="td_title">{{ credit_note.customer.customer_name }}</strong>
+                                    <br>
+                                    &nbsp;Pin: <small class="td_span">{{ credit_note.customer.customer_pin }}</small>
+                                </a>
+                            </td>
+                            <td>{{ credit_note.customer.customer_phone }}</td>
+                            <td>{{ credit_note.receipt_number }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if credit_note.document_path %}
+                                    <a href="{{ credit_note.document_path.url }}" download>
+                                        <button class="btn btn-secondary btn-sm w-btn me-2" type="button"
+                                            id="dropdownMenuButton-{{ item.id }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="white"
+                                                class="bi bi-arrow-down-circle" viewBox="0 0 16 16"
+                                                style="fill: white;">
+                                                <path fill-rule="evenodd"
+                                                    d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8m15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8.5 4.5a.5.5 0 0 0-1 0v5.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293z" />
+                                            </svg>Download PDF
+                                        </button>
+                                    </a>
+
+                                    {% endif %}
+
+                                </div>
+
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 2px;">
+                                &nbsp;
+                            </td>
+                        </tr>
+
+
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p>No Credit notes found for this organization.</p>
+                {% endif %}
             </div>
+
         </div>
     </div>
 </div>
@@ -674,6 +862,35 @@
 
 <!-- Scripts-->
 <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const movementTypeSelect = document.getElementById("movementType");
+        const movementReasonSelect = document.getElementById("movementReason");
+
+        const reasons = {
+            ADD: ["Import", "Stock Movement", "Processing", "Adjustment"],
+            REMOVE: ["Stock Movement", "Processing", "Discarding", "Adjustment"],
+        };
+
+        movementTypeSelect.addEventListener("change", function () {
+            // Clear existing options
+            movementReasonSelect.innerHTML = '<option value="">-- Select Movement Reason --</option>';
+
+            // Get selected type
+            const selectedType = movementTypeSelect.value;
+
+            // Populate reasons based on type
+            if (selectedType && reasons[selectedType]) {
+                reasons[selectedType].forEach(reason => {
+                    const option = document.createElement("option");
+                    option.value = reason;
+                    option.textContent = reason;
+                    movementReasonSelect.appendChild(option);
+                });
+            }
+        });
+    });
+
+
     document.addEventListener('DOMContentLoaded', function () {
         const organizationTab = document.getElementById('organizationTab');
 
@@ -826,6 +1043,105 @@
                 const errorDiv = document.getElementById('delete-item-form-errors');
                 errorDiv.classList.remove('d-none'); // Make the error div visible
                 errorDiv.innerHTML = '<p>An error occurred while deleting the item. Please try again.</p>';
+            });
+    }
+
+    function submitCrForm(e, invoiceId) {
+        e.preventDefault(); // Prevent default form submission
+        const form = document.getElementById(`addCreditNoteForm-${invoiceId}`);
+        const formData = new FormData(form);
+
+        const creditNoteData = {
+            customer: {
+                name: formData.get('customer_name'),
+                phone: formData.get('customer_phone'),
+                email: formData.get('customer_email')
+            },
+            items: []
+        };
+
+        let currentItem = null;
+        // Process the form data into the required format
+        formData.forEach((value, key) => {
+            // Check if the key is related to an item field by looking for 'itemId'
+            const salesItemIdMatch = key.match(/salesItemId/);
+
+            if (salesItemIdMatch) {
+                // Found an itemId, this indicates a new item starts
+                // If there's a current item, push it into the items array
+                if (currentItem && parseFloat(currentItem.creditNoteQuantity) >= 1) {
+                    creditNoteData.items.push(currentItem);
+                }
+
+                // Extract the salesItemId from the key
+                const salesItemId = salesItemIdMatch[1];
+
+                // Start a new item object
+                currentItem = {
+                    salesItemId: salesItemId
+                };
+            }
+
+            // Add fields related to the current item (excluding customer fields)
+            if (currentItem) {
+                if (key.startsWith('salesItemId')) {
+                    currentItem.salesItemId = value; // Item ID field
+                } else if (key.startsWith('credit_note_quantity')) {
+                    currentItem.creditNoteQuantity = value; // Credit Note Quantity
+                } else if (key.startsWith('credit_note_reason')) {
+                    currentItem.creditNoteReason = value; // Credit Note Reason
+                }
+            }
+        });
+
+        // Push the last item into the items array
+        if (currentItem && parseFloat(currentItem.creditNoteQuantity) >= 1) {
+            creditNoteData.items.push(currentItem);
+        }
+
+        if (creditNoteData.items.length === 0) {
+            return;
+        }
+
+        // console.log(creditNoteData);
+
+        fetch(form.action, {
+            method: 'POST',
+            body: JSON.stringify(creditNoteData),
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        }).then((response) => {
+            if (!response.ok) throw new Error('Failed to submit form.');
+            return response.json();
+        }).then((data) => {
+            console.log(data)
+            if (data.success) {
+                window.location.reload();
+            } else if (data.errors) {
+                // Show validation errors in the modal
+                console.log('Errors:', data.errors);
+                const errorDiv = document.getElementById(`cr-form-errors-${invoiceId}`);
+                errorDiv.classList.remove('d-none'); // Make the error div visible
+                errorDiv.innerHTML = ''; // Clear previous errors
+
+                // Loop through the errors and display them
+                for (const field in data.errors) {
+                    data.errors[field].forEach(error => {
+                        const errorMessage = document.createElement('p');
+                        errorMessage.textContent = `${error}`;
+                        errorDiv.appendChild(errorMessage);
+                    });
+                }
+            }
+        })
+            .catch(error => {
+                console.error('Error:', error);
+                // Handle error without alerting
+                const errorDiv = document.getElementById(`cr-form-errors-${invoiceId}`);
+                errorDiv.classList.remove('d-none'); // Make the error div visible
+                errorDiv.innerHTML = '<p>An error occurred while saving the item. Please try again.</p>';
             });
     }
 
