@@ -1,4 +1,11 @@
 # constants.py
+API_BASE_URL = "https://etims-api-sbx.kra.go.ke/etims-api"
+
+API_ENDPOINTS = {
+    "saveItem": f"{API_BASE_URL}/saveItem",
+    "saveCustomer": f"{API_BASE_URL}/saveCustomer",
+    "saveTransaction": f"{API_BASE_URL}/saveTransaction",
+}
 
 MOVEMENT_TYPE_CHOICES = [
     ('ADD', 'Addition'),

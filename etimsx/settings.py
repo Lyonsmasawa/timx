@@ -34,6 +34,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'api_tracker',
     'jazzmin',
     'dal',
     'dal_select2',
@@ -58,8 +59,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'whitenoise.middleware.WhiteNoiseMiddleware'
     'corsheaders.middleware.CorsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -89,6 +90,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'etimsx.wsgi.application'
 
+# Celery Configuration
+CELERY_BROKER_URL = 'amqp://localhost'  # RabbitMQ URL
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+
+TAXPAYER_TIN = "P051109817X"  # Your Taxpayer ID
+BRANCH_ID = "00"  # Branch ID
+API_KEY = "4C286354BC5343209F73ABE2FC87C3B709FF086DBCFD420D8F2D"  # API Key
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
