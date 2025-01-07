@@ -129,6 +129,7 @@ CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[
     "http://localhost:3000",
     "http://localhost:3001",
     "http://localhost:3002",
+    "https://etimsx-app-0dac6505e957.herokuapp.com/"
 ])
 
 # Email settings

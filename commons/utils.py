@@ -1,5 +1,8 @@
 from django.db.models import QuerySet
 from django.db import transaction
+import requests
+import logging
+from django.conf import settings
 
 
 def generate_organization_pin(user):
@@ -85,4 +88,22 @@ def get_choices_as_autocomplete(choices, query):
         for code, name in choices
         if query in name.lower() or query in code.lower()
     ]
-    
+
+
+logger = logging.getLogger(__name__)
+
+
+def send_vscu_request(endpoint, payload):
+    """
+    Sends a request to the VSCU API.
+    """
+    api_url = f"{settings.API_BASE_URL}{endpoint}"
+
+    try:
+        response = requests.post(api_url, json=payload, timeout=10)
+        response_data = response.json()
+        logger.info(f"✅ VSCU API Response: {response_data}")
+        return response_data
+    except requests.RequestException as e:
+        logger.error(f"❌ VSCU API Request Failed: {str(e)}")
+        return {"error": "API request failed"}
