@@ -1,3 +1,5 @@
 env/
 *__pyc
 *.pyc
+
+.env

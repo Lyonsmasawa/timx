@@ -10,7 +10,7 @@ class APIRequestLog(BaseModel):
         ("retrying", "Retrying"),
     ]
 
-    request_type = models.CharField(max_length=50)  # saveItem, saveCustomer
+    request_type = models.CharField(max_length=50)  # e.g., initializeDevice, saveItem, saveCustomer
     request_payload = models.JSONField()
     response_data = models.JSONField(null=True, blank=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")

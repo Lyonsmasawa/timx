@@ -58,14 +58,14 @@ def item_create(request, pk):
 
                     return JsonResponse({
                         'success': False,
-                        'errors': {'general': 'An error occurred. Please try again.'}
+                        'errors': {'general': [f'An error occurred. Please try again. {error_msg}']}
                     })
 
                 except Exception as e:
                     # Catch any other errors
                     return JsonResponse({
                         'success': False,
-                        'errors': {'general': f'An error occurred: {str(e)}'}
+                        'errors': {'general': [f'An error occurred: {str(e)}']}
                     })
 
                 return JsonResponse({
@@ -85,7 +85,7 @@ def item_create(request, pk):
 
     except Exception as e:
         print({str(e)})
-        return JsonResponse({'success': False, 'error': 'Invalid action.'})
+        return JsonResponse({'success': False, 'error': {'general': ['Invalid action.']}})
 
 
 def update_item_quantity(request):

@@ -9,6 +9,7 @@ from django.dispatch import receiver
 from api_tracker.models import APIRequestLog
 from api_tracker.tasks import send_api_request
 
+
 class Item(BaseModel):
     organization = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name='items')
@@ -53,23 +54,23 @@ class Item(BaseModel):
         return self.item_name
 
 
-@receiver(post_save, sender=Item)
-def track_item_creation(sender, instance, created, **kwargs):
-    """
-    When a new Item is created, this function is triggered automatically.
-    It logs the request and adds it to the Celery queue for processing.
-    """
-    if created: 
-        request_log = APIRequestLog.objects.create(
-            request_type="saveItem",
-            request_payload={
-                "itemCd": instance.item_code,
-                "itemNm": instance.item_name,
-                "taxTyCd": instance.tax_type,
-                "dftPrc": float(instance.price),
-            }
-        )
-        
-        print(request_log)
+# @receiver(post_save, sender=Item)
+# def track_item_creation(sender, instance, created, **kwargs):
+#     """
+#     When a new Item is created, this function is triggered automatically.
+#     It logs the request and adds it to the Celery queue for processing.
+#     """
+#     if created:
+#         request_log = APIRequestLog.objects.create(
+#             request_type="saveItem",
+#             request_payload={
+#                 "itemCd": instance.itemCd,
+#                 "itemNm": instance.item_name,
+#                 "taxTyCd": instance.item_tax_code,
+#                 "dftPrc": instance.quantity_unit_code,
+#             }
+#         )
 
-        send_api_request.delay(request_log.id)
+#         print(request_log)
+
+#         send_api_request.delay(request_log.id)

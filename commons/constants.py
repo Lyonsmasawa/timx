@@ -1,10 +1,11 @@
 # constants.py
-API_BASE_URL = "https://etims-api-sbx.kra.go.ke/etims-api"
+from django.conf import settings
 
+# API Endpoints
 API_ENDPOINTS = {
-    "saveItem": f"{API_BASE_URL}/saveItem",
-    "saveCustomer": f"{API_BASE_URL}/saveCustomer",
-    "saveTransaction": f"{API_BASE_URL}/saveTransaction",
+    "saveItem": f"{settings.API_BASE_URL}/saveItem",
+    "saveCustomer": f"{settings.API_BASE_URL}/saveCustomer",
+    "saveTransaction": f"{settings.API_BASE_URL}/saveTransaction",
 }
 
 MOVEMENT_TYPE_CHOICES = [

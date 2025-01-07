@@ -9,32 +9,40 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-
-from pathlib import Path
-import os
-
+import environ
 import django_heroku
+import os
+from pathlib import Path
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# Initialize environment variables
+env = environ.Env()
+environ.Env.read_env()  # Load from .env file
+
+# Build paths inside the project
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-gow^9*!ri#g)8r=6hg&5ttbxg^tfv7_fjq#^+1g(gri5h!eh&3'
+# SECURITY WARNING: keep the secret key secret!
+SECRET_KEY = env("SECRET_KEY", default="django-insecure-key")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env.bool("DEBUG", default=True)
 
-ALLOWED_HOSTS = []
+# Allowed hosts
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"])
 
+# VSCU Configuration
+VSCU_TIN = env("VSCU_TIN", default="A123456789Z")
+VSCU_BRANCH_ID = env("VSCU_BRANCH_ID", default="00")
+VSCU_DEVICE_SERIAL = env("VSCU_DEVICE_SERIAL", default="dvc999993204")
 
-# Application definition
+# API Configuration
+API_BASE_URL = env(
+    "API_BASE_URL", default="https://etims-api-sbx.kra.go.ke/etims-api")
 
+# Installed apps
 INSTALLED_APPS = [
     'api_tracker',
+    'device',
     'jazzmin',
     'dal',
     'dal_select2',
@@ -58,6 +66,7 @@ INSTALLED_APPS = [
     'bootstrap5',
 ]
 
+# Middleware settings
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -72,6 +81,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'etimsx.urls'
 
+# Templates
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -91,103 +101,60 @@ TEMPLATES = [
 WSGI_APPLICATION = 'etimsx.wsgi.application'
 
 # Celery Configuration
-CELERY_BROKER_URL = 'amqp://localhost'  # RabbitMQ URL
+CELERY_BROKER_URL = env(
+    "CELERY_BROKER_URL", default="amqp://admin:mysecurepassword@localhost:5672/")
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
-TAXPAYER_TIN = "P051109817X"  # Your Taxpayer ID
-BRANCH_ID = "00"  # Branch ID
-API_KEY = "4C286354BC5343209F73ABE2FC87C3B709FF086DBCFD420D8F2D"  # API Key
-
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
+# Database Configuration
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+# DATABASES = {
+#     'default': {
+#         'ENGINE': env("DB_ENGINE", default="django.db.backends.sqlite3"),
+#         'NAME': env("DB_NAME", default=BASE_DIR / "db.sqlite3"),
+#         'USER': env("DB_USER", default=""),
+#         'PASSWORD': env("DB_PASSWORD", default=""),
+#         'HOST': env("DB_HOST", default=""),
+#         'PORT': env("DB_PORT", default=""),
+#     }
+# }
 
-# settings.py
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # React frontend
-    "http://localhost:3001",  # React frontend
-    "http://localhost:3002",  # React frontend
-]
+# CORS settings
+CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:3002",
+])
 
-ALLOWED_HOSTS = ['*']
-
-DEFAULT_FROM_EMAIL = "lyonsmasawa@gmail.com"
-# Password validation
-# https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
-
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
-]
-
-
-# Internationalization
-# https://docs.djangoproject.com/en/5.1/topics/i18n/
-
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
-USE_I18N = True
-
-USE_TZ = True
-
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.1/howto/static-files/
-
-# Static files (CSS, JavaScript, Images)
-STATIC_URL = '/static/'  # URL to use when referring to static files
-# Directory for your static files
-STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
-# Where static files will be collected
-STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
-
-# Simplified static file serving.
-# https://warehouse.python.org/project/whitenoise/
-
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-# configuring the location for media
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-# Configure Django App for Heroku.
-django_heroku.settings(locals())
-
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
-
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+# Email settings
+EMAIL_BACKEND = env(
+    "EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="lyonsmasawa@gmail.com")
 
 # Authentication settings
-LOGIN_URL = '/accounts/login/'  # URL to redirect for login
-LOGIN_REDIRECT_URL = '/api/organization/'       # URL after successful login
-LOGOUT_REDIRECT_URL = '/accounts/login/'      # URL after successful logout
+LOGIN_URL = env("LOGIN_URL", default="/accounts/login/")
+LOGIN_REDIRECT_URL = env("LOGIN_REDIRECT_URL", default="/api/organization/")
+LOGOUT_REDIRECT_URL = env("LOGOUT_REDIRECT_URL", default="/accounts/login/")
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+# Static and Media files
+STATIC_URL = "/static/"
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-# Email settings for password reset (use a console backend for development)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+# Configure Django App for Heroku
+django_heroku.settings(locals())
+
+# Default primary key field type
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 JAZZMIN_SETTINGS = {
