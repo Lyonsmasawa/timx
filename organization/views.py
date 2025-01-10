@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 import plotly.graph_objs as go
+from api_tracker.models import APIRequestLog
 from commons.constants import COUNTRY_CHOICES, PACKAGE_CHOICES, PRODUCT_TYPE_CHOICES, TAX_TYPE_CHOICES, TAXPAYER_STATUS_CHOICES, UNIT_CHOICES
 from item_movement.models import ItemMovement
 from .models import Organization
@@ -140,15 +141,25 @@ def organization_detail(request, pk):
     try:
         organization = get_object_or_404(Organization, pk=pk)
         # Querysets for related objects
-        items = Item.objects.filter(organization=organization).order_by('-created_at')
-        customers = Customer.objects.filter(organization=organization).order_by('-created_at')
-        
+        items = Item.objects.select_related("organization").filter(
+            organization=organization).order_by('-created_at')
+        customers = Customer.objects.select_related("organization").filter(
+            organization=organization).order_by('-created_at')
+
         # Separate invoices and credit notes
-        invoices = Transaction.objects.filter(
+        invoices = Transaction.objects.select_related("organization").filter(
             organization=organization, document_type="invoice").order_by('-created_at')
-        credit_notes = Transaction.objects.filter(
+        credit_notes = Transaction.objects.select_related("organization").filter(
             organization=organization, document_type="credit_note").order_by('-created_at')
 
+        # Fetch latest API status for each item, customer, and transaction
+        item_statuses = {log.item.id: log.status for log in APIRequestLog.objects.filter(
+            item__organization=organization)}
+        
+        customer_statuses = {log.customer.id: log.status for log in APIRequestLog.objects.filter(customer__organization=organization)}
+        transaction_statuses = {log.id: log.status for log in APIRequestLog.objects.filter(organization=organization)}
+        
+        print(item_statuses)
         if request.method == 'POST':
             action_name = request.POST.get('action_name')
 
@@ -173,6 +184,9 @@ def organization_detail(request, pk):
             "customers": customers,
             "invoices": invoices,
             "credit_notes": credit_notes,
+            "item_statuses": item_statuses,
+            "customer_statuses": customer_statuses,
+            "transaction_statuses": transaction_statuses,
             "item_form": item_form,
             "customer_form": customer_form,
             "transaction_form": transaction_form,
@@ -195,7 +209,7 @@ def organization_detail(request, pk):
             "items": items,
             "customers": customers,
             "invoices": [],
-            "credit_notes": [],  
+            "credit_notes": [],
             "item_form": ItemForm(),
             "customer_form": CustomerForm(),
             "transaction_form": TransactionForm(),

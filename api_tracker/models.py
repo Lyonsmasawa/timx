@@ -2,6 +2,7 @@ from django.db import models
 
 from commons.models import BaseModel
 
+
 class APIRequestLog(BaseModel):
     STATUS_CHOICES = [
         ("pending", "Pending"),
@@ -10,11 +11,23 @@ class APIRequestLog(BaseModel):
         ("retrying", "Retrying"),
     ]
 
-    request_type = models.CharField(max_length=50)  # e.g., initializeDevice, saveItem, saveCustomer
+    # e.g., initializeDevice, saveItem, saveCustomer
+    request_type = models.CharField(max_length=50)
     request_payload = models.JSONField()
     response_data = models.JSONField(null=True, blank=True)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
+    status = models.CharField(
+        max_length=10, choices=STATUS_CHOICES, default="pending")
     retries = models.PositiveIntegerField(default=0)
+
+    # Allow easy debugging by linking requests to Users, Organizations, and Items
+    user = models.ForeignKey(
+        "auth.User", on_delete=models.SET_NULL, null=True, blank=True)
+    organization = models.ForeignKey(
+        "organization.Organization", on_delete=models.SET_NULL, null=True, blank=True)
+    item = models.ForeignKey(
+        "item.Item", on_delete=models.SET_NULL, null=True, blank=True)
+    customer = models.ForeignKey(
+        "customer.Customer", on_delete=models.CASCADE, null=True, blank=True)
 
     def mark_success(self, response):
         self.status = "success"

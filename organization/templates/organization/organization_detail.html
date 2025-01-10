@@ -1,5 +1,6 @@
 {% extends "main.html" %}
 {% load bootstrap5 %}
+{% load template_filters %}
 
 {% block content %}
 {% include 'res_nav.html' %}
@@ -10,11 +11,11 @@
         <ul class="nav nav-tabs" id="organizationTab" role="tablist">
             <li class="nav-item" role="presentation">
                 <a class="nav-link  active" id="customers-tab" data-bs-toggle="tab" href="#customers" role="tab"
-                    aria-controls="customers" aria-selected="false">Customers</a>
+                    aria-controls="customers" aria-selected="true">Customers</a>
             </li>
             <li class="nav-item" role="presentation">
                 <a class="nav-link" id="items-tab" data-bs-toggle="tab" href="#items" role="tab" aria-controls="items"
-                    aria-selected="true">Items</a>
+                    aria-selected="false">Items</a>
             </li>
             <li class="nav-item" role="presentation">
                 <a class="nav-link" id="sales-tab" data-bs-toggle="tab" href="#sales" role="tab" aria-controls="sales"
@@ -54,6 +55,7 @@
                             <th scope="col">Phone</th>
                             <th scope="col">Email</th>
                             <th scope="col">Address</th>
+                            <th scope="col">Status</th>
                             <th scope="col">Actions</th>
                         </tr>
                         <tr>
@@ -76,6 +78,11 @@
                             <td>{{ customer.customer_phone }}</td>
                             <td>{{ customer.customer_email }}</td>
                             <td>{{ customer.customer_address }}</td>
+                            <td>
+                                {% with customer_status=customer_statuses|dict_get:customer.id %}
+                                <span class="status {{ customer_status }}">{{ customer_status }}</span>
+                                {% endwith %}
+                            </td>
                             <td>
                                 <div class="dropdown">
                                     <button class="btn btn-secondary btn-sm dropdown-toggle w-btn" type="button"
@@ -221,6 +228,7 @@
                             <th scope="col">Class</th>
                             <th scope="col">Tax</th>
                             <th scope="col">Balance</th>
+                            <th scope="col">Status</th>
                             <th scope="col">Actions</th>
                         </tr>
                         <tr>
@@ -243,6 +251,13 @@
                             <td>{{ item.item_class_code }}</td>
                             <td>{{ item.item_tax_code }}</td>
                             <td>{{ item.item_current_balance }}</td>
+
+                            <td>
+                                {% with item_status=item_statuses|dict_get:item.id %}
+                                <span class="status {{ item_status }}">{{ item_status }}</span>
+                                {% endwith %}
+                            </td>
+
                             <td>
                                 <div class="dropdown">
                                     <button class="btn btn-secondary btn-sm dropdown-toggle w-btn" type="button"
@@ -645,11 +660,11 @@
                                                     </div>
                                                 </div>
 
-                                                <div class="col-md-8">
+                                                <div class="col-md-5">
                                                     <!-- Item Details -->
                                                     {% for sales_item in invoice.sales_items.all %}
                                                     <div class="row justify-content-between">
-                                                        <div class="col-md-3">
+                                                        <div class="col-md-5">
                                                             <label for="itemDetails-{{ invoice.id }}"
                                                                 class="form-label">Item Details</label>
                                                             <input type="text" id="itemDetails-{{ invoice.id }}"
@@ -662,7 +677,7 @@
                                                         </div>
 
                                                         <!-- Editable Quantity -->
-                                                        <div class="col-md-4">
+                                                        <div class="col-md-6">
                                                             <label for="creditNoteQuantity-{{ invoice.id }}"
                                                                 class="form-label">Quantity</label>
                                                             <input type="number"
@@ -673,21 +688,26 @@
                                                                 {{ sales_item.qty }}</small>
                                                         </div>
 
-                                                        <!-- Reason -->
-                                                        <div class="col-md-4">
-                                                            <label for="creditNoteReason-{{ invoice.id }}"
-                                                                class="form-label">Reason</label>
-                                                            <select id="creditNoteReason-{{ invoice.id }}"
-                                                                name="credit_note_reason" class="form-select " required>
-                                                                <option value="refund">Refund</option>
-                                                                <option value="replace">Replace</option>
-                                                                <option value="exchange">Exchange</option>
-                                                                <option value="defective">Defective</option>
-                                                                <option value="other">Other</option>
-                                                            </select>
-                                                        </div>
+                                                       
                                                     </div>
                                                     {% endfor %}
+                                                </div>
+
+                                                <div class="col-md-3">
+                                                    <!-- Reason Selection - Only One Place -->
+                                                    <div>
+                                                        <label for="creditNoteReason-{{ invoice.id }}"
+                                                            class="form-label">Reason</label>
+                                                        <select id="creditNoteReason-{{ invoice.id }}"
+                                                            name="credit_note_reason" class="form-select" required>
+                                                            <option value="refund">Refund</option>
+                                                            <option value="replace">Replace</option>
+                                                            <option value="exchange">Exchange</option>
+                                                            <option value="defective">Defective</option>
+                                                            <option value="other">Other</option>
+                                                        </select>
+                                                    </div>
+
                                                 </div>
                                             </div>
 
@@ -893,9 +913,11 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         const organizationTab = document.getElementById('organizationTab');
-
+        console.log(organizationTab)
         // Restore active tab from localStorage
         const activeTabId = localStorage.getItem('activeTabId');
+        console.log(activeTabId)
+
         if (activeTabId) {
             const activeTab = document.getElementById(activeTabId);
             if (activeTab) {
@@ -1060,6 +1082,8 @@
             items: []
         };
 
+        const reason = formData.get('credit_note_reason');
+
         let currentItem = null;
         // Process the form data into the required format
         formData.forEach((value, key) => {
@@ -1088,9 +1112,8 @@
                     currentItem.salesItemId = value; // Item ID field
                 } else if (key.startsWith('credit_note_quantity')) {
                     currentItem.creditNoteQuantity = value; // Credit Note Quantity
-                } else if (key.startsWith('credit_note_reason')) {
-                    currentItem.creditNoteReason = value; // Credit Note Reason
-                }
+                } 
+                currentItem.creditNoteReason = reason; // Credit Note Reason
             }
         });
 

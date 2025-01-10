@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
+import logging.config
 import environ
 import django_heroku
 import os
@@ -20,6 +21,11 @@ environ.Env.read_env()  # Load from .env file
 
 # Build paths inside the project
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Define log directory
+LOG_DIR = os.path.join(BASE_DIR, "logs")
+if not os.path.exists(LOG_DIR):
+    os.makedirs(LOG_DIR)  # Ensure the directory is created
 
 # SECURITY WARNING: keep the secret key secret!
 SECRET_KEY = env("SECRET_KEY", default="django-insecure-key")
@@ -39,8 +45,12 @@ VSCU_DEVICE_SERIAL = env("VSCU_DEVICE_SERIAL", default="dvc999993204")
 API_BASE_URL = env(
     "API_BASE_URL", default="https://etims-api-sbx.kra.go.ke/etims-api")
 
+VSCU_API_BASE_URL = env(
+    "API_BASE_URL", default="https://etims-api-sbx.kra.go.ke/etims-api")
+
 # Installed apps
 INSTALLED_APPS = [
+    'django_celery_beat',
     'api_tracker',
     'device',
     'jazzmin',
@@ -102,9 +112,11 @@ WSGI_APPLICATION = 'etimsx.wsgi.application'
 
 # Celery Configuration
 CELERY_BROKER_URL = env(
-    "CELERY_BROKER_URL", default="amqp://admin:mysecurepassword@localhost:5672/")
+    "CELERY_BROKER_URL", default="amqp://admin:mysecurepassword@172.25.8.136:5672/")
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
+CELERY_TIMEZONE = "Africa/Nairobi"
+
 
 # Database Configuration
 DATABASES = {
@@ -157,6 +169,54 @@ django_heroku.settings(locals())
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "[%(asctime)s] %(levelname)s [%(name)s] %(message)s"
+        },
+        "simple": {
+            "format": "[%(levelname)s] %(message)s"
+        },
+    },
+    "handlers": {
+        "file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": "logs/vscu_api.log",
+            "formatter": "verbose",
+        },
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": [],
+            "level": "DEBUG",
+            "propagate": True,
+        },
+        "celery": {
+            "handlers": ["file", "console"],
+            "level": "DEBUG",
+            "propagate": True,
+        },
+        "vscu_api": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}
+
+TIME_ZONE = 'Africa/Nairobi'
+USE_I18N = True
+USE_L10N = True
+USE_TZ = True
 
 JAZZMIN_SETTINGS = {
     # title of the window (Will default to current_admin_site.site_title if absent or None)

@@ -3,9 +3,10 @@ from django.conf import settings
 
 # API Endpoints
 API_ENDPOINTS = {
-    "saveItem": f"{settings.API_BASE_URL}/saveItem",
-    "saveCustomer": f"{settings.API_BASE_URL}/saveCustomer",
-    "saveTransaction": f"{settings.API_BASE_URL}/saveTransaction",
+    "saveItem": "/saveItem",
+    "saveCustomer": "/saveBhfCustomer",
+    "saveTransaction": "/saveTransaction",
+    "fetchItemClassification": "/selectItemClsList",
 }
 
 MOVEMENT_TYPE_CHOICES = [

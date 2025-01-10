@@ -717,3 +717,29 @@ html {
     flex-direction: column;
     justify-content: space-between;
 }
+
+.status {
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.status.success {
+    color: white;
+    background-color: green;
+}
+
+.status.failed {
+    color: white;
+    background-color: red;
+}
+
+.status.retrying {
+    color: white;
+    background-color: orange;
+}
+
+.status.Pending {
+    color: black;
+    background-color: lightgray;
+}
