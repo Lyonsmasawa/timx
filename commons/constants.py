@@ -7,6 +7,26 @@ API_ENDPOINTS = {
     "saveCustomer": "/saveBhfCustomer",
     "saveTransaction": "/saveTransaction",
     "fetchItemClassification": "/selectItemClsList",
+    "saveStockMovement": "/insertStockIO",
+}
+
+SAR_TYPE_CODES = {
+    "ADD": {
+        "Import": "01",
+        "Purchase": "02",
+        "Return": "03",
+        "Stock Movement": "04",
+        "Processing": "05",
+        "Adjustment": "06",
+    },
+    "REMOVE": {
+        "Sale": "11",
+        "Return": "12",
+        "Stock Movement": "13",
+        "Processing": "14",
+        "Discarding": "15",
+        "Adjustment": "16",
+    }
 }
 
 MOVEMENT_TYPE_CHOICES = [
