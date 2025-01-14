@@ -1,11 +1,7 @@
-from django.conf import settings
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.db import IntegrityError, transaction
 from django.urls import reverse
-from django.utils.timezone import now
-from api_tracker.models import APIRequestLog
-from api_tracker.tasks import send_api_request
 from item_movement.models import ItemMovement
 from organization.models import Organization
 from .models import Item
@@ -15,7 +11,7 @@ from django.contrib import messages
 from django.views import View
 from dal import autocomplete
 from commons.constants import (
-    COUNTRY_CHOICES, PRODUCT_TYPE_CHOICES, SAR_TYPE_CODES, UNIT_CHOICES, PACKAGE_CHOICES, TAX_TYPE_CHOICES, TAXPAYER_STATUS_CHOICES
+    COUNTRY_CHOICES, PRODUCT_TYPE_CHOICES, UNIT_CHOICES, PACKAGE_CHOICES, TAX_TYPE_CHOICES, TAXPAYER_STATUS_CHOICES
 )
 from commons.utils import get_choices_as_autocomplete
 # List Items
@@ -113,13 +109,6 @@ def update_item_quantity(request):
             if not movement_reason:
                 movement_reason = "Stock Movement"
 
-            # Determine the correct sarTyCd based on movement type
-            sar_type_code = SAR_TYPE_CODES.get(
-                movement_type, {}).get(movement_reason)
-
-            if not sar_type_code:
-                return JsonResponse({"error": "Invalid movement reason for the selected type."}, status=400)
-
             # Use a transaction block
             with transaction.atomic():
                 # Get the item
@@ -136,65 +125,12 @@ def update_item_quantity(request):
                 item.save()
 
                 # Create an item movement entry
-                movement = ItemMovement.objects.create(
+                ItemMovement.objects.create(
                     item=item,
                     movement_type=movement_type,
                     movement_reason=movement_reason,
                     item_unit=quantity,
                 )
-
-                # 🔍 **Log API request to send stock update to VSCU API**
-                request_log = APIRequestLog.objects.create(
-                    request_type="saveStockMovement",
-                    request_payload={
-                        "tin": settings.VSCU_TIN,
-                        "bhfId": settings.VSCU_BRANCH_ID,
-                        "sarNo": movement.id,
-                        "orgSarNo": movement.id,
-                        "regTyCd": "M",  # Modify based on type
-                        "custTin": None,
-                        "custNm": None,
-                        "custBhfId": None,
-                        "sarTyCd": sar_type_code,
-                        "ocrnDt": now().strftime("%Y%m%d"),
-                        "totItemCnt": 1,
-                        "totTaxblAmt": 0,  # Modify based on calculations
-                        "totTaxAmt": 0,
-                        "totAmt": 0,  # Modify based on calculations
-                        "remark": f"{movement_reason} for {item.item_name}",
-                        "regrNm": "Admin",
-                        "regrId": "Admin",
-                        "modrNm": "Admin",
-                        "modrId": "Admin",
-                        "itemList": [
-                            {
-                                "itemSeq": 1,
-                                "itemCd": item.itemCd,
-                                "itemClsCd": item.item_class_code,
-                                "itemNm": item.item_name,
-                                "bcd": None,
-                                "pkgUnitCd": item.package_unit_code,
-                                "pkg": 0,
-                                "qtyUnitCd": item.quantity_unit_code,
-                                "qty": quantity,
-                                "itemExprDt": None,
-                                "prc": 0,
-                                "splyAmt": 0,
-                                "totDcAmt": 0,
-                                "taxblAmt": 0,
-                                "taxTyCd": item.item_tax_code,
-                                "taxAmt": 0,
-                                "totAmt": 0,
-                            }
-                        ]
-                    },
-                    item=item,
-                    user=request.user,
-                    organization=item.organization,
-                )
-
-                # 🔄 **Send API request to VSCU asynchronously**
-                send_api_request.apply_async(args=[request_log.id])
 
             # If everything succeeds
             return JsonResponse({'success': True, "message": "Quantity updated successfully"}, status=200)
@@ -311,12 +247,20 @@ class ItemTypeCodeAutocomplete(autocomplete.Select2QuerySetView):
         return queryset
 
 
-class QuantityUnitCodeAutocomplete(View):
+class QuantityUnitCodeAutocomplete(autocomplete.Select2ListView):
     def get(self, request, *args, **kwargs):
-        query = request.GET.get('q', "")
-        results = get_choices_as_autocomplete(UNIT_CHOICES, query)
-        print(results)
-        return JsonResponse({"results": results})
+        if not request.user.is_authenticated:
+            return JsonResponse([], safe=False)
+
+        query = request.GET.get('q', '').lower()
+        
+        filtered_choices = [
+            {"id": code, "text": name}
+            for code, name in UNIT_CHOICES
+            if query in name.lower() or query in code.lower()
+        ]
+
+        return JsonResponse({"results": filtered_choices}, safe=False)
 
 
 class PackageUnitCodeAutocomplete(View):

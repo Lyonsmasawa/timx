@@ -6,6 +6,11 @@ from .models import Item
 
 
 class ItemForm(forms.ModelForm):
+    # quantity_unit_code = forms.CharField(
+    #     widget=autocomplete.ListSelect2(
+    #         url='item:quantity-unit-code-autocomplete')
+    # )
+
     class Meta:
         model = Item
         fields = [
@@ -23,22 +28,22 @@ class ItemForm(forms.ModelForm):
         ]
 
         # widgets = {
-        #     'origin_nation_code': autocomplete.Select2(
+        #     'origin_nation_code': autocomplete.ListSelect2(
         #         url='item:country-code-autocomplete'
         #     ),
-        #     'item_type_code': autocomplete.Select2(
+        #     'item_type_code': autocomplete.ListSelect2(
         #         url='item:item-type-code-autocomplete'
         #     ),
-        #     'quantity_unit_code': autocomplete.Select2(
+        #     'quantity_unit_code': autocomplete.ListSelect2(
         #         url='item:quantity-unit-code-autocomplete'
         #     ),
-        #     'package_unit_code': autocomplete.Select2(
+        #     'package_unit_code': autocomplete.ListSelect2(
         #         url='item:package-unit-code-autocomplete'
         #     ),
-        #     'item_class_code': autocomplete.Select2(
+        #     'item_class_code': autocomplete.ListSelect2(
         #         url='item:item-class-code-autocomplete'
         #     ),
-        #     'item_tax_code': autocomplete.Select2(
+        #     'item_tax_code': autocomplete.ListSelect2(
         #         url='item:item-tax-code-autocomplete'
         #     ),
         # }

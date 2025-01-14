@@ -1,3 +1,4 @@
+from collections import defaultdict
 import json
 from django.http import HttpResponse
 import os
@@ -7,6 +8,9 @@ from django.utils import timezone
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.core.mail import send_mail
+from api_tracker.models import APIRequestLog
+from api_tracker.tasks import send_api_request
+from commons.constants import TAX_RATES
 from item_movement.models import ItemMovement
 from organization.models import Organization
 from transaction.models import Transaction
@@ -18,6 +22,7 @@ from item.models import Item
 from django.conf import settings
 from django.contrib import messages
 from django.db import transaction as transaction_mode
+from dal import autocomplete
 
 # List Sales Items
 
@@ -57,11 +62,15 @@ def sales_items_create(request, pk):
                     organization=organization,
                     customer=customer,
                     receipt_number=invoice_data['invoiceNumber'],
+                    original_receipt_number=invoice_data['invoiceNumber'],
                     document_type="invoice",
                     created_by=request.user
                 )
 
                 sales_items_list = []
+                # Track totals per tax type
+                tax_totals = defaultdict(
+                    lambda: {"taxable_amount": 0, "tax_amount": 0})
 
                 # Create SalesItems
                 for item in invoice_data['items']:
@@ -72,6 +81,17 @@ def sales_items_create(request, pk):
 
                     if item['quantity'] <= 0 or item['rate'] <= 0 or item['lineTotal'] < 0:
                         return JsonResponse({"error": "Invalid item details"}, status=400)
+
+                    # Normalize tax code (A, B, C, D, E)
+                    tax_code = item['taxCode'].upper()
+                    taxable_amount = item['rate'] * item['quantity']
+                    tax_rate = TAX_RATES.get(tax_code, 0)
+                    tax_amount = (taxable_amount * tax_rate) / \
+                        100  # Calculate tax
+
+                    # Store taxable amount & tax amount based on tax code
+                    tax_totals[tax_code]["taxable_amount"] += taxable_amount
+                    tax_totals[tax_code]["tax_amount"] += tax_amount
 
                     # Create Sales Item
                     sales_item = SalesItems.objects.create(
@@ -91,6 +111,7 @@ def sales_items_create(request, pk):
                     ItemMovement.objects.create(
                         item=item_obj,
                         movement_type='REMOVE',
+                        movement_reason='Sale',
                         item_unit=item['quantity'],
                     )
 
@@ -106,6 +127,100 @@ def sales_items_create(request, pk):
                     sales_items_list.append(sales_item)
 
                 print(sales_items_list)
+                # Compute final totals
+                total_taxable_amount = sum(
+                    tax["taxable_amount"] for tax in tax_totals.values())
+                total_tax_amount = sum(tax["tax_amount"]
+                                       for tax in tax_totals.values())
+
+                # Step 3: Generate the API Request Payload
+                request_payload = {
+                    "invcNo": str(transaction.receipt_number),
+                    "orgInvcNo": str(transaction.original_receipt_number) if transaction.original_receipt_number else str(transaction.receipt_number),
+                    "custTin": transaction.customer.customer_pin,
+                    "custNm": transaction.customer.customer_name,
+                    "salesTyCd": "N",
+                    "rcptTyCd": "S",
+                    "pmtTyCd": "01",
+                    "salesSttsCd": "02",
+                    "cfmDt": transaction.created_at.strftime("%Y%m%d%H%M%S"),
+                    "salesDt": transaction.created_at.strftime("%Y%m%d"),
+                    "stockRlsDt": transaction.created_at.strftime("%Y%m%d%H%M%S"),
+                    "totItemCnt": len(sales_items_list),
+                    "taxblAmtA": tax_totals["A"]["taxable_amount"],
+                    "taxblAmtB": tax_totals["B"]["taxable_amount"],
+                    "taxblAmtC": tax_totals["C"]["taxable_amount"],
+                    "taxblAmtD": tax_totals["D"]["taxable_amount"],
+                    "taxblAmtE": tax_totals["E"]["taxable_amount"],
+                    "taxRtA": TAX_RATES["A"],
+                    "taxRtB": TAX_RATES["B"],
+                    "taxRtC": TAX_RATES["C"],
+                    "taxRtD": TAX_RATES["D"],
+                    "taxRtE": TAX_RATES["E"],
+                    "taxAmtA": tax_totals["A"]["tax_amount"],
+                    "taxAmtB": tax_totals["B"]["tax_amount"],
+                    "taxAmtC": tax_totals["C"]["tax_amount"],
+                    "taxAmtD": tax_totals["D"]["tax_amount"],
+                    "taxAmtE": tax_totals["E"]["tax_amount"],
+                    "totTaxblAmt": total_taxable_amount,
+                    "totTaxAmt": total_tax_amount,
+                    "totAmt": total_taxable_amount + total_tax_amount, "totItemCnt": len(sales_items_list),
+                    "prchrAcptcYn": "N",
+                    "remark": None,
+                    "regrId": "Admin",
+                    "regrNm": "Admin",
+                    "modrId": "Admin",
+                    "modrNm": "Admin",
+                    "receipt": {
+                        "custTin": transaction.customer.customer_pin,
+                        "custMblNo": transaction.customer.customer_phone,
+                        "rptNo": str(transaction.receipt_number),
+                        "rcptPbctDt": transaction.created_at.strftime("%Y%m%d%H%M%S"),
+                        "topMsg": "Shopwithus",
+                        "btmMsg": "Welcome",
+                        "prchrAcptcYn": "N"
+                    },
+                    "itemList": [
+                        {
+                            "itemSeq": index + 1,
+                            "itemCd": sale_item.item.itemCd,
+                            "itemClsCd": sale_item.item.item_class_code,
+                            "itemNm": sale_item.item.item_name,
+                            "bcd": None,
+                            "pkgUnitCd": sale_item.item.package_unit_code,
+                            "pkg": 1,
+                            "qtyUnitCd": sale_item.item.quantity_unit_code,
+                            "qty": sale_item.qty,
+                            "prc": float(sale_item.rate),
+                            "splyAmt": round(float(sale_item.line_total) - ((TAX_RATES.get(sale_item.tax_code, 0) / 100) * float(sale_item.line_total)), 2),
+                            "dcRt": round(float(sale_item.discount_rate) if sale_item.discount_rate else 0.0, 2),
+                            "dcAmt": round(float(sale_item.discount_amount) if sale_item.discount_amount else 0.0, 2),
+                            "isrccCd": None,
+                            "isrccNm": None,
+                            "isrcRt": None,
+                            "isrcAmt": None,
+                            "taxTyCd": sale_item.tax_code,
+                            "taxblAmt": round(float(sale_item.line_total) - ((TAX_RATES.get(sale_item.tax_code, 0) / 100) * float(sale_item.line_total)), 2),
+                            "taxAmt": round(float(sale_item.line_total) - float(sale_item.line_total) / (1 + (TAX_RATES.get(sale_item.tax_code, 0) / 100)), 2),
+                            "totAmt": round(float(sale_item.line_total), 2),
+                        }
+                        for index, sale_item in enumerate(sales_items_list)
+                    ]
+                }
+
+                print(request_payload)
+
+                # ✅ Save API Request Log
+                request_log = APIRequestLog.objects.create(
+                    request_type="saveSalesTransaction",
+                    request_payload=request_payload,
+                    transaction=transaction,
+                    user=request.user,
+                    organization=transaction.organization,
+                )
+
+                # ✅ Send request asynchronously using Celery
+                send_api_request.apply_async(args=[request_log.id])
 
                 # Step 3: Generate the PDF Invoice and get the file path
                 pdf_path = generate_transaction_pdf(
@@ -165,8 +280,6 @@ def sales_items_create_note(request, organization_id, transaction_id):
         except Transaction.DoesNotExist:
             return JsonResponse({'success': False, "errors":  {"general": ["Transaction not found"]}})
 
-        print(credit_note_data)
-
         errors = {
             "success": False,
             "errors": {}
@@ -175,6 +288,9 @@ def sales_items_create_note(request, organization_id, transaction_id):
         try:
             with transaction_mode.atomic():
                 credit_note_items = []
+                total_taxable_amount = 0
+                total_tax_amount = 0
+
                 # Process each credit note item
                 for item in credit_note_data['items']:
                     try:
@@ -211,6 +327,7 @@ def sales_items_create_note(request, organization_id, transaction_id):
                     organization=organization,
                     customer=transaction_.customer,
                     receipt_number=formatted_credit_note_number,
+                    original_receipt_number=transaction_.receipt_number,
                     document_type="credit_note",
                     created_by=request.user,
                     reason=item.get('creditNoteReason', 'Other')
@@ -220,9 +337,18 @@ def sales_items_create_note(request, organization_id, transaction_id):
                 for item in credit_note_data['items']:
                     sales_item = transaction_.sales_items.get(
                         id=item['salesItemId'])
+
                     credit_note_reason = item.get('creditNoteReason', 'Other')
                     credit_note_quantity = float(item['creditNoteQuantity'])
                     item_obj = sales_item.item
+
+                    # # Tax calculations
+                    tax_code = sales_item.tax_code
+                    tax_rate = TAX_RATES.get(tax_code, 0)
+                    taxable_amount = round(
+                        float(credit_note_quantity) * float(sales_item.rate), 2)
+                    tax_amount = round(
+                        (float(taxable_amount) * float(tax_rate)) / 100, 2)
 
                     # Collect data for the Credit Note PDF
                     credit_note_items.append({
@@ -237,6 +363,130 @@ def sales_items_create_note(request, organization_id, transaction_id):
                         "line_total": float(credit_note_quantity) * float(sales_item.rate),
                         "reason": credit_note_reason
                     })
+
+                    if credit_note_reason == "refund":
+                        ItemMovement.objects.create(
+                            item=item_obj,
+                            movement_type='ADD',
+                            movement_reason='Return',
+                            item_unit=credit_note_quantity,
+                        )
+
+                        # Update Item's stock balance
+                        item_obj.item_current_balance += float(
+                            credit_note_quantity)
+                        item_obj.save()
+
+                        total_taxable_amount += float(taxable_amount)
+                        total_tax_amount += float(tax_amount)
+
+                # Ensure all tax categories are accounted for in tax_totals
+                tax_totals = {tax_code: {"taxable_amount": 0.00,
+                                         "tax_amount": 0.00} for tax_code in TAX_RATES.keys()}
+
+                # Calculate taxable amounts per tax category
+                for credit_note_item in credit_note_items:
+                    tax_code = credit_note_item["tax_code"]
+                    taxable_amount = float(
+                        credit_note_item["rate"]) * float(credit_note_item["qty"])
+                    tax_amount = taxable_amount * \
+                        (TAX_RATES.get(tax_code, 0) / 100)
+
+                    tax_totals[tax_code]["taxable_amount"] += taxable_amount
+                    tax_totals[tax_code]["tax_amount"] += tax_amount
+
+                # Step 3: Generate the API Request Payload
+                request_payload = {
+                    "invcNo": str(credit_note_transaction.receipt_number),
+                    "orgInvcNo": str(credit_note_transaction.original_receipt_number) if credit_note_transaction.original_receipt_number else str(credit_note_transaction.receipt_number),
+                    "custTin": credit_note_transaction.customer.customer_pin,
+                    "custNm": credit_note_transaction.customer.customer_name,
+                    "salesTyCd": "R",
+                    "rcptTyCd": "R",
+                    "pmtTyCd": "01",
+                    "salesSttsCd": "02",
+                    "cfmDt": credit_note_transaction.created_at.strftime("%Y%m%d%H%M%S"),
+                    "salesDt": credit_note_transaction.created_at.strftime("%Y%m%d"),
+                    "stockRlsDt": credit_note_transaction.created_at.strftime("%Y%m%d%H%M%S"),
+                    "totItemCnt": len(credit_note_items),
+                    # Ensure all tax fields exist (Set default values if missing)
+                    "taxblAmtA": round(tax_totals.get("A", {"taxable_amount": 0.00})["taxable_amount"], 2),
+                    "taxblAmtB": round(tax_totals.get("B", {"taxable_amount": 0.00})["taxable_amount"], 2),
+                    "taxblAmtC": round(tax_totals.get("C", {"taxable_amount": 0.00})["taxable_amount"], 2),
+                    "taxblAmtD": round(tax_totals.get("D", {"taxable_amount": 0.00})["taxable_amount"], 2),
+                    "taxblAmtE": round(tax_totals.get("E", {"taxable_amount": 0.00})["taxable_amount"], 2),
+                    "taxRtA": TAX_RATES["A"],
+                    "taxRtB": TAX_RATES["B"],
+                    "taxRtC": TAX_RATES["C"],
+                    "taxRtD": TAX_RATES["D"],
+                    "taxRtE": TAX_RATES["E"],
+                    "taxAmtA": round(tax_totals.get("A", {"tax_amount": 0.00})["tax_amount"], 2),
+                    "taxAmtB": round(tax_totals.get("B", {"tax_amount": 0.00})["tax_amount"], 2),
+                    "taxAmtC": round(tax_totals.get("C", {"tax_amount": 0.00})["tax_amount"], 2),
+                    "taxAmtD": round(tax_totals.get("D", {"tax_amount": 0.00})["tax_amount"], 2),
+                    "taxAmtE": round(tax_totals.get("E", {"tax_amount": 0.00})["tax_amount"], 2),
+                    "totTaxblAmt": total_taxable_amount,
+                    "totTaxAmt": total_tax_amount,
+                    "totAmt": total_taxable_amount + total_tax_amount,
+                    "prchrAcptcYn": "N",
+                    "remark": None,
+                    "regrId": "Admin",
+                    "regrNm": "Admin",
+                    "modrId": "Admin",
+                    "modrNm": "Admin",
+                    "receipt": {
+                        "custTin": credit_note_transaction.customer.customer_pin,
+                        "custMblNo": credit_note_transaction.customer.customer_phone,
+                        "rptNo": str(credit_note_transaction.receipt_number),
+                        "rcptPbctDt": credit_note_transaction.created_at.strftime("%Y%m%d%H%M%S"),
+                        "topMsg": "Shopwithus",
+                        "btmMsg": "Welcome",
+                        "prchrAcptcYn": "N"
+                    },
+                    "itemList": [
+                        {
+                            "itemSeq": index + 1,
+                            "itemCd": credit_note_item["item"].itemCd,
+                            "itemClsCd": credit_note_item["item"].item_class_code,
+                            "itemNm": credit_note_item["item"].item_name,
+                            "bcd": None,
+                            "pkgUnitCd": credit_note_item["item"].package_unit_code,
+                            "pkg": 1,
+                            "qtyUnitCd": credit_note_item["item"].quantity_unit_code,
+                            "qty": credit_note_item["qty"],
+                            "prc": float(credit_note_item["rate"]),
+                            "splyAmt": round(float(credit_note_item["rate"]) * credit_note_item["qty"], 2),
+                            "dcRt": round(float(credit_note_item.get("discount_rate", 0.0)), 2),
+                            "dcAmt": round(float(credit_note_item.get("discount_amount", 0.0)), 2),
+                            "isrccCd": None,
+                            "isrccNm": None,
+                            "isrcRt": None,
+                            "isrcAmt": None,
+                            "taxTyCd": credit_note_item["tax_code"],
+                            "taxblAmt": round(float(credit_note_item["rate"]) * credit_note_item["qty"], 2),
+                            "taxAmt": round(
+                                float(credit_note_item["rate"]) * credit_note_item["qty"] *
+                                (TAX_RATES.get(
+                                    credit_note_item["tax_code"], 0) / 100), 2
+                            ),
+                            "totAmt": round(float(credit_note_item["rate"]) * credit_note_item["qty"], 2),
+                        }
+                        for index, credit_note_item in enumerate(credit_note_items)
+                    ]
+
+                }
+
+                # Log API Request
+                request_log = APIRequestLog.objects.create(
+                    request_type="saveCreditNote",
+                    request_payload=request_payload,
+                    transaction=credit_note_transaction,
+                    user=request.user,
+                    organization=credit_note_transaction.organization,
+                )
+
+                # Send Request via Celery
+                send_api_request.apply_async(args=[request_log.id])
 
                 # Generate PDF for Credit Note
                 pdf_path = generate_transaction_pdf(
@@ -332,7 +582,8 @@ def generate_transaction_pdf(organization, transaction, customer, sales_items_li
     }
 
     # Initialize tax summary
-    tax_summary = {code: {"taxable_amount": 0, "tax_rate": TAX_RATES[code], "tax_amount": 0} for code in TAX_RATES.keys()}
+    tax_summary = {code: {"taxable_amount": 0,
+                          "tax_rate": TAX_RATES[code], "tax_amount": 0} for code in TAX_RATES.keys()}
 
     # Process items (Unifies invoice & credit note logic)
     items_data = []
@@ -340,13 +591,20 @@ def generate_transaction_pdf(organization, transaction, customer, sales_items_li
 
     for item in sales_items_list:
         # Handle both object-based and dictionary-based data
-        item_description = item.get("item_description", "Item") if isinstance(item, dict) else item.item_description
-        item_name = item.get("item").item_name if isinstance(item, dict) else item.item.item_name
-        quantity = float(item.get("qty", 0)) if isinstance(item, dict) else float(item.qty)
-        rate = float(item.get("rate", 0)) if isinstance(item, dict) else float(item.rate)
-        discount = float(item.get("discount_amount", 0)) if isinstance(item, dict) else float(item.discount_amount)
-        tax_code = item.get("tax_code", None) if isinstance(item, dict) else item.tax_code
-        line_total = float(item.get("line_total", 0)) if isinstance(item, dict) else float(item.line_total)
+        item_description = item.get("item_description", "Item") if isinstance(
+            item, dict) else item.item_description
+        item_name = item.get("item").item_name if isinstance(
+            item, dict) else item.item.item_name
+        quantity = float(item.get("qty", 0)) if isinstance(
+            item, dict) else float(item.qty)
+        rate = float(item.get("rate", 0)) if isinstance(
+            item, dict) else float(item.rate)
+        discount = float(item.get("discount_amount", 0)) if isinstance(
+            item, dict) else float(item.discount_amount)
+        tax_code = item.get("tax_code", None) if isinstance(
+            item, dict) else item.tax_code
+        line_total = float(item.get("line_total", 0)) if isinstance(
+            item, dict) else float(item.line_total)
 
         # Ensure tax code is valid
         if tax_code and tax_code in TAX_RATES:
@@ -406,3 +664,17 @@ def generate_transaction_pdf(organization, transaction, customer, sales_items_li
     transaction.save()
 
     return pdf_path
+
+
+class ItemAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        # Don't forget to filter out results depending on the visitor !
+        if not self.request.user.is_authenticated:
+            return Item.objects.none()
+
+        qs = Item.objects.filter()
+
+        if self.q:
+            qs = qs.filter(name__istartswith=self.q)
+
+        return qs

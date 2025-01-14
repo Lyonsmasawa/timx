@@ -78,11 +78,24 @@
                             <td>{{ customer.customer_phone }}</td>
                             <td>{{ customer.customer_email }}</td>
                             <td>{{ customer.customer_address }}</td>
-                            <td>
-                                {% with customer_status=customer_statuses|dict_get:customer.id %}
-                                <span class="status {{ customer_status }}">{{ customer_status }}</span>
+                            <td class="dflex">
+                                {% with customer_data=customer_statuses|dict_get:customer.id %}
+                                <span class="status {{ customer_data.status }}">{{ customer_data.status }}</span>
+
+                                {% if customer_data.status == "failed" %}
+                                <button class="btn retry-request" data-type="saveCustomer"
+                                    data-url="{% url 'organization:retry_failed_request' 'saveCustomer' customer.id %}"
+                                    data-id="{{ customer_data.id }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="currentColor"
+                                        class="bi bi-repeat" viewBox="0 0 22 22">
+                                        <path
+                                            d="M11 5.466V4H5a4 4 0 0 0-3.584 5.777.5.5 0 1 1-.896.446A5 5 0 0 1 5 3h6V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m3.81.086a.5.5 0 0 1 .67.225A5 5 0 0 1 11 13H5v1.466a.25.25 0 0 1-.41.192l-2.36-1.966a.25.25 0 0 1 .41.192V12h6a4 4 0 0 0 3.585-5.777.5.5 0 0 1 .225-.67Z" />
+                                    </svg>
+                                </button>
+                                {% endif %}
                                 {% endwith %}
                             </td>
+
                             <td>
                                 <div class="dropdown">
                                     <button class="btn btn-secondary btn-sm dropdown-toggle w-btn" type="button"
@@ -252,11 +265,24 @@
                             <td>{{ item.item_tax_code }}</td>
                             <td>{{ item.item_current_balance }}</td>
 
-                            <td>
-                                {% with item_status=item_statuses|dict_get:item.id %}
-                                <span class="status {{ item_status }}">{{ item_status }}</span>
+                            <td class="dflex">
+                                {% with item_data=item_statuses|dict_get:item.id %}
+                                <span class="status {{ item_data.status }}">{{ item_data.status }}</span>
+
+                                {% if item_data.status == "failed" %}
+                                <button class="btn retry-request" data-type="saveItem"
+                                    data-url="{% url 'organization:retry_failed_request' 'saveItem' item.id %}"
+                                    data-id="{{ item_data.id }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="5" height="5" fill="currentColor"
+                                        class="bi bi-repeat" viewBox="0 0 20 20">
+                                        <path
+                                            d="M11 5.466V4H5a4 4 0 0 0-3.584 5.777.5.5 0 1 1-.896.446A5 5 0 0 1 5 3h6V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m3.81.086a.5.5 0 0 1 .67.225A5 5 0 0 1 11 13H5v1.466a.25.25 0 0 1-.41.192l-2.36-1.966a.25.25 0 0 1 .41.192V12h6a4 4 0 0 0 3.585-5.777.5.5 0 0 1 .225-.67Z" />
+                                    </svg>
+                                </button>
+                                {% endif %}
                                 {% endwith %}
                             </td>
+
 
                             <td>
                                 <div class="dropdown">
@@ -549,7 +575,7 @@
                             <th scope="col">Customer</th>
                             <th scope="col">Customer Phone</th>
                             <th scope="col">Invoice Number</th>
-                            <th scope="col">Trader Invoice Number</th>
+                            <th class="col">Status</th>
                             <th scope="col">Download</th>
                         </tr>
                         <tr>
@@ -571,7 +597,24 @@
                             </td>
                             <td>{{ invoice.customer.customer_phone }}</td>
                             <td>{{ invoice.receipt_number }}</td>
-                            <td>{{ invoice.trader_invoice_number }}</td>
+                            <td class="dflex">
+                                {% with transaction_data=transaction_statuses|dict_get:invoice.id %}
+                                <span class="status {{ transaction_data.status }}">{{ transaction_data.status }}</span>
+
+                                {% if transaction_data.status == "failed" %}
+                                <button class="btn retry-request" data-type="saveTransaction"
+                                    data-url="{% url 'organization:retry_failed_request' 'saveTransaction' invoice.id %}"
+                                    data-id="{{ transaction_data.id }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="5" height="5" fill="transparent"
+                                        class="bi bi-repeat" viewBox="0 0 20 20">
+                                        <path
+                                            d="M11 5.466V4H5a4 4 0 0 0-3.584 5.777.5.5 0 1 1-.896.446A5 5 0 0 1 5 3h6V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m3.81.086a.5.5 0 0 1 .67.225A5 5 0 0 1 11 13H5v1.466a.25.25 0 0 1-.41.192l-2.36-1.966a.25.25 0 0 1 .41-.192V12h6a4 4 0 0 0 3.585-5.777.5.5 0 0 1 .225-.67Z" />
+                                    </svg>
+                                </button>
+                                {% endif %}
+                                {% endwith %}
+                            </td>
+
                             <td>
                                 <div class="d-flex align-items-center">
                                     {% if invoice.document_path %}
@@ -688,7 +731,7 @@
                                                                 {{ sales_item.qty }}</small>
                                                         </div>
 
-                                                       
+
                                                     </div>
                                                     {% endfor %}
                                                 </div>
@@ -750,6 +793,7 @@
                             <th scope="col">Customer</th>
                             <th scope="col">Customer Phone</th>
                             <th scope="col">CR Number</th>
+                            <th scope="col">Status</th>
                             <th scope="col">Download</th>
                         </tr>
                         <tr>
@@ -771,6 +815,22 @@
                             </td>
                             <td>{{ credit_note.customer.customer_phone }}</td>
                             <td>{{ credit_note.receipt_number }}</td>
+                            <td class="dflex">
+                                {% with transaction_data=transaction_statuses|dict_get:credit_note.id %}
+                                <span class="status {{ transaction_data.status }}">{{ transaction_data.status }}</span>
+                                {% if transaction_data.status == "failed" %}
+                                <button class="btn retry-request" data-type="saveTransaction"
+                                    data-url="{% url 'organization:retry_failed_request' 'saveTransaction' credit_note.id %}"
+                                    data-id="{{ transaction_data.id }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="5" height="5" fill="transparent"
+                                        class="bi bi-repeat" viewBox="0 0 20 20">
+                                        <path
+                                            d="M11 5.466V4H5a4 4 0 0 0-3.584 5.777.5.5 0 1 1-.896.446A5 5 0 0 1 5 3h6V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m3.81.086a.5.5 0 0 1 .67.225A5 5 0 0 1 11 13H5v1.466a.25.25 0 0 1-.41.192l-2.36-1.966a.25.25 0 0 1 .41-.192V12h6a4 4 0 0 0 3.585-5.777.5.5 0 0 1 .225-.67Z" />
+                                    </svg>
+                                </button>
+                                {% endif %}
+                                {% endwith %}
+                            </td>
                             <td>
                                 <div class="d-flex align-items-center">
                                     {% if credit_note.document_path %}
@@ -852,6 +912,8 @@
                     </div>
                     {% csrf_token %}
                     <input type="hidden" name="action_name" value="create_item">
+
+
                     {{ form.media }}
 
                     <div class="form-row">
@@ -880,8 +942,122 @@
     </div>
 </div>
 
+
+{% block javascript %}
+<script>
+    $(document).ready(function () {
+        console.log("Initializing Select2 for id_quantity_unit_code...");
+    
+        // Ensure jQuery is loaded before Select2
+        if (!$.fn.select2) {
+            console.error("Select2 is not loaded properly!");
+            return;
+        }
+    
+        // Get the Select2 field
+        const quantity_unit_code = $("#id_dquantity_unit_code");
+    
+        if (quantity_unit_code.length > 0) {
+            const dataUrl = quantity_unit_code.attr("data-autocomplete-light-url");
+    
+            if (dataUrl) {
+                console.log("Initializing Select2 with AJAX for id_quantity_unit_code...");
+    
+                quantity_unit_code.select2({
+                    placeholder: "Select a unit code",
+                    dropdownAutoWidth: true,
+                    ajax: {
+                        url: dataUrl,
+                        dataType: 'json',
+                        delay: 250,
+                        processResults: function (data) {
+                            console.log("Processing AJAX results...");
+                            return {
+                                results: data.results
+                            };
+                        },
+                        cache: true
+                    },
+                    minimumInputLength: 1
+                });
+            } else {
+                console.log("No data-autocomplete-light-url found. Initializing Select2 without AJAX.");
+                quantity_unit_code.select2({
+                    placeholder: "Select a unit code"
+                });
+            }
+        } else {
+            console.log("id_quantity_unit_code not found.");
+        }
+    
+        // Fix Select2 inside Bootstrap modal
+        $('#createItemModal').on('shown.bs.modal', function () {
+            console.log("Modal opened. Re-initializing Select2...");
+            quantity_unit_code.select2({
+                dropdownParent: $("#createItemModal") // Ensures Select2 works inside the modal
+            });
+    
+            // Delay focus to prevent Bootstrap stealing focus
+            setTimeout(function () {
+                let searchField = document.querySelector('.select2-container--open .select2-search__field');
+                if (searchField) {
+                    console.log("Focusing on Select2 search field...");
+                    searchField.focus();
+                }
+            }, 200);
+        });
+    
+        // Reinitialize Select2 when switching Bootstrap tabs
+        $('a[data-bs-toggle="tab"]').on("shown.bs.tab", function () {
+            console.log("Tab switched. Re-initializing Select2...");
+            quantity_unit_code.select2();
+        });
+    
+        // Detect dynamically added elements and initialize Select2
+        $(document).on('DOMNodeInserted', function (e) {
+            if ($(e.target).is("#id_quantity_unit_code")) {
+                console.log("New Select2 element detected. Initializing...");
+                $(e.target).select2();
+            }
+        });
+    });
+        
+</script>
+{% endblock javascript %}
+
+
 <!-- Scripts-->
 <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".retry-request").forEach((button) => {
+            button.addEventListener("click", function () {
+                const requestType = this.getAttribute("data-type");
+                const requestId = this.getAttribute("data-id");
+                const dataUrl = this.getAttribute("data-url");
+
+                fetch(dataUrl, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": "{{ csrf_token }}",
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        log_id: requestId
+                    }),
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.success) {
+                            window.location.reload();
+                        }
+                    })
+                    .catch((error) => {
+                        console.error("Error retrying request:", error);
+                    });
+            });
+        });
+    });
+
     document.addEventListener("DOMContentLoaded", function () {
         const movementTypeSelect = document.getElementById("movementType");
         const movementReasonSelect = document.getElementById("movementReason");
@@ -1112,7 +1288,7 @@
                     currentItem.salesItemId = value; // Item ID field
                 } else if (key.startsWith('credit_note_quantity')) {
                     currentItem.creditNoteQuantity = value; // Credit Note Quantity
-                } 
+                }
                 currentItem.creditNoteReason = reason; // Credit Note Reason
             }
         });
@@ -1557,6 +1733,7 @@
                 });
         });
     });
+
 </script>
 
 {% endblock %}

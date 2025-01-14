@@ -1,5 +1,8 @@
 import json
 from django.db.models import Sum
+from django.views.decorators.csrf import csrf_exempt
+from api_tracker.tasks import send_api_request
+from api_tracker.models import APIRequestLog
 from django.db import IntegrityError
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
@@ -153,13 +156,15 @@ def organization_detail(request, pk):
             organization=organization, document_type="credit_note").order_by('-created_at')
 
         # Fetch latest API status for each item, customer, and transaction
-        item_statuses = {log.item.id: log.status for log in APIRequestLog.objects.filter(
+        item_statuses = {log.item.id: {"id": log.id, "status": log.status} for log in APIRequestLog.objects.filter(
             item__organization=organization)}
-        
-        customer_statuses = {log.customer.id: log.status for log in APIRequestLog.objects.filter(customer__organization=organization)}
-        transaction_statuses = {log.id: log.status for log in APIRequestLog.objects.filter(organization=organization)}
-        
-        print(item_statuses)
+
+        customer_statuses = {log.customer.id: {"id": log.id, "status": log.status} for log in APIRequestLog.objects.filter(
+            customer__organization=organization, request_type="saveCustomer")}
+
+        transaction_statuses = {log.transaction.id: {"id": log.id, "status": log.status} for log in APIRequestLog.objects.filter(
+            transaction__organization=organization)}
+
         if request.method == 'POST':
             action_name = request.POST.get('action_name')
 
@@ -175,7 +180,9 @@ def organization_detail(request, pk):
             transaction_form = TransactionForm()
             sales_items_form = SalesItemsForm()
 
-        print(items)
+        # print(f" Customer, {customer_statuses}")
+        # print(f" Items, {item_statuses}")
+        # print(f" Transaction, {transaction_statuses}")
 
         # Render the page for regular requests
         return render(request, "organization/organization_detail.html", {
@@ -288,3 +295,37 @@ def download_invoice(request, pk):
             pdf_file.read(), content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename=invoice_{pk}.pdf'
         return response
+
+
+@csrf_exempt
+def retry_failed_request(request, request_type, request_id):
+    if request.method == "POST":
+        try:
+            # ✅ Parse JSON data from request body
+            data = json.loads(request.body.decode("utf-8"))
+            log_id = data.get("log_id")
+
+            if not log_id:
+                return JsonResponse({"error": "Missing log_id in request."}, status=400)
+
+            # ✅ Retrieve the request log
+            request_log = APIRequestLog.objects.get(pk=log_id, status="failed")
+
+            # ✅ Retry the request using Celery
+            send_api_request.apply_async(args=[request_log.id])
+
+            # ✅ Update status to retrying
+            request_log.retries = 0
+            request_log.mark_retrying()
+            request_log.save()
+
+            return JsonResponse({"success": True, "message": f"Retry for {request_type} initiated successfully!"})
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON data."}, status=400)
+
+        except APIRequestLog.DoesNotExist:
+            return JsonResponse({"error": f"{request_type.capitalize()} request not found or not failed."}, status=404)
+
+    return JsonResponse({"error": "Invalid request method."}, status=405)
+

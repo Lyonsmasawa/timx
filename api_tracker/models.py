@@ -28,6 +28,8 @@ class APIRequestLog(BaseModel):
         "item.Item", on_delete=models.SET_NULL, null=True, blank=True)
     customer = models.ForeignKey(
         "customer.Customer", on_delete=models.CASCADE, null=True, blank=True)
+    transaction = models.ForeignKey(
+        "transaction.Transaction", on_delete=models.CASCADE, null=True, blank=True)
 
     def mark_success(self, response):
         self.status = "success"

@@ -22,4 +22,5 @@ urlpatterns = [
          name='item-class-code-autocomplete'),
     path('item-tax-code-autocomplete/', views.ItemTaxCodeAutocomplete.as_view(),
          name='item-tax-code-autocomplete'),
+    
 ]

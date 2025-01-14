@@ -14,6 +14,7 @@ class Transaction(BaseModel):
         ('credit_note', 'Credit Note'),
         ('receipt', 'Receipt')
     ])
+    original_receipt_number = models.BigIntegerField(blank=True, null=True)
     reason = models.CharField(
         max_length=200, null=True, blank=True, default="sale")
     document_path = models.FileField(

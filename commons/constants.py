@@ -8,8 +8,11 @@ API_ENDPOINTS = {
     "saveTransaction": "/saveTransaction",
     "fetchItemClassification": "/selectItemClsList",
     "saveStockMovement": "/insertStockIO",
+    "saveSalesTransaction": "/saveTrnsSalesOsdc",
+    "saveCreditNote": "/saveTrnsSalesOsdc",
 }
 
+# SAR Type Codes
 SAR_TYPE_CODES = {
     "ADD": {
         "Import": "01",
@@ -29,6 +32,7 @@ SAR_TYPE_CODES = {
     }
 }
 
+# Movement Type Codes
 MOVEMENT_TYPE_CHOICES = [
     ('ADD', 'Addition'),
     ('REMOVE', 'Removal'),
@@ -65,6 +69,14 @@ TAX_TYPE_CHOICES = [
     ("D", "D-Non-VAT"),
     ("E", "E-8%"),
 ]
+
+TAX_RATES = {
+    "A": 0,    # Exempt
+    "B": 16,   # 16% VAT
+    "C": 0,    # 0% VAT
+    "D": 0,    # Non-VAT
+    "E": 8,    # 8% VAT
+}
 
 # Taxpayer Status Choices
 TAXPAYER_STATUS_CHOICES = [

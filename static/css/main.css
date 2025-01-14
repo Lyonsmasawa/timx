@@ -739,7 +739,25 @@ html {
     background-color: orange;
 }
 
-.status.Pending {
+.status.Pending,
+.status.pending {
     color: black;
     background-color: lightgray;
+}
+
+* Ensure Select2 dropdown is above Bootstrap modal */ .select2-container {
+    z-index: 1050 !important;
+}
+
+.select2-container--open {
+    z-index: 9999 !important;
+}
+
+.select2-search__field:focus {
+    background-color: red !important;
+
+}
+
+.select2-search__field:hover {
+    background-color: #354649 !important;
 }

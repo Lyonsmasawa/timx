@@ -13,4 +13,6 @@ urlpatterns = [
          name="organization_delete"),
     path('download-invoice/<int:pk>/',
          views.download_invoice, name='download_invoice'),
+    path("retry/<str:request_type>/<int:request_id>/",
+         views.retry_failed_request, name="retry_failed_request"),
 ]
