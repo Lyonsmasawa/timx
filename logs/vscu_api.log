@@ -50,3 +50,159 @@ def chunks(task, it, n):
 def unlock_chord(self, group_id, callback, interval=0, max_retries=1, result=2, Result=3, GroupResult=4, result_from_tuple=5, **kwargs):
     return 1
 
+[2025-01-17 06:05:23,755] DEBUG [celery.utils.functional] 
+def xmap(task, it):
+    return 1
+
+[2025-01-17 06:05:23,762] DEBUG [celery.utils.functional] 
+def backend_cleanup():
+    return 1
+
+[2025-01-17 06:05:23,763] DEBUG [celery.utils.functional] 
+def chain(*args, **kwargs):
+    return 1
+
+[2025-01-17 06:05:23,764] DEBUG [celery.utils.functional] 
+def xstarmap(task, it):
+    return 1
+
+[2025-01-17 06:05:23,765] DEBUG [celery.utils.functional] 
+def accumulate(self, *args, **kwargs):
+    return 1
+
+[2025-01-17 06:05:23,767] DEBUG [celery.utils.functional] 
+def debug_task(self):
+    return 1
+
+[2025-01-17 06:05:23,769] DEBUG [celery.utils.functional] 
+def async_initialize_vscu_device(self):
+    return 1
+
+[2025-01-17 06:05:23,770] DEBUG [celery.utils.functional] 
+def retry_failed_requests():
+    return 1
+
+[2025-01-17 06:05:23,771] DEBUG [celery.utils.functional] 
+def chord(self, header, body, partial_args=0, interval=1, countdown=2, max_retries=3, eager=4, **kwargs):
+    return 1
+
+[2025-01-17 06:05:23,773] DEBUG [celery.utils.functional] 
+def chunks(task, it, n):
+    return 1
+
+[2025-01-17 06:05:23,774] DEBUG [celery.utils.functional] 
+def unlock_chord(self, group_id, callback, interval=0, max_retries=1, result=2, Result=3, GroupResult=4, result_from_tuple=5, **kwargs):
+    return 1
+
+[2025-01-17 06:05:23,775] DEBUG [celery.utils.functional] 
+def send_api_request(self, request_id):
+    return 1
+
+[2025-01-17 06:05:23,777] DEBUG [celery.utils.functional] 
+def group(self, tasks, result, group_id, partial_args, add_to_parent=0):
+    return 1
+
+[2025-01-17 06:56:59,228] DEBUG [celery.utils.functional] 
+def xmap(task, it):
+    return 1
+
+[2025-01-17 06:56:59,236] DEBUG [celery.utils.functional] 
+def backend_cleanup():
+    return 1
+
+[2025-01-17 06:56:59,243] DEBUG [celery.utils.functional] 
+def chain(*args, **kwargs):
+    return 1
+
+[2025-01-17 06:56:59,244] DEBUG [celery.utils.functional] 
+def xstarmap(task, it):
+    return 1
+
+[2025-01-17 06:56:59,246] DEBUG [celery.utils.functional] 
+def accumulate(self, *args, **kwargs):
+    return 1
+
+[2025-01-17 06:56:59,248] DEBUG [celery.utils.functional] 
+def debug_task(self):
+    return 1
+
+[2025-01-17 06:56:59,251] DEBUG [celery.utils.functional] 
+def async_initialize_vscu_device(self):
+    return 1
+
+[2025-01-17 06:56:59,253] DEBUG [celery.utils.functional] 
+def retry_failed_requests():
+    return 1
+
+[2025-01-17 06:56:59,254] DEBUG [celery.utils.functional] 
+def chord(self, header, body, partial_args=0, interval=1, countdown=2, max_retries=3, eager=4, **kwargs):
+    return 1
+
+[2025-01-17 06:56:59,262] DEBUG [celery.utils.functional] 
+def chunks(task, it, n):
+    return 1
+
+[2025-01-17 06:56:59,265] DEBUG [celery.utils.functional] 
+def unlock_chord(self, group_id, callback, interval=0, max_retries=1, result=2, Result=3, GroupResult=4, result_from_tuple=5, **kwargs):
+    return 1
+
+[2025-01-17 06:56:59,267] DEBUG [celery.utils.functional] 
+def send_api_request(self, request_id):
+    return 1
+
+[2025-01-17 06:56:59,268] DEBUG [celery.utils.functional] 
+def group(self, tasks, result, group_id, partial_args, add_to_parent=0):
+    return 1
+
+[2025-01-17 07:01:50,682] DEBUG [celery.utils.functional] 
+def xmap(task, it):
+    return 1
+
+[2025-01-17 07:01:50,686] DEBUG [celery.utils.functional] 
+def backend_cleanup():
+    return 1
+
+[2025-01-17 07:01:50,688] DEBUG [celery.utils.functional] 
+def chain(*args, **kwargs):
+    return 1
+
+[2025-01-17 07:01:50,693] DEBUG [celery.utils.functional] 
+def xstarmap(task, it):
+    return 1
+
+[2025-01-17 07:01:50,694] DEBUG [celery.utils.functional] 
+def accumulate(self, *args, **kwargs):
+    return 1
+
+[2025-01-17 07:01:50,697] DEBUG [celery.utils.functional] 
+def debug_task(self):
+    return 1
+
+[2025-01-17 07:01:50,698] DEBUG [celery.utils.functional] 
+def async_initialize_vscu_device(self):
+    return 1
+
+[2025-01-17 07:01:50,699] DEBUG [celery.utils.functional] 
+def retry_failed_requests():
+    return 1
+
+[2025-01-17 07:01:50,700] DEBUG [celery.utils.functional] 
+def chord(self, header, body, partial_args=0, interval=1, countdown=2, max_retries=3, eager=4, **kwargs):
+    return 1
+
+[2025-01-17 07:01:50,701] DEBUG [celery.utils.functional] 
+def chunks(task, it, n):
+    return 1
+
+[2025-01-17 07:01:50,703] DEBUG [celery.utils.functional] 
+def unlock_chord(self, group_id, callback, interval=0, max_retries=1, result=2, Result=3, GroupResult=4, result_from_tuple=5, **kwargs):
+    return 1
+
+[2025-01-17 07:01:50,725] DEBUG [celery.utils.functional] 
+def send_api_request(self, request_id):
+    return 1
+
+[2025-01-17 07:01:50,728] DEBUG [celery.utils.functional] 
+def group(self, tasks, result, group_id, partial_args, add_to_parent=0):
+    return 1
+

@@ -10,7 +10,8 @@ from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 import plotly.graph_objs as go
 from api_tracker.models import APIRequestLog
-from commons.constants import COUNTRY_CHOICES, PACKAGE_CHOICES, PRODUCT_TYPE_CHOICES, TAX_TYPE_CHOICES, TAXPAYER_STATUS_CHOICES, UNIT_CHOICES
+from commons.constants import API_ENDPOINTS, COUNTRY_CHOICES, PACKAGE_CHOICES, PRODUCT_TYPE_CHOICES, TAX_TYPE_CHOICES, TAXPAYER_STATUS_CHOICES, UNIT_CHOICES
+from commons.utils import process_purchases_response, send_vscu_request
 from item_movement.models import ItemMovement
 from .models import Organization
 from .forms import OrganizationForm
@@ -165,6 +166,22 @@ def organization_detail(request, pk):
         transaction_statuses = {log.transaction.id: {"id": log.id, "status": log.status} for log in APIRequestLog.objects.filter(
             transaction__organization=organization)}
 
+        purchases = []
+
+        try:
+            data = {
+                "lastReqDt": "20231010000000"
+            }
+            url = API_ENDPOINTS.get("selectTrnsPurchaseSalesList")
+            response = send_vscu_request(
+                endpoint=url, method="POST", data=data)
+
+            purchases = process_purchases_response(response.json())
+            print(purchases)
+        except Exception as e:
+            # Log the error and stay on the page
+            print(f"Error in requestview: {str(e)}")
+
         if request.method == 'POST':
             action_name = request.POST.get('action_name')
 
@@ -204,6 +221,7 @@ def organization_detail(request, pk):
             'PACKAGE_CHOICES': PACKAGE_CHOICES,
             'TAXPAYER_STATUS_CHOICES': TAXPAYER_STATUS_CHOICES,
             'TAX_TYPE_CHOICES': TAX_TYPE_CHOICES,
+            'purchases': purchases,
         })
 
     except Exception as e:
@@ -225,8 +243,6 @@ def organization_detail(request, pk):
 
 
 # Update Organization
-
-
 @login_required
 def organization_update(request, pk):
     organization = get_object_or_404(Organization, pk=pk)
@@ -328,4 +344,3 @@ def retry_failed_request(request, request_type, request_id):
             return JsonResponse({"error": f"{request_type.capitalize()} request not found or not failed."}, status=404)
 
     return JsonResponse({"error": "Invalid request method."}, status=405)
-

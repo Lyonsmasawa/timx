@@ -26,6 +26,11 @@
                 <a class="nav-link" id="credit-note-tab" data-bs-toggle="tab" href="#credit-note" role="tab"
                     aria-controls="credit-note" aria-selected="false">Credit Note</a>
             </li>
+
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" id="purchases-tab" data-bs-toggle="tab" href="#purchases" role="tab"
+                    aria-controls="purchases" aria-selected="false">Purchases</a>
+            </li>
         </ul>
         <h4 class="text-muted weight-bold">Organization: {{ organization.organization_name }}</h4>
 
@@ -619,6 +624,18 @@
                                 <div class="d-flex align-items-center">
                                     {% with transaction_data=transaction_statuses|dict_get:invoice.id %}
                                     {% if transaction_data.status == "success" %}
+
+                                    {% if invoice.document_path %}
+                                    <button class="btn btn-secondary btn-sm w-btn me-2 view-pdf-btn"
+                                        data-pdf-url="{{ invoice.document_path.url }}" data-bs-toggle="modal"
+                                        data-bs-target="#pdfModal">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="white"
+                                            class="bi bi-arrow-down-circle" viewBox="0 0 16 16" style="fill: white;">
+                                            <path fill-rule="evenodd"
+                                                d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8m15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8.5 4.5a.5.5 0 0 0-1 0v5.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293z" />
+                                        </svg> View PDF
+                                    </button>
+                                    {% else %}
                                     <a href="{% url 'sales_items:generate_invoice_pdf' transaction_data.id invoice.id %}"
                                         class="btn btn-secondary btn-sm w-btn me-2">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="white"
@@ -627,7 +644,7 @@
                                                 d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8m15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8.5 4.5a.5.5 0 0 0-1 0v5.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293z" />
                                         </svg> Download PDF
                                     </a>
-
+                                    {% endif %}
                                     <!-- Add Credit Note Button -->
                                     <button class="btn btn-primary btn-sm w-btn" type="button"
                                         id="addCreditNoteButton-{{ invoice.id }}" data-bs-toggle="modal"
@@ -867,6 +884,86 @@
                 {% endif %}
             </div>
 
+            <!-- Purchases tab -->
+            <div class="tab-pane fade show active" id="purchases" role="tabpanel" aria-labelledby="purchases-tab">
+                <h3></h3>
+                <div class="d-flex justify-content-between align-items-center p-0 pt-1">
+                    <h3><span style="color: #000000;">{{ purchases.count }}</span> Purchases</h3>
+                    <div>
+                    </div>
+                </div>
+                <hr class="hr-style" />
+                <ul class="list-group purchases-list"></ul>
+                {% if purchases %}
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Supplier Name</th>
+                            <th>Supplier TIN</th>
+                            <th>Invoice Number</th>
+                            <th>Confirmation Date</th>
+                            <th>Total Amount</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for purchase in purchases %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ purchase.supplier_name }}</td>
+                            <td>{{ purchase.supplier_tin }}</td>
+                            <td>{{ purchase.invoice_number }}</td>
+                            <td>{{ purchase.confirmation_date }}</td>
+                            <td>KES {{ purchase.total_amount|floatformat:2 }}</td>
+                            <td>
+                                <button class="btn btn-primary btn-sm view-items-btn"
+                                    data-items="{{ purchase.items|escapejs }}" data-bs-toggle="modal"
+                                    data-bs-target="#itemsModal">
+                                    View Items
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <!-- Modal for Viewing Items -->
+                <div class="modal fade" id="itemsModal" tabindex="-1" aria-labelledby="itemsModalLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="itemsModalLabel">Purchase Items</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Item Code</th>
+                                            <th>Item Name</th>
+                                            <th>Quantity</th>
+                                            <th>Price</th>
+                                            <th>Total Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="itemsModalBody">
+                                        <!-- Dynamically filled by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% else %}
+                <p>No purchases found for this organization.</p>
+                {% endif %}
+
+            </div>
         </div>
     </div>
 </div>
@@ -1022,12 +1119,64 @@
         });
     });
 
+    document.addEventListener("DOMContentLoaded", function () {
+        const viewPdfBtns = document.querySelectorAll(".view-pdf-btn");
+        const pdfIframe = document.getElementById("pdfIframe");
+        const downloadPdfBtn = document.getElementById("downloadPdfBtn");
+
+        viewPdfBtns.forEach((btn) => {
+            btn.addEventListener("click", function () {
+                const pdfUrl = this.getAttribute("data-pdf-url");
+                pdfIframe.setAttribute("src", pdfUrl);
+                downloadPdfBtn.setAttribute("href", pdfUrl);
+            });
+        });
+
+        // Print PDF functionality
+        const printPdfBtn = document.getElementById("printPdfBtn");
+        printPdfBtn.addEventListener("click", function () {
+            const iframeWindow = pdfIframe.contentWindow || pdfIframe;
+            iframeWindow.focus();
+            iframeWindow.print();
+        });
+    });
+
+
 </script>
 {% endblock javascript %}
 
 
 <!-- Scripts-->
 <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const viewItemsButtons = document.querySelectorAll(".view-items-btn");
+
+        viewItemsButtons.forEach(button => {
+            button.addEventListener("click", function () {
+                const items = JSON.parse(this.getAttribute("data-items"));
+                console.log(items)
+                const modalBody = document.getElementById("itemsModalBody");
+
+                modalBody.innerHTML = ""; // Clear previous content
+
+                items.forEach((item, index) => {
+                    const row = `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${item.itemCd}</td>
+                            <td>${item.itemNm}</td>
+                            <td>${item.qty}</td>
+                            <td>${item.prc}</td>
+                            <td>${item.totAmt}</td>
+                        </tr>
+                    `;
+                    modalBody.innerHTML += row;
+                });
+            });
+        });
+    });
+
+
     document.addEventListener("DOMContentLoaded", function () {
         document.querySelectorAll(".retry-request").forEach((button) => {
             button.addEventListener("click", function () {

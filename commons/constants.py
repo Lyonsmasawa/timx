@@ -10,6 +10,7 @@ API_ENDPOINTS = {
     "saveStockMovement": "/insertStockIO",
     "saveSalesTransaction": "/saveTrnsSalesOsdc",
     "saveCreditNote": "/saveTrnsSalesOsdc",
+    "selectTrnsPurchaseSalesList": "/selectTrnsPurchaseSalesList"
 }
 
 # SAR Type Codes

@@ -291,7 +291,6 @@ def generate_qr_code(link, transaction_id):
     return f"transaction_qr_codes/{qr_filename}"
 
 
-
 def generate_qr_code_base64(data):
     """
     Generate a QR code as a base64 string.
@@ -299,7 +298,7 @@ def generate_qr_code_base64(data):
     qr = qrcode.QRCode(box_size=10, border=4)
     qr.add_data(data)
     qr.make(fit=True)
-    
+
     # Save QR code to a BytesIO stream
     img = qr.make_image(fill="black", back_color="white")
     buffer = BytesIO()
@@ -309,9 +308,8 @@ def generate_qr_code_base64(data):
     # Encode as base64 string
     img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
     buffer.close()
-    
-    return f"data:image/png;base64,{img_base64}"
 
+    return f"data:image/png;base64,{img_base64}"
 
 
 def intcomma(number):
@@ -324,3 +322,22 @@ def intcomma(number):
     except (ValueError, TypeError):
         # Return the number as is if it's invalid
         return number
+
+
+def process_purchases_response(response_data):
+    """
+    Process the API response and format it for display in the UI.
+    """
+    purchases = []
+    for purchase in response_data.get("data", {}).get("saleList", []):
+        purchases.append({
+            "supplier_name": purchase.get("spplrNm"),
+            "supplier_tin": purchase.get("spplrTin"),
+            "invoice_number": purchase.get("spplrInvcNo"),
+            "confirmation_date": purchase.get("cfmDt"),
+            "total_amount": purchase.get("totAmt"),
+            "taxable_amount": purchase.get("totTaxblAmt"),
+            "tax_amount": purchase.get("totTaxAmt"),
+            "items": purchase.get("itemList", [])
+        })
+    return purchases

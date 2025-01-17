@@ -694,13 +694,9 @@ def generate_transaction_pdf(
     # Parse the string into a datetime object
     issued_date = datetime.strptime(issued_date, "%Y%m%d%H%M%S")
 
-    # Format the datetime object if needed
-    formatted_issued_date = issued_date.strftime("%Y-%m-%d")
     response_date = scu_info.get('sdcDateTime', '')
 
     response_date = datetime.strptime(response_date, "%Y%m%d%H%M%S")
-
-    formatted_response_date = response_date.strftime("%Y-%m-%d %H:%M:%S")
 
     # Format tax_summary values
     formatted_tax_summary = {
@@ -716,7 +712,7 @@ def generate_transaction_pdf(
     context = {
         "organization": organization,
         "document_number": transaction.receipt_number,
-        "document_date": formatted_issued_date,
+        "document_date": issued_date,
         "customer_name": customer.customer_name,
         "customer_email": customer.customer_email,
         "customer_pin": customer.customer_pin,
@@ -728,7 +724,7 @@ def generate_transaction_pdf(
         "total_receipts": total_receipts,
         "internal_data": internal_data_formatted,
         "receipt_signature": receipt_signature_formatted,
-        "issued_date": formatted_response_date,
+        "res_date": response_date,
         'scu_info': scu_info,
         'qr_code_path': qr_code_path,
     }

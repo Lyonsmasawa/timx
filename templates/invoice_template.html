@@ -137,7 +137,7 @@
             margin-top: 100px;
             text-align: center;
             font-size: 0.8rem;
-            color: #555;
+            color: #464646;
         }
     </style>
 </head>
@@ -167,7 +167,7 @@
                 <div class="section" style="align-items: flex-end; margin-right: 70px;">
                     <h4>{{ document_type }} Details</h4>
                     <p><strong>{{ document_type }} No. </strong> {{ document_number }}</p>
-                    <p><strong>Date:</strong> {{ document_date }}</p>
+                    <p><strong>Date:</strong> {{ document_date|date:"d-m-Y" }}</p>
                 </div>
             </div>
 
@@ -245,6 +245,9 @@
 
     <!-- Footer -->
     <footer>
+        <p>
+            Date: {{ res_date|date:"d-m-Y" }} &nbsp;&nbsp;&nbsp;&nbsp; Time: {{ res_date|date:"H:i:s" }}
+        </p>
         <p>SCU ID: {{ receipt_signature }}</p>
         <p>CU Invoice No: {{ receipt_signature }}/{{ receipt_number }}</p>
         <p>Internal Data: {{ internal_data|wordwrap:4 }}</p>
