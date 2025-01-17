@@ -1,5 +1,6 @@
 import json
 import os
+import qrcode
 from django.db.models import QuerySet
 from django.db import transaction
 import requests
@@ -242,3 +243,47 @@ def initialize_vscu_device():
     except Exception as e:
         request_log.mark_failed({"error": str(e)})
         return None
+
+
+def generate_qr_link(scu_data):
+    """Generates a URL link for the SCU receipt verification."""
+    rcpt_sign = scu_data.get('rcptSign', '')
+    receipt_number = scu_data.get('curRcptNo', '')
+
+    if rcpt_sign and receipt_number:
+
+        # {"resultCd": "000", "resultMsg": "Successful", "resultDt": "20250111211615", "data": {"curRcptNo": 37, "totRcptNo": 37,
+        #     "intrlData": "GLNQYR4HJKVXOTVTM5BNKQHHLE", "rcptSign": "TYP7XCALGGWXM44R", "sdcDateTime": "20250111211615"}}
+        return f"https://etims.kra.go.ke/common/link/etims/receipt/indexEtimsReceptData?{rcpt_sign}"
+
+    # {KRA-PIN+BHF-ID+RcpSignture)"
+    return None
+
+
+def generate_qr_code(link, transaction_id):
+    """
+    Generates a QR code from a given link and saves it.
+    """
+    if not link:
+        return None
+
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(link)
+    qr.make(fit=True)
+
+    img = qr.make_image(fill='black', back_color='white')
+
+    # Save QR Code
+    qr_filename = f"qr_{transaction_id}.png"
+    qr_path = os.path.join(settings.MEDIA_ROOT,
+                           "transaction_qr_codes", qr_filename)
+
+    os.makedirs(os.path.dirname(qr_path), exist_ok=True)
+    img.save(qr_path)
+
+    return f"transaction_qr_codes/{qr_filename}"

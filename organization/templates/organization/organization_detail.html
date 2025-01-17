@@ -617,17 +617,15 @@
 
                             <td>
                                 <div class="d-flex align-items-center">
-                                    {% if invoice.document_path %}
-                                    <a href="{{ invoice.document_path.url }}" download>
-                                        <button class="btn btn-secondary btn-sm w-btn me-2" type="button"
-                                            id="dropdownMenuButton-{{ item.id }}">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="white"
-                                                class="bi bi-arrow-down-circle" viewBox="0 0 16 16"
-                                                style="fill: white;">
-                                                <path fill-rule="evenodd"
-                                                    d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8m15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8.5 4.5a.5.5 0 0 0-1 0v5.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293z" />
-                                            </svg>Download PDF
-                                        </button>
+                                    {% with transaction_data=transaction_statuses|dict_get:invoice.id %}
+                                    {% if transaction_data.status == "success" %}
+                                    <a href="{% url 'sales_items:generate_invoice_pdf' transaction_data.id invoice.id %}"
+                                        class="btn btn-secondary btn-sm w-btn me-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="white"
+                                            class="bi bi-arrow-down-circle" viewBox="0 0 16 16" style="fill: white;">
+                                            <path fill-rule="evenodd"
+                                                d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8m15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8.5 4.5a.5.5 0 0 0-1 0v5.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293z" />
+                                        </svg> Download PDF
                                     </a>
 
                                     <!-- Add Credit Note Button -->
@@ -642,8 +640,10 @@
                                                 d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
                                         </svg> CR
                                     </button>
+                                    {% else %}
+                                    <span class="status pending">pending</span>
                                     {% endif %}
-
+                                    {% endwith %}
                                 </div>
 
                             </td>
@@ -947,22 +947,22 @@
 <script>
     $(document).ready(function () {
         console.log("Initializing Select2 for id_quantity_unit_code...");
-    
+
         // Ensure jQuery is loaded before Select2
         if (!$.fn.select2) {
             console.error("Select2 is not loaded properly!");
             return;
         }
-    
+
         // Get the Select2 field
         const quantity_unit_code = $("#id_dquantity_unit_code");
-    
+
         if (quantity_unit_code.length > 0) {
             const dataUrl = quantity_unit_code.attr("data-autocomplete-light-url");
-    
+
             if (dataUrl) {
                 console.log("Initializing Select2 with AJAX for id_quantity_unit_code...");
-    
+
                 quantity_unit_code.select2({
                     placeholder: "Select a unit code",
                     dropdownAutoWidth: true,
@@ -989,14 +989,14 @@
         } else {
             console.log("id_quantity_unit_code not found.");
         }
-    
+
         // Fix Select2 inside Bootstrap modal
         $('#createItemModal').on('shown.bs.modal', function () {
             console.log("Modal opened. Re-initializing Select2...");
             quantity_unit_code.select2({
                 dropdownParent: $("#createItemModal") // Ensures Select2 works inside the modal
             });
-    
+
             // Delay focus to prevent Bootstrap stealing focus
             setTimeout(function () {
                 let searchField = document.querySelector('.select2-container--open .select2-search__field');
@@ -1006,13 +1006,13 @@
                 }
             }, 200);
         });
-    
+
         // Reinitialize Select2 when switching Bootstrap tabs
         $('a[data-bs-toggle="tab"]').on("shown.bs.tab", function () {
             console.log("Tab switched. Re-initializing Select2...");
             quantity_unit_code.select2();
         });
-    
+
         // Detect dynamically added elements and initialize Select2
         $(document).on('DOMNodeInserted', function (e) {
             if ($(e.target).is("#id_quantity_unit_code")) {
@@ -1021,7 +1021,7 @@
             }
         });
     });
-        
+
 </script>
 {% endblock javascript %}
 

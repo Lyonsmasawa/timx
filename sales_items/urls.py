@@ -11,6 +11,8 @@ urlpatterns = [
     path("<int:pk>/", views.sales_items_detail, name="sales_items_detail"),
     path("<int:pk>/update/", views.sales_items_update, name="sales_items_update"),
     path("<int:pk>/delete/", views.sales_items_delete, name="sales_items_delete"),
+    path("generate-invoice/<int:request_log_id>/<int:transaction_id>/",
+         views.generate_invoice_pdf, name="generate_invoice_pdf"),
     path('items-autocomplete/', views.ItemAutocomplete.as_view(),
          name='items-autocomplete'),
 ]

@@ -11,6 +11,7 @@ from django.core.mail import send_mail
 from api_tracker.models import APIRequestLog
 from api_tracker.tasks import send_api_request
 from commons.constants import TAX_RATES
+from commons.utils import generate_qr_code, generate_qr_link
 from item_movement.models import ItemMovement
 from organization.models import Organization
 from transaction.models import Transaction
@@ -564,7 +565,172 @@ def sales_items_delete(request, pk):
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
 
-def generate_transaction_pdf(organization, transaction, customer, sales_items_list, transaction_data, document_type):
+def generate_invoice_pdf(request, request_log_id, transaction_id,):
+    """
+    Generate and return the invoice PDF dynamically from stored API request and response.
+    """
+    transaction = get_object_or_404(Transaction, id=transaction_id)
+    print(transaction)
+
+    # Retrieve the latest successful API request for this transaction
+    try:
+        request_log = APIRequestLog.objects.get(
+            id=request_log_id, transaction=transaction, request_type="saveSalesTransaction", status="success")
+    except APIRequestLog.DoesNotExist:
+        return HttpResponse("Invoice not available yet. Please retry later.", status=404)
+
+    # Get the API response details
+    response_data = request_log.response_data
+    request_data = request_log.request_payload
+
+    if not response_data or "data" not in response_data:
+        return HttpResponse("API response not found. Try again later.", status=404)
+
+    # Extract relevant data from the API response
+    receipt_number = response_data["data"]["curRcptNo"]
+    total_receipts = response_data["data"]["totRcptNo"]
+    internal_data = response_data["data"]["intrlData"]
+    receipt_signature = response_data["data"]["rcptSign"]
+    issued_date = response_data["data"]["sdcDateTime"]
+
+    document_type = "invoice"
+
+    # ✅ Generate the PDF dynamically using API data
+    pdf_path = generate_transaction_pdf(
+        transaction.organization,
+        transaction,
+        transaction.customer,
+        request_data,
+        response_data,
+        document_type,
+        receipt_number,
+        total_receipts,
+        internal_data,
+        receipt_signature,
+        issued_date
+    )
+
+    # Open and send the PDF as a response to auto-download
+    with open(pdf_path, "rb") as pdf_file:
+        response = HttpResponse(
+            pdf_file.read(), content_type="application/pdf")
+        response['Content-Disposition'] = f'attachment; filename="invoice_{transaction.receipt_number}.pdf"'
+        return response
+
+
+def generate_transaction_pdf(
+    organization,
+    transaction,
+    customer,
+    request_data,
+    response_data,
+    document_type,
+    receipt_number,
+    total_receipts,
+    internal_data,
+    receipt_signature,
+    issued_date
+):
+    """
+    Generates a PDF for both Invoices and Credit Notes dynamically using API response.
+    """
+    document_label = "Invoice" if document_type == "invoice" else "Credit Note"
+
+    # Extract relevant data from response
+    scu_info = response_data.get("data", {})
+    # Extract SCU response details
+    scu_info = response_data.get("data", {})
+    qr_link = generate_qr_link(scu_info)  # Generate SCU verification link
+    qr_code_path = generate_qr_code(
+        qr_link, transaction.id)  # Generate QR code from link
+
+    # ✅ Extract tax rates
+    TAX_RATES = {
+        "A": 0,   # Exempt
+        "B": 16,  # VAT 16%
+        "C": 0,   # Zero-rated
+        "D": 0,   # Non-VAT
+        "E": 8    # VAT 8%
+    }
+
+    # ✅ Initialize tax summary
+    tax_summary = {code: {"taxable_amount": 0,
+                          "tax_rate": TAX_RATES[code], "tax_amount": 0} for code in TAX_RATES.keys()}
+
+    # ✅ Extract tax details from API response
+    tax_summary["A"]["taxable_amount"] = response_data.get("taxblAmtA", 0)
+    tax_summary["B"]["taxable_amount"] = response_data.get("taxblAmtB", 0)
+    tax_summary["C"]["taxable_amount"] = response_data.get("taxblAmtC", 0)
+    tax_summary["D"]["taxable_amount"] = response_data.get("taxblAmtD", 0)
+    tax_summary["E"]["taxable_amount"] = response_data.get("taxblAmtE", 0)
+
+    tax_summary["A"]["tax_amount"] = response_data.get("taxAmtA", 0)
+    tax_summary["B"]["tax_amount"] = response_data.get("taxAmtB", 0)
+    tax_summary["C"]["tax_amount"] = response_data.get("taxAmtC", 0)
+    tax_summary["D"]["tax_amount"] = response_data.get("taxAmtD", 0)
+    tax_summary["E"]["tax_amount"] = response_data.get("taxAmtE", 0)
+
+    # ✅ Extract items from API request data
+    items_data = []
+    total_due = response_data.get("totAmt", 0)
+
+    for item in request_data["itemList"]:
+        items_data.append({
+            "description": item["itemNm"],
+            "name": item["itemNm"],
+            "quantity": float(item["qty"]),
+            "rate": float(item["prc"]),
+            "discount": float(item["dcAmt"]),
+            "tax_code": item["taxTyCd"],
+            "line_total": float(item["totAmt"]),
+        })
+
+    # ✅ Generate PDF Content
+    context = {
+        "organization": organization,
+        "document_number": transaction.receipt_number,
+        "document_date": issued_date,
+        "customer_name": customer.customer_name,
+        "customer_email": customer.customer_email,
+        "customer_pin": customer.customer_pin,
+        "items": items_data,
+        "total_due": total_due,
+        "document_type": document_label,  # Displays "Invoice" or "Credit Note"
+        "tax_summary": tax_summary,  # ✅ Tax Summary for display
+        "receipt_number": receipt_number,
+        "total_receipts": total_receipts,
+        "internal_data": internal_data,
+        "receipt_signature": receipt_signature,
+        "issued_date": issued_date,
+        'scu_info': scu_info,
+        'qr_code_path': qr_code_path
+    }
+
+    html_content = render_to_string(
+        "../templates/invoice_tempate.html", context)
+
+    # Convert the HTML to PDF
+    pdf = HTML(string=html_content).write_pdf()
+
+    # Save the PDF to the server
+    pdf_filename = f"transaction_{transaction.receipt_number}.pdf"
+    pdf_path = os.path.join(settings.MEDIA_ROOT,
+                            "transaction_documents", pdf_filename)
+
+    # Create directory if it doesn't exist
+    os.makedirs(os.path.dirname(pdf_path), exist_ok=True)
+
+    with open(pdf_path, "wb") as f:
+        f.write(pdf)
+
+    # Update transaction document_path field
+    transaction.document_path = f"transaction_documents/{pdf_filename}"
+    transaction.save()
+
+    return pdf_path
+
+
+def gxenerate_transaction_pdf(organization, transaction, customer, sales_items_list, transaction_data, document_type):
     """
     Generates a PDF for both Invoices and Credit Notes dynamically using the same template.
     """
