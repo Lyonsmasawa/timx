@@ -1,5 +1,7 @@
+{% load template_filters %}
+
 <!DOCTYPE html>
-<html style="min-width: 100vw; min-height: 90vh;">
+<html style="min-width: 100vw; min-height: 100vh;">
 
 <head>
     <title>Invoice</title>
@@ -12,14 +14,17 @@
             font-family: 'Arial', sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f9f9f9;
+            backgrousnd-color: #f9f9f9;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         .invoice-container {
             width: 100vw;
             min-height: 100vh;
             margin: 0 0;
-            background: #fff;
             padding: 0px;
             display: flex;
             justify-content: space-between;
@@ -30,44 +35,46 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 3px solid #083613;
-            padding-bottom: 40px;
+            border-bottom: 0.01rem solid #000000;
+            padding-bottom: 10px;
         }
 
         .header .company-info {
             font-size: 0.9rem;
-            color: #555;
+            padding: 0rem;
+            color: #000000;
+        }
+
+        .company-info p {
+            padding: 0rem;
         }
 
         .header img {
-            height: 50px;
+            height: 115px;
         }
 
         .invoice-details {
             margin-top: 30px;
+            width: 100vw !important;
             display: flex;
             justify-content: space-between;
             font-size: 0.9rem;
         }
 
-        .section {
-            width: 48%;
-        }
-
         .section h4 {
             margin: 0 0 5px;
-            color: #083613;
+            color: #000000;
         }
 
         .section p {
             margin: 5px 0;
-            color: #555;
+            color: #000000;
         }
 
         .invoice-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 40px;
+            margin-top: 30px;
         }
 
         .invoice-table th,
@@ -78,8 +85,7 @@
         }
 
         .invoice-table th {
-            background-color: #083613;
-            color: #fff;
+            background-color: #f9f9f9;
         }
 
         .invoice-table tbody tr:nth-child(odd) {
@@ -141,12 +147,14 @@
         <div class="upper">
             <div class="header">
                 <div class="company-info">
-                    <p><strong>{{ organization.organization_name }}</strong></p>
-                    <p>{{ organization.organization_physical_address}}</p>
-                    <p>VAT Registration No. {{organization.organization_pin}}</p>
+                    <p style="padding: 0rem; margin: 0rem; margin-bottom: 5px;"><strong>
+                            {{organization.organization_name}}</strong></p>
+                    <p style="padding: 0rem; margin: 0rem; margin-bottom: 7px">
+                        {{organization.organization_physical_address}}</p>
+                    <p style="padding: 0rem; margin: 0rem; margin-top: 5px;"><strong>VAT Registration No.</strong>
+                        {{organization.organization_pin}}</p>
                 </div>
-                <img src="{{ qrcode_path }}" alt="Etims Logo">
-
+                <img src="{{ qr_code_path }}" alt="{{ qr_code_path }}">
             </div>
 
             <div class="invoice-details">
@@ -154,11 +162,11 @@
                     <h4>Bill To</h4>
                     <p><strong>{{ customer_name }}</strong></p>
                     <p>{{ customer_email }}</p>
-                    <p>KRA Pin No. {{ customer_pin }}</p>
+                    <p><strong>KRA Pin No. </strong>{{ customer_pin }}</p>
                 </div>
-                <div class="section">
+                <div class="section" style="align-items: flex-end; margin-right: 70px;">
                     <h4>{{ document_type }} Details</h4>
-                    <p><strong>{{ document_type }} No:</strong> {{ document_number }}</p>
+                    <p><strong>{{ document_type }} No. </strong> {{ document_number }}</p>
                     <p><strong>Date:</strong> {{ document_date }}</p>
                 </div>
             </div>
@@ -166,32 +174,30 @@
             <table class="invoice-table">
                 <thead>
                     <tr>
-                        <th>#</th>
                         <th>Item</th>
                         <th>Description</th>
                         <th>Quantity</th>
                         <th>Rate</th>
                         <th>Discount</th>
-                        <th>Line Total</th>
+                        <th>Total (Tax Code)</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in items %}
                     <tr>
-                        <td>{{ forloop.counter }}</td>
                         <td>{{ item.name }}</td>
                         <td>{{ item.description }}</td>
                         <td>{{ item.quantity }}</td>
                         <td>{{ item.rate }}</td>
                         <td>{{ item.discount }}</td>
-                        <td>{{ item.line_total }}</td>
+                        <td>{{ item.line_total }} ({{ item.tax_code }})</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
 
             <div class="summary">
-                <p><strong>Total Amount:</strong> <span id="total-due" style="color: #083613;">Ksh {{total_due}}</span>
+                <p>Total Amount: <span id="total-due" style="color: #000000;"><strong>Ksh {{total_due}}</strong></span>
                 </p>
             </div>
         </div>
@@ -210,11 +216,11 @@
             <tbody>
                 <tr>
                     <td>Taxable Amount (KES)</td>
-                    <td>{{ tax_summary.A.taxable_amount|floatformat:2 }}</td>
-                    <td>{{ tax_summary.B.taxable_amount|floatformat:2 }}</td>
-                    <td>{{ tax_summary.C.taxable_amount|floatformat:2 }}</td>
-                    <td>{{ tax_summary.E.taxable_amount|floatformat:2 }}</td>
-                    <td>{{ tax_summary.D.taxable_amount|floatformat:2 }}</td>
+                    <td>{{ tax_summary.A.taxable_amount }}</td>
+                    <td>{{ tax_summary.B.taxable_amount }}</td>
+                    <td>{{ tax_summary.C.taxable_amount }}</td>
+                    <td>{{ tax_summary.E.taxable_amount }}</td>
+                    <td>{{ tax_summary.D.taxable_amount }}</td>
                 </tr>
                 <tr>
                     <td>Tax Rate (%)</td>
@@ -226,20 +232,28 @@
                 </tr>
                 <tr>
                     <td>Tax Amount (KES)</td>
-                    <td>{{ tax_summary.A.tax_amount|floatformat:2 }}</td>
-                    <td>{{ tax_summary.B.tax_amount|floatformat:2 }}</td>
-                    <td>{{ tax_summary.C.tax_amount|floatformat:2 }}</td>
-                    <td>{{ tax_summary.E.tax_amount|floatformat:2 }}</td>
-                    <td>{{ tax_summary.D.tax_amount|floatformat:2 }}</td>
+                    <td>{{ tax_summary.A.tax_amount }}</td>
+                    <td>{{ tax_summary.B.tax_amount }}</td>
+                    <td>{{ tax_summary.C.tax_amount }}</td>
+                    <td>{{ tax_summary.E.tax_amount }}</td>
+                    <td>{{ tax_summary.D.tax_amount }}</td>
                 </tr>
             </tbody>
         </table>
 
-        <footer>
-            Thank you for your business. For inquiries, contact us at {{organization.organization_email}}
-        </footer>
     </div>
 
+    <!-- Footer -->
+    <footer>
+        <p>SCU ID: {{ receipt_signature }}</p>
+        <p>CU Invoice No: {{ receipt_signature }}/{{ receipt_number }}</p>
+        <p>Internal Data: {{ internal_data|wordwrap:4 }}</p>
+        <br>
+        <hr style="color: #c4c4c4; height: 1px;">
+        <p>Thank you for your business. For inquiries, contact us at
+            <a style="text-decoration: none;" href="">{{ organization.organization_email}}</a>.
+        </p>
+    </footer>
 </body>
 
 </html>

@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import datetime
 import json
 from django.http import HttpResponse
 import os
@@ -11,7 +12,7 @@ from django.core.mail import send_mail
 from api_tracker.models import APIRequestLog
 from api_tracker.tasks import send_api_request
 from commons.constants import TAX_RATES
-from commons.utils import generate_qr_code, generate_qr_link
+from commons.utils import generate_qr_code, generate_qr_code_base64, generate_qr_link, intcomma
 from item_movement.models import ItemMovement
 from organization.models import Organization
 from transaction.models import Transaction
@@ -223,16 +224,16 @@ def sales_items_create(request, pk):
                 # ✅ Send request asynchronously using Celery
                 send_api_request.apply_async(args=[request_log.id])
 
-                # Step 3: Generate the PDF Invoice and get the file path
-                pdf_path = generate_transaction_pdf(
-                    organization, transaction, customer, sales_items_list, invoice_data, "invoice")
+                # # Step 3: Generate the PDF Invoice and get the file path
+                # pdf_path = generate_transaction_pdf(
+                #     organization, transaction, customer, sales_items_list, invoice_data, "invoice")
 
-                # Open and send the PDF as a response to auto-download
-                with open(pdf_path, "rb") as pdf_file:
-                    response = HttpResponse(
-                        pdf_file.read(), content_type='application/pdf')
-                    response['Content-Disposition'] = f'attachment; filename="invoice_{transaction.receipt_number}.pdf"'
-                    return response
+                # # Open and send the PDF as a response to auto-download
+                # with open(pdf_path, "rb") as pdf_file:
+                #     response = HttpResponse(
+                #         pdf_file.read(), content_type='application/pdf')
+                #     response['Content-Disposition'] = f'attachment; filename="invoice_{transaction.receipt_number}.pdf"'
+                #     return response
 
         except Exception as e:
             # messages.error(request, f"An error occurred: {str(e)}")
@@ -636,13 +637,11 @@ def generate_transaction_pdf(
     """
     document_label = "Invoice" if document_type == "invoice" else "Credit Note"
 
-    # Extract relevant data from response
-    scu_info = response_data.get("data", {})
     # Extract SCU response details
     scu_info = response_data.get("data", {})
     qr_link = generate_qr_link(scu_info)  # Generate SCU verification link
-    qr_code_path = generate_qr_code(
-        qr_link, transaction.id)  # Generate QR code from link
+    qr_code_path = generate_qr_code_base64(
+        qr_link)
 
     # ✅ Extract tax rates
     TAX_RATES = {
@@ -657,57 +656,85 @@ def generate_transaction_pdf(
     tax_summary = {code: {"taxable_amount": 0,
                           "tax_rate": TAX_RATES[code], "tax_amount": 0} for code in TAX_RATES.keys()}
 
-    # ✅ Extract tax details from API response
-    tax_summary["A"]["taxable_amount"] = response_data.get("taxblAmtA", 0)
-    tax_summary["B"]["taxable_amount"] = response_data.get("taxblAmtB", 0)
-    tax_summary["C"]["taxable_amount"] = response_data.get("taxblAmtC", 0)
-    tax_summary["D"]["taxable_amount"] = response_data.get("taxblAmtD", 0)
-    tax_summary["E"]["taxable_amount"] = response_data.get("taxblAmtE", 0)
 
-    tax_summary["A"]["tax_amount"] = response_data.get("taxAmtA", 0)
-    tax_summary["B"]["tax_amount"] = response_data.get("taxAmtB", 0)
-    tax_summary["C"]["tax_amount"] = response_data.get("taxAmtC", 0)
-    tax_summary["D"]["tax_amount"] = response_data.get("taxAmtD", 0)
-    tax_summary["E"]["tax_amount"] = response_data.get("taxAmtE", 0)
+    # ✅ Extract tax details from API response
+    tax_summary["A"]["taxable_amount"] = request_data.get("taxblAmtA", 0)
+    tax_summary["B"]["taxable_amount"] = request_data.get("taxblAmtB", 0)
+    tax_summary["C"]["taxable_amount"] = request_data.get("taxblAmtC", 0)
+    tax_summary["D"]["taxable_amount"] = request_data.get("taxblAmtD", 0)
+    tax_summary["E"]["taxable_amount"] = request_data.get("taxblAmtE", 0)
+
+    tax_summary["A"]["tax_amount"] = request_data.get("taxAmtA", 0)
+    tax_summary["B"]["tax_amount"] = request_data.get("taxAmtB", 0)
+    tax_summary["C"]["tax_amount"] = request_data.get("taxAmtC", 0)
+    tax_summary["D"]["tax_amount"] = request_data.get("taxAmtD", 0)
+    tax_summary["E"]["tax_amount"] = request_data.get("taxAmtE", 0)
 
     # ✅ Extract items from API request data
     items_data = []
-    total_due = response_data.get("totAmt", 0)
+    total_due = request_data.get("totAmt", 0)
 
     for item in request_data["itemList"]:
         items_data.append({
             "description": item["itemNm"],
             "name": item["itemNm"],
-            "quantity": float(item["qty"]),
-            "rate": float(item["prc"]),
-            "discount": float(item["dcAmt"]),
+            "quantity": intcomma(float(item["qty"])),
+            "rate": intcomma(float(item["prc"])),
+            "discount": intcomma(float(item["dcAmt"])),
             "tax_code": item["taxTyCd"],
-            "line_total": float(item["totAmt"]),
+            "line_total": intcomma(float(item["totAmt"])),
         })
+
+    # Separate `internal_data` and `receipt_signature` by dashes
+    internal_data_formatted = "-".join([internal_data[i:i+4]
+                                       for i in range(0, len(internal_data), 4)])
+    receipt_signature_formatted = "-".join([receipt_signature[i:i+4]
+                                           for i in range(0, len(receipt_signature), 4)])
+
+    # Parse the string into a datetime object
+    issued_date = datetime.strptime(issued_date, "%Y%m%d%H%M%S")
+
+    # Format the datetime object if needed
+    formatted_issued_date = issued_date.strftime("%Y-%m-%d")
+    response_date = scu_info.get('sdcDateTime', '')
+
+    response_date = datetime.strptime(response_date, "%Y%m%d%H%M%S")
+
+    formatted_response_date = response_date.strftime("%Y-%m-%d %H:%M:%S")
+
+    # Format tax_summary values
+    formatted_tax_summary = {
+        key: {
+            "taxable_amount": intcomma(value["taxable_amount"]),
+            "tax_rate": intcomma(value["tax_rate"]),
+            "tax_amount": intcomma(value["tax_amount"]),
+        }
+        for key, value in tax_summary.items()
+    }
 
     # ✅ Generate PDF Content
     context = {
         "organization": organization,
         "document_number": transaction.receipt_number,
-        "document_date": issued_date,
+        "document_date": formatted_issued_date,
         "customer_name": customer.customer_name,
         "customer_email": customer.customer_email,
         "customer_pin": customer.customer_pin,
         "items": items_data,
-        "total_due": total_due,
-        "document_type": document_label,  # Displays "Invoice" or "Credit Note"
-        "tax_summary": tax_summary,  # ✅ Tax Summary for display
+        "total_due": intcomma(total_due),
+        "document_type": document_label,
+        "tax_summary": formatted_tax_summary,
         "receipt_number": receipt_number,
         "total_receipts": total_receipts,
-        "internal_data": internal_data,
-        "receipt_signature": receipt_signature,
-        "issued_date": issued_date,
+        "internal_data": internal_data_formatted,
+        "receipt_signature": receipt_signature_formatted,
+        "issued_date": formatted_response_date,
         'scu_info': scu_info,
-        'qr_code_path': qr_code_path
+        'qr_code_path': qr_code_path,
     }
 
     html_content = render_to_string(
-        "../templates/invoice_tempate.html", context)
+        "../templates/invoice_template.html", context)
 
     # Convert the HTML to PDF
     pdf = HTML(string=html_content).write_pdf()
@@ -730,7 +757,7 @@ def generate_transaction_pdf(
     return pdf_path
 
 
-def gxenerate_transaction_pdf(organization, transaction, customer, sales_items_list, transaction_data, document_type):
+def gxeenerate_transaction_pdf(organization, transaction, customer, sales_items_list, transaction_data, document_type):
     """
     Generates a PDF for both Invoices and Credit Notes dynamically using the same template.
     """

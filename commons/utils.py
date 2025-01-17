@@ -1,3 +1,5 @@
+import base64
+from io import BytesIO
 import json
 import os
 import qrcode
@@ -287,3 +289,38 @@ def generate_qr_code(link, transaction_id):
     img.save(qr_path)
 
     return f"transaction_qr_codes/{qr_filename}"
+
+
+
+def generate_qr_code_base64(data):
+    """
+    Generate a QR code as a base64 string.
+    """
+    qr = qrcode.QRCode(box_size=10, border=4)
+    qr.add_data(data)
+    qr.make(fit=True)
+    
+    # Save QR code to a BytesIO stream
+    img = qr.make_image(fill="black", back_color="white")
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+
+    # Encode as base64 string
+    img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    buffer.close()
+    
+    return f"data:image/png;base64,{img_base64}"
+
+
+
+def intcomma(number):
+    """Format numbers with commas and retain two decimal places."""
+    try:
+        # Convert to float to handle decimals
+        number = float(number)
+        # Format with commas and two decimal places
+        return f"{number:,.2f}"
+    except (ValueError, TypeError):
+        # Return the number as is if it's invalid
+        return number
