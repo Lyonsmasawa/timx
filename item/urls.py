@@ -10,6 +10,10 @@ urlpatterns = [
     path("<int:pk>/update/", views.item_update, name="item_update"),
     path("<int:pk>/delete/", views.item_delete, name="item_delete"),
     path('update-quantity/', views.update_item_quantity, name='update_quantity'),
+    path('update_mapped_item_quantity/', views.update_mapped_item_quantity,
+         name='update_mapped_item_quantity'),
+    path('create_items_from_purchase/<int:pk>/', views.create_items_from_purchase,
+         name='create_items_from_purchase'),
     path('country-code-autocomplete/', views.CountryCodeAutocomplete.as_view(),
          name='country-code-autocomplete'),
     path('item-type-code-autocomplete/', views.ItemTypeCodeAutocomplete.as_view(),
@@ -22,5 +26,5 @@ urlpatterns = [
          name='item-class-code-autocomplete'),
     path('item-tax-code-autocomplete/', views.ItemTaxCodeAutocomplete.as_view(),
          name='item-tax-code-autocomplete'),
-    
+
 ]

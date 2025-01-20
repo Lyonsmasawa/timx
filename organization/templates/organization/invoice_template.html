@@ -1,0 +1,206 @@
+{% load template_filters %}
+
+<!DOCTYPE html>
+
+<head>
+    <title>Invoice</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .invoice-container {
+            width: 100%;
+            margin: 0 0;
+            padding: 0px;
+            display: flex;
+            justify-content: space-between;
+            flex-direction: column;
+        }
+
+        .invoice-details {
+            margin-top: 30px;
+            width: 100% !important;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+
+        .section h4 {
+            margin: 0 0 5px;
+            color: #000000;
+        }
+
+        .section p {
+            margin: 5px 0;
+            color: #000000;
+        }
+
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 30px;
+        }
+
+        .invoice-table th,
+        .invoice-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .invoice-table th {
+            background-color: #f9f9f9;
+        }
+
+        .invoice-table tbody tr:nth-child(odd) {
+            background-color: #f1f1f1;
+        }
+
+        .summary {
+            margin-top: 30px;
+            text-align: right;
+        }
+
+        .summary strong {
+            font-size: 1.1rem;
+        }
+
+        .tax-summary-table {
+            width: 100%;
+            font-weight: 500;
+            border-collapse: collapse;
+            margin-top: 100px;
+            font-size: 13px;
+            text-align: left;
+        }
+
+        .tax-summary-table th,
+        .tax-summary-table td {
+            font-weight: 500;
+            padding: 8px;
+        }
+
+        .tax-summary-table th {
+            background-color: #f9f9f9;
+            text-align: left;
+        }
+
+        .tax-summary-table td {
+            text-align: left;
+        }
+
+        .tax-summary-table tr:hover {
+            background-color: #e9ecef;
+        }
+
+        .tax-summary-table td:first-child {
+            text-align: left;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="invoice-container">
+        <div class="upper">
+            <div class="invoice-details">
+                <div class="section">
+                    <h4>Supplier</h4>
+                    <p><strong>{{ purchase.supplier_name }}</strong></p>
+                    <p><strong>KRA Pin No. </strong>{{ purchase.supplier_tin }}</p>
+                </div>
+                <div class="section" style="align-items: flex-end; margin-right: 70px;">
+                    <h4>{{ document_type }} Details</h4>
+                    <p><strong>Invoice No. </strong> {{ purchase.invoice_number }}</p>
+                    <p><strong>Date:</strong> {{ purchase.confirmation_date }}</p>
+                </div>
+            </div>
+
+            <table class="invoice-table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>ItemCD</th>
+                        <th>Name</th>
+                        <th>Quantity</th>
+                        <th>Rate</th>
+                        <th>Taxable Amount</th>
+                        <th>Total (Tax Code)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in purchase.items %}
+                    <tr>
+                        <td data-attr="{{ item }}">{{ item.itemSeq }}</td>
+                        <td>{{ item.itemCd }}</td>
+                        <td>{{ item.itemNm }}</td>
+                        <td>{{ item.qty }}</td>
+                        <td>{{ item.prc }}</td>
+                        <td>{{ item.taxblAmt }}</td>
+
+                        <td>{{ item.totAmt }} ({{ item.taxTyCd }})</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="summary">
+                <p>Total Amount: <span id="total-due" style="color: #000000;"><strong>Ksh {{purchase.total_amount}}</strong></span>
+                </p>
+            </div>
+        </div>
+
+        <table class="tax-summary-table">
+            <thead>
+                <tr>
+                    <th>Tax Class</th>
+                    <th>A-Exempt</th>
+                    <th>B-VAT 16%</th>
+                    <th>C-Zero Rated</th>
+                    <th>E-VAT 8%</th>
+                    <th>D-Non VAT</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Taxable Amount (KES)</td>
+                    <td>{{ purchase.tax_summary.A.taxable_amount }}</td>
+                    <td>{{ purchase.tax_summary.B.taxable_amount }}</td>
+                    <td>{{ purchase.tax_summary.C.taxable_amount }}</td>
+                    <td>{{ purchase.tax_summary.E.taxable_amount }}</td>
+                    <td>{{ purchase.tax_summary.D.taxable_amount }}</td>
+                </tr>
+                <tr>
+                    <td>Tax Rate (%)</td>
+                    <td>{{ purchase.tax_summary.A.tax_rate }}</td>
+                    <td>{{ purchase.tax_summary.B.tax_rate }}</td>
+                    <td>{{ purchase.tax_summary.C.tax_rate }}</td>
+                    <td>{{ purchase.tax_summary.E.tax_rate }}</td>
+                    <td>{{ purchase.tax_summary.D.tax_rate }}</td>
+                </tr>
+                <tr>
+                    <td>Tax Amount (KES)</td>
+                    <td>{{ purchase.tax_summary.A.tax_amount }}</td>
+                    <td>{{ purchase.tax_summary.B.tax_amount }}</td>
+                    <td>{{ purchase.tax_summary.C.tax_amount }}</td>
+                    <td>{{ purchase.tax_summary.E.tax_amount }}</td>
+                    <td>{{ purchase.tax_summary.D.tax_amount }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+    </div>
+
+</body>
+
+</html>

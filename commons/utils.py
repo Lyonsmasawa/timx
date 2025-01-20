@@ -234,13 +234,13 @@ def initialize_vscu_device():
 
     try:
         response = requests.post(url, json=payload, headers=headers)
-        response_data = response.json()
+        purchase_item = response.json()
 
-        if response_data.get("resultCd") == "000":
-            request_log.mark_success(response_data)
-            return response_data
+        if purchase_item.get("resultCd") == "000":
+            request_log.mark_success(purchase_item)
+            return purchase_item
         else:
-            request_log.mark_failed(response_data)
+            request_log.mark_failed(purchase_item)
             return None
     except Exception as e:
         request_log.mark_failed({"error": str(e)})
@@ -324,20 +324,100 @@ def intcomma(number):
         return number
 
 
-def process_purchases_response(response_data):
+def process_purchases(purchases_queryset):
     """
-    Process the API response and format it for display in the UI.
+    Enrich the purchases queryset with tax summaries and return them as a list of dictionaries.
     """
-    purchases = []
-    for purchase in response_data.get("data", {}).get("saleList", []):
-        purchases.append({
-            "supplier_name": purchase.get("spplrNm"),
-            "supplier_tin": purchase.get("spplrTin"),
-            "invoice_number": purchase.get("spplrInvcNo"),
-            "confirmation_date": purchase.get("cfmDt"),
-            "total_amount": purchase.get("totAmt"),
-            "taxable_amount": purchase.get("totTaxblAmt"),
-            "tax_amount": purchase.get("totTaxAmt"),
-            "items": purchase.get("itemList", [])
-        })
-    return purchases
+    enriched_purchases = []
+    for purchase in purchases_queryset:
+        # print(purchase.payload)
+        # Deserialize payload
+        payload = purchase.payload
+
+        # Compute tax summary
+        tax_summary = compute_tax_summary(payload)
+
+        # Add tax summary to the purchase dict
+        purchase_data = {
+            "id": purchase.id,
+            "supplier_name": purchase.supplier_name,
+            "supplier_tin": purchase.supplier_tin,
+            "invoice_number": purchase.invoice_number,
+            "confirmation_date": purchase.confirmation_date,
+            "total_item_count": purchase.total_item_count,
+            "total_taxable_amount": purchase.total_taxable_amount,
+            "total_tax_amount": purchase.total_tax_amount,
+            "total_amount": purchase.total_amount,
+            "items": payload.get("itemList", []),
+            "tax_summary": tax_summary,
+        }
+
+        enriched_purchases.append(purchase_data)
+
+    return enriched_purchases
+
+
+def compute_tax_summary(purchase_payload):
+    """
+    Given a single purchase dict, accumulate taxable amount and tax amount
+    by tax type (A, B, C, D, E). 
+    """
+    # Initialize a structure for each tax type
+    # Rates can be adjusted if they differ from your scenario
+    tax_summary = {
+        'A': {'taxable_amount': 0, 'tax_rate': 0,  'tax_amount': 0},   # Exempt
+        # VAT 16%
+        'B': {'taxable_amount': 0, 'tax_rate': 16, 'tax_amount': 0},
+        'C': {'taxable_amount': 0, 'tax_rate': 0,  'tax_amount': 0},   # Zero Rated
+        'D': {'taxable_amount': 0, 'tax_rate': 0,  'tax_amount': 0},   # Non VAT
+        'E': {'taxable_amount': 0, 'tax_rate': 8,  'tax_amount': 0},   # VAT 8%
+    }
+
+    items = purchase_payload.get('itemList', [])
+    for item in items:
+        code = item.get('taxTyCd')  # e.g. 'B'
+        if code in tax_summary:
+            tax_summary[code]['taxable_amount'] += item.get('taxblAmt', 0) or 0
+            tax_summary[code]['tax_amount'] += item.get('taxAmt', 0) or 0
+
+    return tax_summary
+
+
+def process_purchase_data(sales_list, organization_id):
+    """
+    Process and store purchase data from the API.
+    """
+    from purchases.models import Purchase
+    from django.db import transaction
+    from django.utils.dateparse import parse_datetime
+
+    created_purchases = []
+    with transaction.atomic():
+        for purchase_data in sales_list:
+            invoice_number = purchase_data.get("spplrInvcNo")
+
+            # Skip existing invoices
+            if Purchase.objects.filter(invoice_number=invoice_number, organization_id=organization_id).exists():
+                continue
+
+            # Parse confirmation date
+            confirmation_date = parse_datetime(purchase_data.get("cfmDt"))
+            if not confirmation_date:
+                confirmation_date = purchase_data.get("cfmDt")
+
+            # Create purchase record
+            purchase = Purchase.objects.create(
+                organization_id=organization_id,
+                supplier_name=purchase_data.get("spplrNm", "Unknown Supplier"),
+                supplier_tin=purchase_data.get("spplrTin", "N/A"),
+                invoice_number=invoice_number,
+                confirmation_date=confirmation_date,
+                total_item_count=purchase_data.get("totItemCnt", 0),
+                total_taxable_amount=purchase_data.get("totTaxblAmt", 0),
+                total_tax_amount=purchase_data.get("totTaxAmt", 0),
+                total_amount=purchase_data.get("totAmt", 0),
+                payload=purchase_data,
+            )
+            created_purchases.append(purchase)
+
+    return created_purchases

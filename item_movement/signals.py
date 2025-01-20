@@ -6,6 +6,7 @@ from api_tracker.tasks import send_api_request
 from commons.constants import SAR_TYPE_CODES
 from item_movement.models import ItemMovement
 from django.utils.timezone import now
+from celery.exceptions import OperationalError
 
 
 @receiver(post_save, sender=ItemMovement)
@@ -69,4 +70,7 @@ def track_stock_movement(sender, instance, created, **kwargs):
         )
 
         # Send request asynchronously using Celery
-        send_api_request.apply_async(args=[request_log.id])
+        try:
+            send_api_request.apply_async(args=[request_log.id])
+        except OperationalError as e:
+            print(f"Celery is mot reachable: {e}")

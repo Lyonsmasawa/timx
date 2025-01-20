@@ -1,3 +1,4 @@
+import json
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.db import IntegrityError, transaction
@@ -88,6 +89,7 @@ def item_create(request, pk):
         return JsonResponse({'success': False, 'error': {'general': ['Invalid action.']}})
 
 
+@login_required
 def update_item_quantity(request):
     if request.method == 'POST':
         item_id = request.POST.get('item_id')
@@ -140,9 +142,130 @@ def update_item_quantity(request):
 
         except Exception as e:
             return JsonResponse({'success': False, "error": str(e)}, status=400)
+
+
+@login_required
+def update_mapped_item_quantity(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            mapped_items = data.get("mapped_items", [])
+
+            if not mapped_items:
+                return JsonResponse({"error": "No mapped items provided."}, status=400)
+
+            with transaction.atomic():
+                for mapped_item in mapped_items:
+                    item_id = mapped_item.get("mapped_item_id")
+                    quantity = mapped_item.get("quantity")
+
+                    if not item_id or quantity is None:
+                        continue
+
+                    # Get the item and update its stock
+                    item = Item.objects.get(id=item_id)
+                    item.item_current_balance += int(quantity)
+                    item.save()
+
+                    # Log the movement
+                    ItemMovement.objects.create(
+                        item=item,
+                        movement_type="ADD",
+                        movement_reason="Stock Movement",
+                        item_unit=quantity,
+                    )
+
+            return JsonResponse({"success": True, "message": "Stock updated successfully."}, status=200)
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+    return JsonResponse({"error": "Invalid request method."}, status=405)
+
+
+@login_required
+def create_items_from_purchase(request, pk):
+    """
+    Create multiple items from a purchase payload.
+    """
+    if request.method == 'POST':
+        try:
+            organization = Organization.objects.get(id=pk, user=request.user)
+        except Organization.DoesNotExist:
+            return JsonResponse({"error": "Organization not found."}, status=404)
+
+        try:
+            # Parse the JSON payload
+            data = json.loads(request.body.decode('utf-8'))
+            items_data = data.get('items', [])
+
+            if not items_data:
+                return JsonResponse({"error": "No items found in the payload."}, status=400)
+
+            created_items = []
+            with transaction.atomic():
+                for item_data in items_data:
+                    # Parse the string representation of the item into a dictionary
+                    try:
+                        item = eval(item_data.get('item'))  # Caution: Use safer alternatives like `json.loads` if applicable
+                    except Exception as e:
+                        print(f"Error parsing item data: {str(e)}")
+                        continue
+
+                    print(item)  # Debugging: Ensure it's parsed correctly
+                    try:
+                        # Extract data from the parsed dictionary
+                        item_name = item.get('itemNm')
+                        itemCd = item.get('itemCd')
+                        item_class_code = item.get('itemClsCd')
+                        quantity_unit_code = item.get('qtyUnitCd')
+                        package_unit_code = item.get('pkgUnitCd')
+                        item_tax_code = item.get('taxTyCd')
+                        origin_nation_code = item.get('originNationCd', 'KE')  # Default to 'KE'
+                        price = item.get('prc', 0)
+                        opening_balance = item.get('qty', 0)
+
+                        # Check if the item already exists in the organization
+                        if Item.objects.filter(organization=organization, item_name=item_name).exists():
+                            print(f"Item '{item_name}' already exists. Skipping.")
+                            continue
+
+                        # Create the new item
+                        item_obj = Item.objects.create(
+                            organization=organization,
+                            item_name=item_name,
+                            origin_nation_code=origin_nation_code,
+                            item_type_code='2',
+                            quantity_unit_code=quantity_unit_code,
+                            package_unit_code=package_unit_code,
+                            item_class_code=item_class_code,
+                            item_tax_code=item_tax_code,
+                            item_opening_balance=opening_balance,
+                            item_current_balance=opening_balance,
+                            item_system_name=item_name,  # Optional field
+                            itemCd=itemCd,
+                        )
+                        created_items.append(item_obj.item_name)
+                    except Exception as e:
+                        # Log or handle errors for individual items
+                        print(f"Error creating item: {str(e)}")
+                        continue
+            return JsonResponse({
+                "success": True,
+                "message": f"Successfully created {len(created_items)} item(s).",
+                "created_items": created_items,
+            }, status=201)
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON data."}, status=400)
+
+        except Exception as e:
+            return JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
+
+    return JsonResponse({"error": "Invalid request method."}, status=405)
+
+
 # Item Detail
-
-
 @login_required
 def item_detail(request, pk):
     try:
@@ -253,7 +376,7 @@ class QuantityUnitCodeAutocomplete(autocomplete.Select2ListView):
             return JsonResponse([], safe=False)
 
         query = request.GET.get('q', '').lower()
-        
+
         filtered_choices = [
             {"id": code, "text": name}
             for code, name in UNIT_CHOICES

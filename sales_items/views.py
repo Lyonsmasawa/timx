@@ -25,7 +25,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.db import transaction as transaction_mode
 from dal import autocomplete
-
+from celery.exceptions import OperationalError
 # List Sales Items
 
 
@@ -222,7 +222,11 @@ def sales_items_create(request, pk):
                 )
 
                 # ✅ Send request asynchronously using Celery
-                send_api_request.apply_async(args=[request_log.id])
+
+                try:
+                    send_api_request.apply_async(args=[request_log.id])
+                except OperationalError as e:
+                    print(f"Celery is mot reachable: {e}")
 
                 # # Step 3: Generate the PDF Invoice and get the file path
                 # pdf_path = generate_transaction_pdf(
@@ -488,7 +492,10 @@ def sales_items_create_note(request, organization_id, transaction_id):
                 )
 
                 # Send Request via Celery
-                send_api_request.apply_async(args=[request_log.id])
+                try:
+                    send_api_request.apply_async(args=[request_log.id])
+                except OperationalError as e:
+                    print(f"Celery is mot reachable: {e}")
 
                 # Generate PDF for Credit Note
                 pdf_path = generate_transaction_pdf(
@@ -655,7 +662,6 @@ def generate_transaction_pdf(
     # ✅ Initialize tax summary
     tax_summary = {code: {"taxable_amount": 0,
                           "tax_rate": TAX_RATES[code], "tax_amount": 0} for code in TAX_RATES.keys()}
-
 
     # ✅ Extract tax details from API response
     tax_summary["A"]["taxable_amount"] = request_data.get("taxblAmtA", 0)

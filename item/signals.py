@@ -3,7 +3,7 @@ from django.dispatch import receiver
 from api_tracker.models import APIRequestLog
 from api_tracker.tasks import send_api_request
 from item.models import Item
-
+from celery.exceptions import OperationalError
 
 @receiver(post_save, sender=Item)
 def track_item_creation(sender, instance, created, **kwargs):
@@ -47,4 +47,7 @@ def track_item_creation(sender, instance, created, **kwargs):
                 instance, "organization") else None,
         )
 
-        send_api_request.apply_async(args=[request_log.id])
+        try:
+            send_api_request.apply_async(args=[request_log.id])
+        except OperationalError as e:
+            print(f"Celery is mot reachable: {e}")

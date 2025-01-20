@@ -890,6 +890,10 @@
                 <div class="d-flex justify-content-between align-items-center p-0 pt-1">
                     <h3><span style="color: #000000;">{{ purchases.count }}</span> Purchases</h3>
                     <div>
+                        <button data-url="{% url 'organization:update_purchases_view' organization.id %}" type="button"
+                            class="btn add purchase-request">
+                            Update Items
+                        </button>
                     </div>
                 </div>
                 <hr class="hr-style" />
@@ -899,65 +903,223 @@
                     <thead>
                         <tr>
                             <th>#</th>
+                            <th>Invoice Number</th>
                             <th>Supplier Name</th>
                             <th>Supplier TIN</th>
-                            <th>Invoice Number</th>
                             <th>Confirmation Date</th>
                             <th>Total Amount</th>
-                            <th>Actions</th>
+                            <th>Items</th>
+                            <th>Status</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for purchase in purchases %}
                         <tr>
                             <td>{{ forloop.counter }}</td>
+                            <td>{{ purchase.invoice_number }}</td>
                             <td>{{ purchase.supplier_name }}</td>
                             <td>{{ purchase.supplier_tin }}</td>
-                            <td>{{ purchase.invoice_number }}</td>
                             <td>{{ purchase.confirmation_date }}</td>
                             <td>KES {{ purchase.total_amount|floatformat:2 }}</td>
                             <td>
                                 <button class="btn btn-primary btn-sm view-items-btn"
                                     data-items="{{ purchase.items|escapejs }}" data-bs-toggle="modal"
-                                    data-bs-target="#itemsModal">
+                                    data-bs-target="#purchaseModal-{{purchase.invoice_number}}"
+                                    data-modal-id="purchaseModalBody-{{ purchase.invoice_number }}">
                                     View Items
                                 </button>
+                                <!-- Modal for Viewing Items -->
+                                <div class="modal fade" id="purchaseModal-{{purchase.invoice_number}}" tabindex="-1"
+                                    aria-labelledby="purchaseModalLabel-{{purchase.invoice_number}}" aria-hidden="true">
+                                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="itemsModalLabel">
+                                                    #{{purchase.invoice_number}} - Purchase Items</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                    aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div>
+                                                    <button type="button" class="btn add" data-toggle="modal"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#addPurchaseItemsModal-{{ purchase.invoice_number }}"
+                                                        data-modal-id="addPurchaseItemsModal-{{ purchase.invoice_number }}">
+                                                        + Add Items
+                                                    </button>
+                                                </div>
+                                                {% include "organization/invoice_template.html" with purchase=purchase%}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Add Purchase Items Modal -->
+                                <div class="modal fade" id="addPurchaseItemsModal-{{ purchase.invoice_number }}"
+                                    tabindex="-1" aria-labelledby="addItemsModalLabel-{{ purchase.invoice_number }}"
+                                    aria-hidden="true">
+                                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title"
+                                                    id="addItemsModalLabel-{{ purchase.invoice_number }}">
+                                                    Create items from Purchase Invoice
+                                                    {{ purchase.invoice_number }}
+                                                </h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                    aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <ul class="nav nav-tabs" id="addItemsTabs-{{ purchase.invoice_number }}"
+                                                    role="tablist">
+                                                    <li class="nav-item" role="presentation">
+                                                        <button class="nav-link active"
+                                                            id="create-items-tab-{{ purchase.invoice_number }}"
+                                                            data-bs-toggle="tab"
+                                                            data-bs-target="#create-items-{{ purchase.invoice_number }}"
+                                                            type="button" role="tab" aria-controls="create-items"
+                                                            aria-selected="true">Create Item(s)</button>
+                                                    </li>
+                                                    <li class="nav-item" role="presentation">
+                                                        <button class="nav-link"
+                                                            id="add-existing-tab-{{ purchase.invoice_number }}"
+                                                            data-bs-toggle="tab"
+                                                            data-bs-target="#add-existing-{{ purchase.invoice_number }}"
+                                                            type="button" role="tab" aria-controls="add-existing"
+                                                            aria-selected="false">Add to Existing
+                                                            Item(s)</button>
+                                                    </li>
+                                                </ul>
+                                                <div class="tab-content mt-3"
+                                                    id="addItemsTabsContent-{{ purchase.invoice_number }}">
+                                                    <!-- Create Items Tab -->
+                                                    <div class="tab-pane fade show active"
+                                                        id="create-items-{{ purchase.invoice_number }}" role="tabpanel"
+                                                        aria-labelledby="create-items-tab-{{ purchase.invoice_number }}">
+                                                        <form>
+                                                            <table class="table">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Item Name</th>
+                                                                        <th>Quantity</th>
+                                                                        <th>Unit Price</th>
+                                                                        <th>Create Item?</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody
+                                                                    id="create-items-body-{{ purchase.invoice_number }}"
+                                                                    action="{% url 'item:create_items_from_purchase' organization.id %}">
+                                                                    {% for item in purchase.items %}
+                                                                    <tr>
+                                                                        <td data-attr="{{item}}">{{ item.itemNm }}</td>
+                                                                        <td>{{ item.qty }}</td>
+                                                                        <td>{{ item.prc }}</td>
+                                                                        <td><input type="checkbox"
+                                                                                name="stock-item-{{ forloop.counter }}">
+                                                                        </td>
+                                                                    </tr>
+                                                                    {% endfor %}
+                                                                </tbody>
+                                                            </table>
+
+                                                            <div class="text-end">
+                                                                <button type="button" class="btn cancel"
+                                                                    data-bs-dismiss="modal">Cancel</button>
+                                                                <form method="POST"
+                                                                    id="createItemStockForm-{{ purchase.invoice_number }}">
+                                                                    {% csrf_token %}
+                                                                    &nbsp;
+                                                                    <button type="submit" class="btn w-btn"
+                                                                        onclick="submitCreateItemStockForm(event, '{{purchase.invoice_number}}')">
+                                                                        Create Items</button>
+                                                                </form>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+
+                                                    <!-- Add to Existing Items Tab -->
+                                                    <div class="tab-pane fade"
+                                                        id="add-existing-{{ purchase.invoice_number }}" role="tabpanel"
+                                                        aria-labelledby="add-existing-tab-{{ purchase.invoice_number }}">
+                                                        <form>
+                                                            <table class="table">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Item Name</th>
+                                                                        <th>Quantity</th>
+                                                                        <th>Map to Item</th>
+                                                                        <th>Deselect</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody
+                                                                    id="existing-items-body-{{ purchase.invoice_number }}"
+                                                                    action="{% url 'item:update_mapped_item_quantity' %}">
+                                                                    {% for item in purchase.items %}
+                                                                    <tr>
+                                                                        <td data-attr="{{item}}">{{ item.itemNm }}</td>
+                                                                        <td>{{ item.qty }}</td>
+                                                                        <td>
+                                                                            <select class="form-control"
+                                                                                id="select-{{ forloop.counter }}"
+                                                                                name="map-to-item-{{ forloop.counter }}">
+                                                                                <option value="">Select...</option>
+                                                                                {% for existing_item in items %}
+                                                                                <option value="{{ existing_item.id }}">
+                                                                                    {{ existing_item.item_name}}
+                                                                                </option>
+                                                                                {% endfor %}
+                                                                            </select>
+                                                                        </td>
+                                                                        <td>
+                                                                            <button type="button"
+                                                                                class="btn btn-sm btn-warning"
+                                                                                onclick="resetSelection('{{ forloop.counter }}')">
+                                                                                Reset
+                                                                            </button>
+                                                                        </td>
+                                                                    </tr>
+                                                                    {% endfor %}
+                                                                </tbody>
+                                                            </table>
+                                                            <div class="text-end">
+                                                                <button type="button" class="btn cancel"
+                                                                    data-bs-dismiss="modal">Cancel</button>
+                                                                &nbsp;
+                                                                &nbsp;
+                                                                <button type="submit" class="btn w-btn"
+                                                                    onclick="submitUpdateItemStockForm(event, '{{purchase.invoice_number}}')">
+                                                                    Add Stock</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="dflex">
+                                <span class="status {% if purchase.verified %}success{% else %}pending{% endif %}">
+                                    {% if purchase.verified %}Verified{% else %}Not Verified{% endif %}
+                                </span>
+
+                                {% if not purchase.verified %}
+                                <button class="btn verify-request" data-type="savePurchase"
+                                    data-url="{% url 'organization:verify_purchase' 'savePurchase' purchase.invoice_number purchase.id  %}"
+                                    data-id="{{ purchase.imvoice_number }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="currentColor"
+                                        class="bi bi-repeat" viewBox="0 0 22 22">
+                                        <path
+                                            d="M11 5.466V4H5a4 4 0 0 0-3.584 5.777.5.5 0 1 1-.896.446A5 5 0 0 1 5 3h6V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m3.81.086a.5.5 0 0 1 .67.225A5 5 0 0 1 11 13H5v1.466a.25.25 0 0 1-.41.192l-2.36-1.966a.25.25 0 0 1 .41.192V12h6a4 4 0 0 0 3.585-5.777.5.5 0 0 1 .225-.67Z" />
+                                    </svg>
+                                </button>
+                                {% endif %}
+
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
-
-                <!-- Modal for Viewing Items -->
-                <div class="modal fade" id="itemsModal" tabindex="-1" aria-labelledby="itemsModalLabel"
-                    aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="itemsModalLabel">Purchase Items</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                    aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <table class="table table-bordered">
-                                    <thead>
-                                        <tr>
-                                            <th>#</th>
-                                            <th>Item Code</th>
-                                            <th>Item Name</th>
-                                            <th>Quantity</th>
-                                            <th>Price</th>
-                                            <th>Total Amount</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="itemsModalBody">
-                                        <!-- Dynamically filled by JavaScript -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
                 {% else %}
                 <p>No purchases found for this organization.</p>
@@ -1148,33 +1310,137 @@
 
 <!-- Scripts-->
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const viewItemsButtons = document.querySelectorAll(".view-items-btn");
+    function resetSelection(rowId) {
+        // Get the `select` element for the given row
+        const selectField = document.getElementById(`select-${rowId}`);
+        if (selectField) {
+            selectField.value = "";
+        }
+    }
 
-        viewItemsButtons.forEach(button => {
-            button.addEventListener("click", function () {
-                const items = JSON.parse(this.getAttribute("data-items"));
-                console.log(items)
-                const modalBody = document.getElementById("itemsModalBody");
 
-                modalBody.innerHTML = ""; // Clear previous content
+    function submitUpdateItemStockForm(event, purchaseNumber) {
+        event.preventDefault();
 
-                items.forEach((item, index) => {
-                    const row = `
-                        <tr>
-                            <td>${index + 1}</td>
-                            <td>${item.itemCd}</td>
-                            <td>${item.itemNm}</td>
-                            <td>${item.qty}</td>
-                            <td>${item.prc}</td>
-                            <td>${item.totAmt}</td>
-                        </tr>
-                    `;
-                    modalBody.innerHTML += row;
+        // Get the table body containing the item rows
+        const tableBody = document.getElementById(`existing-items-body-${purchaseNumber}`);
+        console.log(`updateItemStockForm-${purchaseNumber}`)
+
+        const actionUrl = tableBody.getAttribute("action");
+        // const csrf = tableBody.getAttribute("data-attr");
+
+        console.log(actionUrl);
+
+        // Collect all rows and structure the data
+        const items = [];
+        Array.from(tableBody.querySelectorAll("tr")).forEach((row) => {
+            const itemName = row.cells[0].innerText.trim();
+            const quantity = row.cells[1].innerText.trim();
+            const mapToItemSelect = row.querySelector('select');
+
+            if (mapToItemSelect && mapToItemSelect.value) {
+                items.push({
+                    item_name: itemName,
+                    quantity: parseFloat(quantity),
+                    mapped_item_id: mapToItemSelect.value,
                 });
-            });
+            }
         });
-    });
+
+        if (items.length === 0) {
+            alert("Please map at least one item to proceed.");
+            return;
+        }
+
+        // Prepare the payload
+        const payload = {
+            purchase_number: purchaseNumber,
+            mapped_items: items,
+        };
+
+        console.log("Payload:", payload); // Debugging: log payload before sending
+
+        // Send the data to the backend
+        fetch(actionUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': getCsrfToken(),
+            },
+            body: JSON.stringify(payload),
+        })
+            .then((response) => {
+                if (response.ok) {
+                    console.log(response);
+                    // alert("Items updated successfully!");
+                    // location.reload(); // Reload the page to show updated data
+                } else {
+                    console.log(response);
+                    // alert("Error updating items. Please try again.");
+                }
+            })
+            .catch((error) => console.error("Error:", error));
+    }
+
+
+    function submitCreateItemStockForm(event, purchaseNumber) {
+        event.preventDefault();
+
+        // Get the table body containing the item rows
+        const tableBody = document.getElementById(`create-items-body-${purchaseNumber}`);
+        const actionUrl = tableBody.getAttribute("action");
+
+        // Collect all rows and structure the data
+        const items = [];
+        Array.from(tableBody.querySelectorAll("tr")).forEach((row, index) => {
+            const itemDataAttr = row.cells[0].getAttribute("data-attr");
+            const createItemCheckbox = row.querySelector(`input[name="stock-item-${index + 1}"]`);
+
+            if (createItemCheckbox && createItemCheckbox.checked) {
+                items.push({
+                    item: itemDataAttr,
+                });
+            }
+        });
+
+        if (items.length === 0) {
+            alert("Please select at least one item to create.");
+            return;
+        }
+
+        // Prepare the payload
+        const payload = {
+            purchase_number: purchaseNumber,
+            items: items,
+        };
+
+        console.log("Payload for creating items:", payload, actionUrl);
+
+        // Send the data to the backend
+        fetch(actionUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": document.querySelector('[name="csrfmiddlewaretoken"]').value,
+            },
+            body: JSON.stringify(payload),
+        })
+            .then((response) => {
+                if (response.ok) {
+                    alert("Items created successfully!");
+                    // location.reload(); // Reload the page to reflect the changes
+                } else {
+                    alert("Error creating items. Please try again.");
+                }
+            })
+            .catch((error) => console.error("Error:", error));
+    }
+
+
+    // Utility function to get the CSRF token from the page
+    function getCsrfToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]').value;
+    }
 
 
     document.addEventListener("DOMContentLoaded", function () {
@@ -1202,6 +1468,62 @@
                     })
                     .catch((error) => {
                         console.error("Error retrying request:", error);
+                    });
+            });
+        });
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".purchase-request").forEach((button) => {
+            button.addEventListener("click", function () {
+                const dataUrl = this.getAttribute("data-url");
+
+                fetch(dataUrl, {
+                    method: "GET",
+                    headers: {
+                        "X-CSRFToken": "{{ csrf_token }}",
+                    },
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.success) {
+                            console.log(data)
+                            // window.location.reload();
+                        }
+                    })
+                    .catch((error) => {
+                        console.error("Error retrying request:", error);
+                    });
+            });
+        });
+    });
+
+
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".verify-request").forEach((button) => {
+            button.addEventListener("click", function () {
+                const requestType = this.getAttribute("data-type");
+                const requestId = this.getAttribute("data-id");
+                const dataUrl = this.getAttribute("data-url");
+
+                fetch(dataUrl, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": "{{ csrf_token }}",
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        invoice_number: requestId
+                    }),
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.success) {
+                            window.location.reload();
+                        }
+                    })
+                    .catch((error) => {
+                        console.error("Error verifyinging request:", error);
                     });
             });
         });

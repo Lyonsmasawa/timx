@@ -1,7 +1,7 @@
 import json
 from django.db.models import Sum
 from django.views.decorators.csrf import csrf_exempt
-from api_tracker.tasks import send_api_request
+from api_tracker.tasks import fetch_and_update_purchases, send_api_request
 from api_tracker.models import APIRequestLog
 from django.db import IntegrityError
 from django.shortcuts import render, get_object_or_404, redirect
@@ -11,8 +11,9 @@ from django.http import JsonResponse, HttpResponse
 import plotly.graph_objs as go
 from api_tracker.models import APIRequestLog
 from commons.constants import API_ENDPOINTS, COUNTRY_CHOICES, PACKAGE_CHOICES, PRODUCT_TYPE_CHOICES, TAX_TYPE_CHOICES, TAXPAYER_STATUS_CHOICES, UNIT_CHOICES
-from commons.utils import process_purchases_response, send_vscu_request
+from commons.utils import compute_tax_summary, process_purchases, send_vscu_request
 from item_movement.models import ItemMovement
+from purchases.models import Purchase
 from .models import Organization
 from .forms import OrganizationForm
 from item.models import Item
@@ -24,6 +25,7 @@ from customer.models import Customer
 from django.contrib.auth.decorators import login_required
 from item.forms import ItemForm
 from customer.forms import CustomerForm
+from celery.exceptions import OperationalError
 
 # List Organizations
 
@@ -155,6 +157,9 @@ def organization_detail(request, pk):
             organization=organization, document_type="invoice").order_by('-created_at')
         credit_notes = Transaction.objects.select_related("organization").filter(
             organization=organization, document_type="credit_note").order_by('-created_at')
+        purchases_data = Purchase.objects.select_related("organization").filter(
+            organization=organization).order_by('-created_at')
+        purchases = process_purchases(purchases_data)
 
         # Fetch latest API status for each item, customer, and transaction
         item_statuses = {log.item.id: {"id": log.id, "status": log.status} for log in APIRequestLog.objects.filter(
@@ -165,22 +170,6 @@ def organization_detail(request, pk):
 
         transaction_statuses = {log.transaction.id: {"id": log.id, "status": log.status} for log in APIRequestLog.objects.filter(
             transaction__organization=organization)}
-
-        purchases = []
-
-        try:
-            data = {
-                "lastReqDt": "20231010000000"
-            }
-            url = API_ENDPOINTS.get("selectTrnsPurchaseSalesList")
-            response = send_vscu_request(
-                endpoint=url, method="POST", data=data)
-
-            purchases = process_purchases_response(response.json())
-            print(purchases)
-        except Exception as e:
-            # Log the error and stay on the page
-            print(f"Error in requestview: {str(e)}")
 
         if request.method == 'POST':
             action_name = request.POST.get('action_name')
@@ -328,7 +317,11 @@ def retry_failed_request(request, request_type, request_id):
             request_log = APIRequestLog.objects.get(pk=log_id, status="failed")
 
             # ✅ Retry the request using Celery
-            send_api_request.apply_async(args=[request_log.id])
+            try:
+                send_api_request.apply_async(args=[request_log.id])
+            except OperationalError as e:
+                # Log the error and allow the application to proceed
+                print(f"Celery is not reachable: {e}")
 
             # ✅ Update status to retrying
             request_log.retries = 0
@@ -336,6 +329,87 @@ def retry_failed_request(request, request_type, request_id):
             request_log.save()
 
             return JsonResponse({"success": True, "message": f"Retry for {request_type} initiated successfully!"})
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON data."}, status=400)
+
+        except APIRequestLog.DoesNotExist:
+            return JsonResponse({"error": f"{request_type.capitalize()} request not found or not failed."}, status=404)
+
+    return JsonResponse({"error": "Invalid request method."}, status=405)
+
+
+@login_required
+def update_purchases_view(request, org_id):
+    try:
+        try:
+            organization = Organization.objects.get(
+                id=org_id, user=request.user)
+        except Organization.DoesNotExist:
+            return JsonResponse({"error": "Organization not found."}, status=404)
+
+        # Define request payload
+        request_payload = {"lastReqDt": "20231010000000"}
+
+        # Log API request in the tracker
+        request_log = APIRequestLog.objects.create(
+            request_type="updatePurchases",
+            request_payload=request_payload,
+            organization=organization,
+        )
+
+        # ✅ Retry the request using Celery
+        try:
+            send_api_request.apply_async(args=[request_log.id])
+        except OperationalError as e:
+            # Log the error and allow the application to proceed
+            print(f"Celery is not reachable: {e}")
+
+        return JsonResponse({"status": "success", "message": "Purchase update initiated"}, status=200)
+    except AttributeError:
+        return JsonResponse({"error": "User is not associated with an organization"}, status=400)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@csrf_exempt
+def verify_purchase(request, request_type, inv_no, purchase_id):
+    if request.method == "POST":
+        try:
+            # ✅ Parse JSON data from request body
+            # data = json.loads(request.body.decode("utf-8"))
+            # invoice_number = data.get("invoice_number")
+
+            if not purchase_id:
+                return JsonResponse({"error": "Missing id in request."}, status=400)
+
+            # ✅ Retrieve the request log
+
+            try:
+                purchase = Purchase.objects.get(
+                    pk=purchase_id, invoice_number=inv_no)
+            except Purchase.DoesNotExist:
+                return JsonResponse({"error": "Purchase not found."}, status=404)
+
+            print(purchase.payload)
+            return
+            
+            # ✅ Save API Request Log
+            # request_log = APIRequestLog.objects.create(
+            #     request_type="verifyPurchase",
+            #     request_payload=purchase.payload
+            #     user=request.user,
+            #     purchase=purchase,
+            #     organization=purchase.organization,
+            # )
+
+            # ✅ Send request asynchronously using Celery
+            try:
+                send_api_request.apply_async(args=[request_log.id])
+            except OperationalError as e:
+                print(f"Celery is mot reachable: {e}")
+
+            return JsonResponse({"success": True, "message": f"Retry for {request_log.request_type} initiated successfully!"})
 
         except json.JSONDecodeError:
             return JsonResponse({"error": "Invalid JSON data."}, status=400)
