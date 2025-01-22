@@ -207,7 +207,8 @@ def create_items_from_purchase(request, pk):
                 for item_data in items_data:
                     # Parse the string representation of the item into a dictionary
                     try:
-                        item = eval(item_data.get('item'))  # Caution: Use safer alternatives like `json.loads` if applicable
+                        # Caution: Use safer alternatives like `json.loads` if applicable
+                        item = eval(item_data.get('item'))
                     except Exception as e:
                         print(f"Error parsing item data: {str(e)}")
                         continue
@@ -221,13 +222,15 @@ def create_items_from_purchase(request, pk):
                         quantity_unit_code = item.get('qtyUnitCd')
                         package_unit_code = item.get('pkgUnitCd')
                         item_tax_code = item.get('taxTyCd')
-                        origin_nation_code = item.get('originNationCd', 'KE')  # Default to 'KE'
+                        origin_nation_code = item.get(
+                            'originNationCd', 'KE')  # Default to 'KE'
                         price = item.get('prc', 0)
                         opening_balance = item.get('qty', 0)
 
                         # Check if the item already exists in the organization
                         if Item.objects.filter(organization=organization, item_name=item_name).exists():
-                            print(f"Item '{item_name}' already exists. Skipping.")
+                            print(
+                                f"Item '{item_name}' already exists. Skipping.")
                             continue
 
                         # Create the new item

@@ -222,7 +222,6 @@ def sales_items_create(request, pk):
                 )
 
                 # ✅ Send request asynchronously using Celery
-
                 try:
                     send_api_request.apply_async(args=[request_log.id])
                 except OperationalError as e:

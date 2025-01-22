@@ -4,14 +4,19 @@ from .models import Transaction
 from .forms import TransactionForm
 
 # List Transactions
+
+
 def transaction_list(request):
     try:
-        transactions = Transaction.objects.select_related('organization', 'customer').all()
+        transactions = Transaction.objects.select_related(
+            'organization', 'customer').all()
         return render(request, "transaction_list.html", {"transactions": transactions})
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
 # Create Transaction
+
+
 def transaction_create(request):
     if request.method == "POST":
         form = TransactionForm(request.POST, request.FILES)
@@ -41,9 +46,12 @@ def transaction_create(request):
         return render(request, "transaction_form.html", {"form": form})
 
 # Transaction Detail
+
+
 def transaction_detail(request, pk):
     try:
-        transaction = Transaction.objects.select_related('organization', 'customer').get(pk=pk)
+        transaction = Transaction.objects.select_related(
+            'organization', 'customer').get(pk=pk)
         return JsonResponse({
             "status": "success",
             "data": {
@@ -60,10 +68,13 @@ def transaction_detail(request, pk):
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
 # Update Transaction
+
+
 def transaction_update(request, pk):
     transaction = get_object_or_404(Transaction, pk=pk)
     if request.method == "POST":
-        form = TransactionForm(request.POST, request.FILES, instance=transaction)
+        form = TransactionForm(
+            request.POST, request.FILES, instance=transaction)
         if form.is_valid():
             try:
                 form.save()
@@ -81,6 +92,8 @@ def transaction_update(request, pk):
         return render(request, "transaction_form.html", {"form": form})
 
 # Delete Transaction
+
+
 def transaction_delete(request, pk):
     try:
         transaction = get_object_or_404(Transaction, pk=pk)

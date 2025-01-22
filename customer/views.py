@@ -146,8 +146,8 @@ def customer_delete(request, pk):
         return JsonResponse({'success': True, 'message': "Customer deleted successfully."})
     except Exception as e:
         return JsonResponse({'success': False, 'errors': {'general': ["Invalid request method."]}})
-    
-    
+
+
 # Customer Autocomplete
 class CustomerAutocomplete(autocomplete.Select2QuerySetView):
     def get_queryset(self):
