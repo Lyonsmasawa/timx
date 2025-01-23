@@ -14,11 +14,12 @@ app.config_from_object("django.conf:settings", namespace="CELERY")
 # Auto-discover tasks in installed apps
 app.autodiscover_tasks()
 
-# "update_item_classification_daily": {
-#     "task": "api_tracker.tasks.fetch_and_update_item_classification",
-#     "schedule": 50,
-# },
+
 app.conf.beat_schedule = {
+    "update_item_classification_daily": {
+        "task": "api_tracker.tasks.fetch_and_update_item_classification",
+        "schedule": 5000000,
+    },
     "retry_failed_requests": {
         "task": "api_tracker.tasks.retry_failed_requests",
         "schedule": 300.0,  # Every 5 minutes

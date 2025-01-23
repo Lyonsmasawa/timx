@@ -14,6 +14,8 @@ urlpatterns = [
          name='update_mapped_item_quantity'),
     path('create_items_from_purchase/<int:pk>/', views.create_items_from_purchase,
          name='create_items_from_purchase'),
+    path("save-item-composition/", views.save_item_composition,
+         name="save_item_composition"),
     path('country-code-autocomplete/', views.CountryCodeAutocomplete.as_view(),
          name='country-code-autocomplete'),
     path('item-type-code-autocomplete/', views.ItemTypeCodeAutocomplete.as_view(),

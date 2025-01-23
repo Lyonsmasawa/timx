@@ -340,6 +340,7 @@ def process_purchases(purchases_queryset):
         # Add tax summary to the purchase dict
         purchase_data = {
             "id": purchase.id,
+            "verified": purchase.verified,
             "supplier_name": purchase.supplier_name,
             "supplier_tin": purchase.supplier_tin,
             "invoice_number": purchase.invoice_number,

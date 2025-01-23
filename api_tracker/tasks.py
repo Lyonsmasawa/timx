@@ -233,6 +233,18 @@ def send_api_request(self, request_id):
                     "message": "purchases updated successfully",
                     "response": created_purchases
                 })
+
+            elif request_log.request_type == "verifyPurchase":
+                try:
+                    # Mark the purchase as verified
+                    request_log.purchase.verified = True
+                    request_log.purchase.save()
+                    request_log.mark_success(response_data)
+                    logger.info(f"✅ Request successful: {response_data}")
+                except Exception as e:
+                    request_log.mark_failed({"error": str(e)})
+                    raise requests.exceptions.RequestException(
+                        f"API returned resultCd: {request_log.purchase}, msg: {e}, response: {response_data}")
             else:
                 request_log.mark_success(response_data)
                 print(f"✅ Request successful: {response_data}")

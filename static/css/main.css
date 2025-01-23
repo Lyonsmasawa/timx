@@ -740,7 +740,8 @@ html {
 }
 
 .status.Pending,
-.status.pending {
+.status.pending,
+.status.verifieds {
     color: black;
     background-color: lightgray;
 }
@@ -760,4 +761,13 @@ html {
 
 .select2-search__field:hover {
     background-color: #354649 !important;
+}
+
+.view-items-btn {
+    background-color: #343434;
+}
+
+.view-items-btn:hover {
+    background-color: #343434;
+    color: white;
 }

@@ -12,9 +12,10 @@ API_ENDPOINTS = {
     "saveCreditNote": "/saveTrnsSalesOsdc",
     "selectTrnsPurchaseSalesList": "/selectTrnsPurchaseSalesList",
     "updatePurchases": "/selectTrnsPurchaseSalesList",
-    "verifyPurchases": "/selectTrnsPurchaseSalesList"
+    "verifyPurchase": "/insertTrnsPurchase",
+    "addItemComposition": "/saveItemComposition"
 }
-
+ 
 # SAR Type Codes
 SAR_TYPE_CODES = {
     "ADD": {

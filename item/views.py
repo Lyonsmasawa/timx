@@ -3,6 +3,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.db import IntegrityError, transaction
 from django.urls import reverse
+from api_tracker.models import APIRequestLog
+from api_tracker.tasks import send_api_request
 from item_movement.models import ItemMovement
 from organization.models import Organization
 from .models import Item
@@ -347,6 +349,53 @@ def item_delete(request, pk):
 
     except Exception as e:
         return JsonResponse({'success': False, 'errors': {'general': ["Invalid request, Please try again!"]}})
+
+
+@login_required
+def save_item_composition(request):
+    if request.method == "POST":
+        try:
+            item_cd = request.POST.get("itemCd")
+            cpst_item_cd = request.POST.get("cpstItemCd")
+            cpst_qty = request.POST.get("cpstQty")
+
+            if not all([item_cd, cpst_item_cd, cpst_qty]):
+                return JsonResponse({"error": "Missing required fields."}, status=400)
+
+            # Validate item codes
+            try:
+                item = Item.objects.get(itemCd=item_cd)
+                cpst_item = Item.objects.get(itemCd=cpst_item_cd)
+            except Item.DoesNotExist:
+                return JsonResponse({"error": "Invalid item code(s)."}, status=400)
+
+            # Prepare the API payload
+            payload = {
+                "itemCd": item_cd,
+                "cpstItemCd": cpst_item_cd,
+                "cpstQty": int(cpst_qty),
+                "regrId": getattr(request.user, "username", "admin"),
+                "regrNm": request.user.get_full_name() if hasattr(request.user, "get_full_name") and request.user.get_full_name() else "admin",
+            }
+
+            # Log the API request
+            request_log = APIRequestLog.objects.create(
+                request_type="saveItemComposition",
+                request_payload=payload,
+                user=request.user,
+                organization=item.organization,
+                item=item,
+            )
+
+            # Send the request asynchronously
+            send_api_request.apply_async(args=[request_log.id])
+
+            return JsonResponse({"success": "Item composition saved and queued for API request."}, status=200)
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request method."}, status=405)
 
 
 class CountryCodeAutocomplete(autocomplete.Select2QuerySetView):

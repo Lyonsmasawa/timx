@@ -171,6 +171,9 @@ def organization_detail(request, pk):
         transaction_statuses = {log.transaction.id: {"id": log.id, "status": log.status} for log in APIRequestLog.objects.filter(
             transaction__organization=organization)}
 
+        purchases_statuses = {log.purchase.id: {"id": log.id, "status": log.status} for log in APIRequestLog.objects.filter(
+            purchase__organization=organization, request_type="verifyPurchase")}
+
         if request.method == 'POST':
             action_name = request.POST.get('action_name')
 
@@ -200,6 +203,7 @@ def organization_detail(request, pk):
             "item_statuses": item_statuses,
             "customer_statuses": customer_statuses,
             "transaction_statuses": transaction_statuses,
+            'purchases_statuses':  purchases_statuses,
             "item_form": item_form,
             "customer_form": customer_form,
             "transaction_form": transaction_form,
@@ -391,17 +395,41 @@ def verify_purchase(request, request_type, inv_no, purchase_id):
             except Purchase.DoesNotExist:
                 return JsonResponse({"error": "Purchase not found."}, status=404)
 
-            print(purchase.payload)
-            return
+            purchase.payload.update({
+                "modrId": "Admin",
+                "modrNm": "Admin",
+                "regrId": "Admin",
+                "regrNm": "Admin",
+                "regTyCd": "M",
+                "invcNo": purchase.payload.get("spplrInvcNo"),
+                "orgInvcNo": 0,
+                "rcptTyCd": "P",
+                "pchsTyCd": "N",
+                "pchsSttsCd": "02",
+                "pchsDt": purchase.payload.get("salesDt", "")
+            })
+
+            # Swap cfmDt and stockRlsDt
+            cfmDt_value = purchase.payload.get("cfmDt")
+            stockRlsDt_value = purchase.payload.get("stockRlsDt")
+            purchase.payload["cfmDt"] = stockRlsDt_value if stockRlsDt_value is not None else ""
+            purchase.payload["stockRlsDt"] = cfmDt_value if cfmDt_value is not None else ""
+
+            # Replace null values with empty strings
+            for key, value in purchase.payload.items():
+                if value is None:
+                    purchase.payload[key] = ""
+
+            # payload = json.dumps(purchase.payload)
 
             # ✅ Save API Request Log
-            # request_log = APIRequestLog.objects.create(
-            #     request_type="verifyPurchase",
-            #     request_payload=purchase.payload
-            #     user=request.user,
-            #     purchase=purchase,
-            #     organization=purchase.organization,
-            # )
+            request_log = APIRequestLog.objects.create(
+                request_type="verifyPurchase",
+                request_payload=purchase.payload,
+                user=request.user,
+                purchase=purchase,
+                organization=purchase.organization,
+            )
 
             # ✅ Send request asynchronously using Celery
             try:
