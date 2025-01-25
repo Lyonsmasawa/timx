@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 import logging.config
 import environ
-import django_heroku
 import os
 from pathlib import Path
 
@@ -143,8 +142,7 @@ DATABASES = {
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[
     "http://localhost:3000",
     "http://localhost:3001",
-    "http://localhost:3002",
-    "https://etimsx-app-0dac6505e957.herokuapp.com/"
+    "http://localhost:3002"
 ])
 
 # Email settings
@@ -165,9 +163,6 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
-
-# Configure Django App for Heroku
-django_heroku.settings(locals())
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
