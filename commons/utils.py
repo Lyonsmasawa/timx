@@ -68,22 +68,26 @@ def generate_item_cd(self):
 
     with transaction.atomic():
         # Get the last item's numeric part (last 7 digits) within the organization
-        last_item = (
+        last_items = (
             Item.objects.filter(organization=self.organization)
             # Ignore invalid numeric suffix
             .exclude(itemCd__regex=r"\D{0,}[^0-9]{7}$")
-            .order_by('-itemCd')  # Order by `itemCd`
-            .first()
+            .order_by('-itemCd')
         )
         # print(last_item)
 
-        # Extract and increment the numeric part
-        if last_item and last_item.itemCd[-7:].isdigit():
-            last_number = int(last_item.itemCd[-7:])
-        else:
-            last_number = 0
+        # Extract the last 7 digits from all item codes
+        existing_numbers = set()
+        for item in last_items:
+            # Ensure the last 7 digits are numeric
+            if item.itemCd[-7:].isdigit():
+                existing_numbers.add(int(item.itemCd[-7:]))
 
-        next_number = last_number + 1
+        # Find the next available number (starting from 1)
+        next_number = 1
+        while next_number in existing_numbers:
+            next_number += 1
+
         increment = f"{next_number:07d}"  # Ensure zero-padded to 7 digits
         print(increment)
         # Generate the new item code

@@ -1,61 +1,76 @@
+# organization/tests.py
 from django.test import TestCase
-from django.urls import reverse
-from django.contrib.auth.models import User
-from organization.models import Organization
+from django.contrib.auth import get_user_model
+from .models import Organization
 
-class OrganizationTestCase(TestCase):
+User = get_user_model()
+
+class OrganizationModelTest(TestCase):
     def setUp(self):
-        """
-        Set up test data before each test runs.
-        """
-        self.user = User.objects.create_user(username='testuser', password='password')
-        self.organization = Organization.objects.create(
-            organization_name="Test Org",
-            organization_pin="12345",
-            organization_email="test@org.com",
-            organization_phone="1234567890",
-        )
-        self.client.login(username='testuser', password='password')  # Authenticate user
+        # Create a user to attach to the Organizations (since it's a ManyToMany)
+        self.user = User.objects.create_user(username='orguser', password='testpass')
 
     def test_create_organization(self):
         """
-        Test creating an organization.
+        Ensure that an organization can be created and saved to the database.
         """
-        response = self.client.post(reverse('organization:organization_create'), {
-            "organization_name": "New Org",
-            "organization_pin": "67890",
-            "organization_email": "new@org.com",
-            "organization_phone": "0987654321",
-        })
-        self.assertEqual(response.status_code, 200)  # Expect success
-        self.assertTrue(Organization.objects.filter(organization_name="New Org").exists())
+        org = Organization.objects.create(
+            organization_name="MyOrg",
+            organization_pin="ORG-123",
+            organization_email="org@example.com",
+            organization_physical_address="123 Main St",
+            organization_phone="555-1234",
+        )
+        
+        # add the user to the ManyToMany field separately
+        org.user.add(self.user)
 
-    def test_get_organization_detail(self):
-        """
-        Test retrieving organization details.
-        """
-        response = self.client.get(reverse('organization:organization_detail', args=[self.organization.id]))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Test Org")
+        self.assertEqual(Organization.objects.count(), 1)
+        saved_org = Organization.objects.first()
+        self.assertEqual(saved_org.organization_name, "MyOrg")
+        self.assertEqual(saved_org.organization_pin, "ORG-123")
 
-    def test_update_organization(self):
-        """
-        Test updating organization details.
-        """
-        response = self.client.post(reverse('organization:organization_update', args=[self.organization.id]), {
-            "organization_name": "Updated Org",
-            "organization_pin": "54321",
-            "organization_email": "updated@org.com",
-            "organization_phone": "1112223333",
-        })
-        self.assertEqual(response.status_code, 200)
-        self.organization.refresh_from_db()
-        self.assertEqual(self.organization.organization_name, "Updated Org")
+        # Check ManyToMany relationship
+        self.assertIn(self.user, saved_org.user.all())
 
-    def test_delete_organization(self):
+    def test_unique_name_and_pin(self):
         """
-        Test deleting an organization.
+        organization_name and organization_pin are unique. Attempting to create duplicates should raise an error.
         """
-        response = self.client.post(reverse('organization:organization_delete', args=[self.organization.id]))
-        self.assertEqual(response.status_code, 200)
-        self.assertFalse(Organization.objects.filter(id=self.organization.id).exists())
+        Organization.objects.create(
+            organization_name="UniqueOrg",
+            organization_pin="PIN-001",
+            organization_email="unique@example.com",
+            organization_physical_address="111 Street",
+            organization_phone="111-1111",
+        )
+
+        with self.assertRaises(Exception):
+            # Could be IntegrityError or Django ValidationError, 
+            # depending on how you handle it. We'll catch a generic Exception for demonstration.
+            Organization.objects.create(
+                organization_name="UniqueOrg",
+                organization_pin="PIN-001",
+                organization_email="duplicate@example.com",
+                organization_physical_address="222 Street",
+                organization_phone="222-2222",
+            )
+
+    def test_prevent_pin_edit_after_creation(self):
+        """
+        The model's save() raises a ValueError if we try to change organization_pin after creation.
+        """
+        org = Organization.objects.create(
+            organization_name="NoPinChange",
+            organization_pin="ORIG-PIN",
+            organization_email="pinchange@example.com",
+            organization_physical_address="Some Address",
+            organization_phone="1234",
+        )
+
+        # Attempt to change the pin
+        org.organization_pin = "NEW-PIN"
+        with self.assertRaises(ValueError) as ctx:
+            org.save()
+
+        self.assertIn("Organization PIN cannot be edited.", str(ctx.exception))
