@@ -536,7 +536,7 @@
                         <!-- Modal for Item Composition -->
                         <div class="modal fade" id="itemCompositionModal-{{ item.id }}" tabindex="-1"
                             aria-labelledby="itemCompositionModalLabel" aria-hidden="true">
-                            <div class="modal-dialog modal-lg modal-dialog-centered">
+                            <div class="modal-dialog modal-md modal-dialog-centered">
                                 <div class="modal-content">
                                     <div class="modal-header">
                                         <h5 class="modal-title" id="itemCompositionModalLabel">Item Composition for
@@ -694,7 +694,7 @@
                                             class="bi bi-arrow-down-circle" viewBox="0 0 16 16" style="fill: white;">
                                             <path fill-rule="evenodd"
                                                 d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8m15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8.5 4.5a.5.5 0 0 0-1 0v5.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293z" />
-                                        </svg> Download PDF
+                                        </svg> Generate PDF
                                     </a>
                                     {% endif %}
                                     <!-- Add Credit Note Button -->
@@ -902,23 +902,34 @@
                             </td>
                             <td>
                                 <div class="d-flex align-items-center">
+                                    {% with transaction_data=transaction_statuses|dict_get:credit_note.id %}
+                                    {% if transaction_data.status == "success" %}
+
                                     {% if credit_note.document_path %}
-                                    <a href="{{ credit_note.document_path.url }}" download>
-                                        <button class="btn btn-secondary btn-sm w-btn me-2" type="button"
-                                            id="dropdownMenuButton-{{ item.id }}">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="white"
-                                                class="bi bi-arrow-down-circle" viewBox="0 0 16 16"
-                                                style="fill: white;">
-                                                <path fill-rule="evenodd"
-                                                    d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8m15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8.5 4.5a.5.5 0 0 0-1 0v5.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293z" />
-                                            </svg>Download PDF
-                                        </button>
+                                    <button class="btn btn-secondary btn-sm w-btn me-2 view-pdf-btn"
+                                        data-pdf-url="{{ credit_note.document_path.url }}" data-bs-toggle="modal"
+                                        data-bs-target="#pdfModal">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="white"
+                                            class="bi bi-arrow-down-circle" viewBox="0 0 16 16" style="fill: white;">
+                                            <path fill-rule="evenodd"
+                                                d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8m15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8.5 4.5a.5.5 0 0 0-1 0v5.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293z" />
+                                        </svg> View PDF
+                                    </button>
+                                    {% else %}
+                                    <a href="{% url 'sales_items:generate_credit_note_pdf' transaction_data.id credit_note.id %}"
+                                        class="btn btn-secondary btn-sm w-btn me-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="white"
+                                            class="bi bi-arrow-down-circle" viewBox="0 0 16 16" style="fill: white;">
+                                            <path fill-rule="evenodd"
+                                                d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8m15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8.5 4.5a.5.5 0 0 0-1 0v5.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293z" />
+                                        </svg> Generate PDF
                                     </a>
-
                                     {% endif %}
-
+                                    {% else %}
+                                    <span class="status pending">pending</span>
+                                    {% endif %}
+                                    {% endwith %}
                                 </div>
-
                             </td>
                         </tr>
                         <tr>
@@ -1008,7 +1019,7 @@
                                 <!-- Add Purchase Items Modal -->
                                 <div class="modal fade" id="addPurchaseItemsModal-{{ purchase.invoice_number }}"
                                     tabindex="-1" aria-labelledby="addItemsModalLabel-{{ purchase.invoice_number }}"
-                                    aria-hidden="true">
+                                    aria-hidden="true" data-bs-backdrop="static">
                                     <div class="modal-dialog modal-lg modal-dialog-centered">
                                         <div class="modal-content">
                                             <div class="modal-header">
@@ -1226,6 +1237,27 @@
     </div>
 </div>
 
+
+<!-- Bootstrap Modal for Viewing PDF -->
+<div class="modal fade" id="pdfModal" tabindex="-1" aria-labelledby="pdfModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="pdfModalLabel">PDF Viewer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- PDF Viewer -->
+                <iframe id="pdfIframe" style="width:100%; height:500px;" frameborder="0"></iframe>
+            </div>
+            <div class="modal-footer">
+                <a id="downloadPdfBtn" href="#" class="btn btn-primary" download>Download PDF</a>
+                <button type="button" class="btn btn-secondary" id="printPdfBtn">Print PDF</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Item Creation Modal -->
 <div class="modal fade" id="createItemModal" tabindex="-1" aria-labelledby="itemModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered  modal-part">
@@ -1351,42 +1383,114 @@
         });
     });
 
-    document.addEventListener("DOMContentLoaded", function () {
-        const viewPdfBtns = document.querySelectorAll(".view-pdf-btn");
-        const pdfIframe = document.getElementById("pdfIframe");
-        const downloadPdfBtn = document.getElementById("downloadPdfBtn");
-
-        viewPdfBtns.forEach((btn) => {
-            btn.addEventListener("click", function () {
-                const pdfUrl = this.getAttribute("data-pdf-url");
-                pdfIframe.setAttribute("src", pdfUrl);
-                downloadPdfBtn.setAttribute("href", pdfUrl);
-            });
-        });
-
-        // Print PDF functionality
-        const printPdfBtn = document.getElementById("printPdfBtn");
-        printPdfBtn?.addEventListener("click", function () {
-            const iframeWindow = pdfIframe.contentWindow || pdfIframe;
-            iframeWindow.focus();
-            iframeWindow.print();
-        });
-    });
-
-
 </script>
 {% endblock javascript %}
 
 
 <!-- Scripts-->
 <script>
+    function showToast(message) {
+        alert(message);
+    }
+
     function resetSelection(rowId) {
         // Get the `select` element for the given row
         const selectField = document.getElementById(`select-${rowId}`);
+        console.log(selectField);
         if (selectField) {
             selectField.value = "";
         }
     }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // Listen for modal show events
+        document.querySelectorAll(".modal").forEach((modal) => {
+            modal.addEventListener("show.bs.modal", function () {
+                const openModals = document.querySelectorAll(".modal.show").length;
+
+                // Adjust z-index of the current modal to stack properly
+                const modalDialog = this.querySelector(".modal-dialog");
+                if (modalDialog) {
+                    modalDialog.style.zIndex = 1040 + (openModals + 1) * 10;
+                }
+
+                // Adjust the backdrop for stacking
+                const modalBackdrop = document.createElement("div");
+                modalBackdrop.className = "modal-backdrop fade show";
+                modalBackdrop.style.zIndex = 1039 + (openModals + 1) * 10;
+                document.body.appendChild(modalBackdrop);
+            });
+
+            // Listen for modal hide events
+            modal.addEventListener("hidden.bs.modal", function () {
+                // Remove the last backdrop when the top modal is closed
+                const openModals = document.querySelectorAll(".modal.show").length;
+                if (openModals === 0) {
+                    document.querySelectorAll(".modal-backdrop").forEach((backdrop) => {
+                        backdrop.remove();
+                    });
+                }
+            });
+        });
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // Select all "View PDF" buttons
+        const viewPdfBtns = document.querySelectorAll(".view-pdf-btn");
+
+        // Modal Elements
+        const pdfIframe = document.getElementById("pdfIframe");
+        const downloadPdfBtn = document.getElementById("downloadPdfBtn");
+        const printPdfBtn = document.getElementById("printPdfBtn");
+
+        // Function to handle viewing the PDF
+        viewPdfBtns.forEach((btn) => {
+            btn.addEventListener("click", function () {
+                // Get the PDF URL from the button's data attribute
+                const pdfUrl = this.getAttribute("data-pdf-url");
+
+                // Check if the URL is valid
+                if (!pdfUrl) {
+                    console.error("PDF URL is missing.");
+                    return;
+                }
+
+                // Update iframe source to display the PDF
+                if (pdfIframe) {
+                    pdfIframe.setAttribute("src", pdfUrl);
+                } else {
+                    console.error("PDF iframe element is not found.");
+                }
+
+                // Update the download link for the PDF
+                if (downloadPdfBtn) {
+                    downloadPdfBtn.setAttribute("href", pdfUrl);
+                } else {
+                    console.error("Download button element is not found.");
+                }
+            });
+        });
+
+        // Function to handle printing the PDF
+        if (printPdfBtn) {
+            printPdfBtn.addEventListener("click", function () {
+                if (pdfIframe) {
+                    const iframeWindow = pdfIframe.contentWindow || pdfIframe;
+                    if (iframeWindow) {
+                        iframeWindow.focus();
+                        iframeWindow.print();
+                    } else {
+                        console.error("Unable to access iframe content for printing.");
+                    }
+                } else {
+                    console.error("PDF iframe element is not found.");
+                }
+            });
+        } else {
+            console.error("Print button element is not found.");
+        }
+    });
+
 
 
     function submitUpdateItemStockForm(event, purchaseNumber) {
@@ -1439,19 +1543,16 @@
             },
             body: JSON.stringify(payload),
         })
-            .then((response) => {
-                if (response.ok) {
-                    console.log(response);
-                    // alert("Items updated successfully!");
-                    // location.reload(); // Reload the page to show updated data
-                } else {
-                    console.log(response);
-                    // alert("Error updating items. Please try again.");
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.success) {
+                    window.location.reload();
                 }
             })
-            .catch((error) => console.error("Error:", error));
+            .catch((error) => {
+                console.error("Error retrying request:", error);
+            });
     }
-
 
     function submitCreateItemStockForm(event, purchaseNumber) {
         event.preventDefault();
@@ -1494,16 +1595,15 @@
                 "X-CSRFToken": document.querySelector('[name="csrfmiddlewaretoken"]').value,
             },
             body: JSON.stringify(payload),
-        })
-            .then((response) => {
-                if (response.ok) {
-                    alert("Items created successfully!");
-                    // location.reload(); // Reload the page to reflect the changes
-                } else {
-                    alert("Error creating items. Please try again.");
+        }).then((response) => response.json())
+            .then((data) => {
+                if (data.success) {
+                    window.location.reload();
                 }
             })
-            .catch((error) => console.error("Error:", error));
+            .catch((error) => {
+                console.error("Error retrying request:", error);
+            });
     }
 
 
@@ -1547,7 +1647,23 @@
         document.querySelectorAll(".purchase-request").forEach((button) => {
             button.addEventListener("click", function () {
                 const dataUrl = this.getAttribute("data-url");
+                const DISABLE_MINUTES = 5;
+                const disableMs = DISABLE_MINUTES * 60 * 1000;
 
+                // If you have multiple, consider unique IDs, e.g. `purchaseRequestLastClicked_<some_id>`.
+                const storageKey = "purchaseRequestLastClicked";
+
+                // Check if we have a previous timestamp
+                const lastClickedTime = localStorage.getItem(storageKey);
+                const currentTime = Date.now();
+
+                // If the last clicked time exists and is within 5 minutes, disable the button
+                if (lastClickedTime && currentTime - lastClickedTime < disableMs) {
+                    button.disabled = true;
+                    button.textContent = "Updating...";
+                    return
+                }
+                console.log(disableMs);
                 fetch(dataUrl, {
                     method: "GET",
                     headers: {
@@ -1557,6 +1673,16 @@
                     .then((response) => response.json())
                     .then((data) => {
                         if (data.success) {
+                            // 1) Show a toast
+                            showToast("Update in progress...");
+
+                            // 2) Change the text and disable the button
+                            button.textContent = "Updating...";
+                            button.disabled = true;
+
+                            // 3) Store the current timestamp in localStorage
+                            localStorage.setItem(storageKey, new Date().getTime());
+
                             console.log(data)
                             // window.location.reload();
                         }

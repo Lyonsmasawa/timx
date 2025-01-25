@@ -8,7 +8,7 @@ class Transaction(BaseModel):
     organization = models.ForeignKey(Organization, on_delete=models.DO_NOTHING)
     customer = models.ForeignKey(Customer, on_delete=models.DO_NOTHING)
     trader_invoice_number = models.CharField(max_length=200)
-    receipt_number = models.BigIntegerField()
+    receipt_number = models.BigIntegerField(unique=True)
     document_type = models.CharField(max_length=50, choices=[
         ('invoice', 'Invoice'),
         ('credit_note', 'Credit Note'),

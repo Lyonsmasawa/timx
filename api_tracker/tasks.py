@@ -279,7 +279,7 @@ def retry_failed_requests():
     Retries all pending or failed API requests that have not exceeded the retry limit.
     """
     failed_requests = APIRequestLog.objects.filter(
-        status__in=["pending", "failed"], retries__lt=4)
+        status__in=["pending", "failed", "retrying"], retries__lt=4)
 
     for request_log in failed_requests:
         wait_time = 5 * (request_log.retries + 1)  # Exponential backoff

@@ -771,3 +771,11 @@ html {
     background-color: #343434;
     color: white;
 }
+
+.modal-backdrop {
+    z-index: 1039; /* Base backdrop z-index */
+}
+
+.modal-dialog {
+    z-index: 1040; /* Base modal z-index */
+}

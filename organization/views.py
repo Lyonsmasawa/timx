@@ -368,11 +368,11 @@ def update_purchases_view(request, org_id):
             # Log the error and allow the application to proceed
             print(f"Celery is not reachable: {e}")
 
-        return JsonResponse({"status": "success", "message": "Purchase update initiated"}, status=200)
+        return JsonResponse({"success": True, "message": "Purchase update initiated"}, status=200)
     except AttributeError:
         return JsonResponse({"error": "User is not associated with an organization"}, status=400)
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
 @csrf_exempt

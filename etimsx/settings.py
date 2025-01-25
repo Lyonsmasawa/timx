@@ -90,6 +90,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+X_FRAME_OPTIONS = 'SAMEORIGIN'  # Allow same-origin iframes
+
 ROOT_URLCONF = 'etimsx.urls'
 
 # Templates

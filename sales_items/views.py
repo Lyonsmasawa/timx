@@ -1,5 +1,6 @@
 from collections import defaultdict
 from datetime import datetime
+from decimal import Decimal
 import json
 from django.http import HttpResponse
 import os
@@ -378,7 +379,7 @@ def sales_items_create_note(request, organization_id, transaction_id):
                         )
 
                         # Update Item's stock balance
-                        item_obj.item_current_balance += float(
+                        item_obj.item_current_balance += Decimal(
                             credit_note_quantity)
                         item_obj.save()
 
@@ -493,21 +494,22 @@ def sales_items_create_note(request, organization_id, transaction_id):
                 # Send Request via Celery
                 try:
                     send_api_request.apply_async(args=[request_log.id])
+                    return JsonResponse({'success': True, 'data': "Processing request"})
                 except OperationalError as e:
                     print(f"Celery is mot reachable: {e}")
 
-                # Generate PDF for Credit Note
-                pdf_path = generate_transaction_pdf(
-                    organization, credit_note_transaction, transaction_.customer, credit_note_items, credit_note_data, "credit_note")
+                # # Generate PDF for Credit Note
+                # pdf_path = generate_transaction_pdf(
+                #     organization, credit_note_transaction, transaction_.customer, credit_note_items, credit_note_data, "credit_note")
 
-                # Open and send the PDF as a response to auto-download
-                with open(pdf_path, "rb") as pdf_file:
-                    response = HttpResponse(
-                        pdf_file.read(), content_type='application/pdf'
-                    )
-                    response[
-                        'Content-Disposition'] = f'attachment; filename="credit_note_{formatted_credit_note_number}.pdf"'
-                    return response
+                # # Open and send the PDF as a response to auto-download
+                # with open(pdf_path, "rb") as pdf_file:
+                #     response = HttpResponse(
+                #         pdf_file.read(), content_type='application/pdf'
+                #     )
+                #     response[
+                #         'Content-Disposition'] = f'attachment; filename="credit_note_{formatted_credit_note_number}.pdf"'
+                #     return response
 
         except Exception as e:
             return JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
@@ -601,6 +603,60 @@ def generate_invoice_pdf(request, request_log_id, transaction_id,):
     issued_date = response_data["data"]["sdcDateTime"]
 
     document_type = "invoice"
+
+    # ✅ Generate the PDF dynamically using API data
+    pdf_path = generate_transaction_pdf(
+        transaction.organization,
+        transaction,
+        transaction.customer,
+        request_data,
+        response_data,
+        document_type,
+        receipt_number,
+        total_receipts,
+        internal_data,
+        receipt_signature,
+        issued_date
+    )
+
+    # Open and send the PDF as a response to auto-download
+    with open(pdf_path, "rb") as pdf_file:
+        response = HttpResponse(
+            pdf_file.read(), content_type="application/pdf")
+        response['Content-Disposition'] = f'attachment; filename="invoice_{transaction.receipt_number}.pdf"'
+        return response
+
+
+
+def generate_credit_note_pdf(request, request_log_id, transaction_id,):
+    """
+    Generate and return the credit note PDF dynamically from stored API request and response.
+    """
+    transaction = get_object_or_404(Transaction, id=transaction_id)
+    print(transaction)
+
+    # Retrieve the latest successful API request for this transaction
+    try:
+        request_log = APIRequestLog.objects.get(
+            id=request_log_id, transaction=transaction, request_type="saveCreditNote", status="success")
+    except APIRequestLog.DoesNotExist:
+        return HttpResponse("Credit note not available yet. Please retry later.", status=404)
+
+    # Get the API response details
+    response_data = request_log.response_data
+    request_data = request_log.request_payload
+
+    if not response_data or "data" not in response_data:
+        return HttpResponse("API response not found. Try again later.", status=404)
+
+    # Extract relevant data from the API response
+    receipt_number = response_data["data"]["curRcptNo"]
+    total_receipts = response_data["data"]["totRcptNo"]
+    internal_data = response_data["data"]["intrlData"]
+    receipt_signature = response_data["data"]["rcptSign"]
+    issued_date = response_data["data"]["sdcDateTime"]
+
+    document_type = "credit note"
 
     # ✅ Generate the PDF dynamically using API data
     pdf_path = generate_transaction_pdf(
