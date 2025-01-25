@@ -1,1 +1,0 @@
-web: gunicorn etimsx.wsgi --log-file -

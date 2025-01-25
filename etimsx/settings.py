@@ -51,6 +51,7 @@ VSCU_API_BASE_URL = env(
 # Installed apps
 INSTALLED_APPS = [
     'django_celery_beat',
+    'django_celery_results',
     'api_tracker',
     'device',
     'jazzmin',
@@ -117,6 +118,7 @@ CELERY_BROKER_URL = env(
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_TIMEZONE = "Africa/Nairobi"
+CELERY_RESULT_BACKEND = 'django-db'
 
 
 # Database Configuration

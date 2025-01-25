@@ -21,9 +21,9 @@
         </div>
 
 
-        {% if messages %}
+        {% if messagess %}
         <ul class="messages">
-            {% for message in messages %}
+            {% for message in messagess %}
             <li class="alert {{ message.tags }}">{{ message }}</li>
             {% endfor %}
         </ul>
@@ -404,12 +404,11 @@
                     </div>
                     `;
                     organizationList.insertAdjacentHTML('beforeend', newOrg);
-
-                    const closeButton = document.querySelector('.btn-close'); // Close button in the modal
-                    if (closeButton) {
-                        closeButton.click(); // Simulate click to close modal
-                    }
                     form.reset();
+
+                    // const modal = bootstrap.Modal.getInstance(document.getElementById('organizationModal'));
+                    //modal.hide();
+                    window.location.reload();
                 } else if (data.errors) {
                     // Show validation errors in the modal
                     console.log('Errors:', data.errors);

@@ -220,8 +220,7 @@ def organization_detail(request, pk):
     except Exception as e:
         # Log the error and stay on the page
         print(f"Error in organization_detail view: {str(e)}")
-        messages.error(
-            request, "An unexpected error occurred. Please try again later.")
+        # messages.error(request, "An unexpected error occurred. Please try again later.")
         return render(request, "organization/organization_detail.html", {
             "organization": organization,
             "items": items,
