@@ -1,26 +1,39 @@
-# Use the official Python image as a base
-FROM python:3.10-slim
+# Use an official Python runtime as a parent image
+FROM python:3.11.4-alpine
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Create and set the working directory
-WORKDIR /app
+# Set the working directory
+WORKDIR /usr/src/app
 
-# Copy project files
-COPY . /app/
+# Install system dependencies for WeasyPrint
+RUN apk add --no-cache \
+    gcc \
+    musl-dev \
+    libffi-dev \
+    gobject-introspection-dev \
+    cairo-dev \
+    pango-dev \
+    gdk-pixbuf-dev \
+    jpeg-dev \
+    zlib-dev
+
+RUN pip install --upgrade pip
+
+# Copy only requirements to leverage Docker cache
+COPY ./requirements.txt /usr/src/app/
 
 # Install dependencies
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -r requirements.txt
 
+# create unprivileged user
+# RUN adduser --disabled-password --gecos '' myuser
 
-# Expose port for Django
-EXPOSE 8000
+COPY ./entrypoint.sh /usr/src/app/entrypoint.sh
 
-# Use the entrypoint script
-ENTRYPOINT ["/app/entrypoint.sh"]
+# Copy the rest of the application code
+COPY . /usr/src/app/
 
-# Default command to run the server
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+ENTRYPOINT [ "/usr/src/app/entrypoint.sh" ]

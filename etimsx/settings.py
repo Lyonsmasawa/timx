@@ -115,7 +115,7 @@ WSGI_APPLICATION = 'etimsx.wsgi.application'
 
 # Celery Configuration
 CELERY_BROKER_URL = env(
-    "CELERY_BROKER_URL", default="amqp://admin:mysecurepassword@172.25.8.136:5672/")
+    "CELERY_BROKER_URL", default="amqp://admin:mysecurepassword@rabbitmq:5672/")
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_TIMEZONE = "Africa/Nairobi"
