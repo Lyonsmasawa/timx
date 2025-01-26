@@ -74,6 +74,7 @@ def sales_items_create(request, pk):
                 # Track totals per tax type
                 tax_totals = defaultdict(
                     lambda: {"taxable_amount": 0, "tax_amount": 0})
+                total_line_items_amount = 0
 
                 # Create SalesItems
                 for item in invoice_data['items']:
@@ -87,10 +88,15 @@ def sales_items_create(request, pk):
 
                     # Normalize tax code (A, B, C, D, E)
                     tax_code = item['taxCode'].upper()
-                    taxable_amount = item['rate'] * item['quantity']
+
+                    taxable_amount = round(
+                        (float(item["quantity"]) * float(item["rate"])) - float(item['discount']), 2)
                     tax_rate = TAX_RATES.get(tax_code, 0)
                     tax_amount = (taxable_amount * tax_rate) / \
                         100  # Calculate tax
+
+                    total_line_items_amount += round(
+                        float(item["lineTotal"]), 2)
 
                     # Store taxable amount & tax amount based on tax code
                     tax_totals[tax_code]["taxable_amount"] += taxable_amount
@@ -167,7 +173,8 @@ def sales_items_create(request, pk):
                     "taxAmtE": tax_totals["E"]["tax_amount"],
                     "totTaxblAmt": total_taxable_amount,
                     "totTaxAmt": total_tax_amount,
-                    "totAmt": total_taxable_amount + total_tax_amount, "totItemCnt": len(sales_items_list),
+                    "totAmt": total_line_items_amount,
+                    "totItemCnt": len(sales_items_list),
                     "prchrAcptcYn": "N",
                     "remark": None,
                     "regrId": "Admin",
@@ -225,6 +232,7 @@ def sales_items_create(request, pk):
                 # ✅ Send request asynchronously using Celery
                 try:
                     send_api_request.apply_async(args=[request_log.id])
+                    return JsonResponse({'success': True, 'data': "Processing request"})
                 except OperationalError as e:
                     print(f"Celery is mot reachable: {e}")
 
@@ -475,7 +483,11 @@ def sales_items_create_note(request, organization_id, transaction_id):
                                 (TAX_RATES.get(
                                     credit_note_item["tax_code"], 0) / 100), 2
                             ),
-                            "totAmt": round(float(credit_note_item["rate"]) * credit_note_item["qty"], 2),
+                            "totAmt": round(float(credit_note_item["rate"]) * credit_note_item["qty"], 2) + round(
+                                float(credit_note_item["rate"]) * credit_note_item["qty"] *
+                                (TAX_RATES.get(
+                                    credit_note_item["tax_code"], 0) / 100), 2
+                            ),
                         }
                         for index, credit_note_item in enumerate(credit_note_items)
                     ]
@@ -625,7 +637,6 @@ def generate_invoice_pdf(request, request_log_id, transaction_id,):
             pdf_file.read(), content_type="application/pdf")
         response['Content-Disposition'] = f'attachment; filename="invoice_{transaction.receipt_number}.pdf"'
         return response
-
 
 
 def generate_credit_note_pdf(request, request_log_id, transaction_id,):
