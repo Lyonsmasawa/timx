@@ -1,28 +1,55 @@
 services:
   web:
     build: .
-    command: python manage.py runserver 0.0.0.0:8000
-    volumes:
-      - .:/app
-      - ./db.sqlite3:/app/db.sqlite3
     ports:
       - "8000:8000"
+    command: >
+      sh -c "
+      gpg --decrypt --passphrase $ENV_PASSPHRASE --batch --quiet /app/.env.gpg > /app/.env &&
+      python manage.py migrate &&
+      python manage.py collectstatic --noinput &&
+      python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+      - .:/app/db.sqlite3
+      - .:/app/.env.gpg
+    environment:
+      DJANGO_SETTINGS_MODULE: etimsx.settings
+      DEBUG: True
+    depends_on:
+      - celery
+      - rabbitmq
+
+  celery:
+    build: .
+    command: >
+      sh -c "
+      ./wait-for-it.sh rabbitmq &&
+      celery -A etimsx worker --loglevel=info"
+    volumes:
+      - .:/app
+    environment:
+      DEBUG: True
+      CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
+    depends_on:
+      - rabbitmq
+
+  celery-beat:
+    build: .
+    command: >
+      sh -c "
+      ./wait-for-it.sh rabbitmq &&
+      celery -A etimsx beat --loglevel=info"
+    volumes:
+      - .:/app
+    environment:
+      DEBUG: True
+      CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
     depends_on:
       - rabbitmq
 
   rabbitmq:
-    image: rabbitmq:3-management
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+    image: "rabbitmq:3-management"
     ports:
-      - "5672:5672"       # RabbitMQ broker
-      - "15672:15672"     # RabbitMQ Management UI
-
-  celery:
-    build: .
-    command: celery -A your_project_name worker --loglevel=info
-    volumes:
-      - .:/app
-    depends_on:
-      - rabbitmq
+      - "5672:5672"
+      - "15672:15672"

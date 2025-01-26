@@ -1,4 +1,4 @@
-# Use the official Python image as a parent image
+# Use the official Python image as a base
 FROM python:3.10-slim
 
 # Set environment variables
@@ -15,8 +15,12 @@ COPY . /app/
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 RUN pip install --no-cache-dir -r requirements.txt
 
+
 # Expose port for Django
 EXPOSE 8000
 
-# Run the app
+# Use the entrypoint script
+ENTRYPOINT ["/app/entrypoint.sh"]
+
+# Default command to run the server
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
