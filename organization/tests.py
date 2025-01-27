@@ -46,8 +46,6 @@ class OrganizationModelTest(TestCase):
         )
 
         with self.assertRaises(Exception):
-            # Could be IntegrityError or Django ValidationError, 
-            # depending on how you handle it. We'll catch a generic Exception for demonstration.
             Organization.objects.create(
                 organization_name="UniqueOrg",
                 organization_pin="PIN-001",
