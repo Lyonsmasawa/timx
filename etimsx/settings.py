@@ -55,13 +55,13 @@ INSTALLED_APPS = [
     'device',
     'jazzmin',
     'dal',
-    'dal_select2',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_select2',
     'rest_framework',
     'crispy_forms',
     'accounts',
@@ -75,7 +75,12 @@ INSTALLED_APPS = [
     'purchases',
     'corsheaders',
     'bootstrap5',
+    "crispy_bootstrap5",
 ]
+
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+
+CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 # Middleware settings
 MIDDLEWARE = [

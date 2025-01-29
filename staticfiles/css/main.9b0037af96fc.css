@@ -20,7 +20,7 @@ html {
     height: 60vh;
     background: linear-gradient(-45deg,
             rgba(0, 153, 145, 0),
-            rgba(0, 0, 0, 70)), url('../images/adminbg.jpg');
+            rgba(0, 0, 0, 70)), url("../images/adminbg.8bcd8ed0cbdb.jpg");
     background-size: cover;
     background-repeat: no-repeat;
     display: flex;
@@ -753,6 +753,23 @@ html {
     background-color: lightgray;
 }
 
+* Ensure Select2 dropdown is above Bootstrap modal */ .select2-container {
+    z-index: 1050 !important;
+}
+
+.select2-container--open {
+    z-index: 9999 !important;
+}
+
+.select2-search__field:focus {
+    background-color: red !important;
+
+}
+
+.select2-search__field:hover {
+    background-color: #354649 !important;
+}
+
 .view-items-btn {
     background-color: #343434;
 }
@@ -763,13 +780,12 @@ html {
 }
 
 .modal-backdrop {
-    z-index: 909;
+    z-index: 1039;
     /* Base backdrop z-index */
 }
 
-
 .modal-dialog {
-    z-index: 940;
+    z-index: 1040;
     /* Base modal z-index */
 }
 
@@ -784,128 +800,4 @@ html {
     align-items: center;
     text-align: center;
     justify-content: center;
-}
-
-/* Ensure the select2 dropdown appears above the modal */
-.select2-dropdown,
-.select2-search__field {
-    z-index: 2999 !important;
-    /* Increase z-index to ensure it's above the modal */
-}
-
-/* Styling the select input field */
-.select2-container .select2-selection--single {
-    height: 40px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    padding-left: 10px;
-    font-size: 16px;
-}
-
-/* Styling the dropdown */
-.select2-dropdown {
-    border-radius: 5px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-}
-
-/* Highlight the selected option */
-.select2-results__option--highlighted {
-    background-color: #007bff;
-    color: white;
-}
-
-/* Add a custom clear button */
-.select2-container .select2-selection__clear {
-    color: red;
-}
-
-/* Adjust the width */
-.select2-container--default .select2-selection--single {
-    width: 100% !important;
-    /* Make it full width */
-}
-
-.select2-container--open {
-    z-index: 3000 !important;
-}
-
-
-/* Form Styling */
-#createItemModal form {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-}
-
-/* Label Styling */
-#createItemModal label {
-    font-weight: bold;
-    display: block;
-    font-size: 18px;
-    margin-bottom: 8px;
-    color: #333;
-}
-
-/* Input and Select Fields */
-#createItemModal input,
-#createItemModal select {
-    padding: 4px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    width: 100% !important;
-    display: block;
-    /* Default width */
-    box-sizing: border-box;
-    /* Spacing between fields */
-}
-
-/* Focused Input Styling */
-#createItemModal input:focus,
-#createItemModal select:focus {
-    border-color: #007bff;
-    outline: none;
-}
-
-#createItemModal .select2 {
-    width: 100% !important;
-}
-
-/* Submit Button Styling */
-#createItemModal button[type="submit"] {
-    padding: 12px;
-    background-color: #000000;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    font-size: 16px;
-    cursor: pointer;
-    width: 100%;
-    margin-top: 20px;
-}
-
-#createItemModal button[type="submit"]:hover {
-    background-color: #0056b3;
-}
-
-/* Close Button Styling */
-#createItemModal .modal-header .close {
-    font-size: 1.5em;
-    color: #000;
-    opacity: 1;
-}
-
-#createItemModal .modal-header .close:hover {
-    opacity: 0.7;
-}
-
-#createItemModal p {
-    width: 100%;
-}
-
-#sales_form label {
-    font-weight: bold;
-    display: block;
-    font-size: 18px;
-    margin-bottom: 8px;
-    color: #333;
 }

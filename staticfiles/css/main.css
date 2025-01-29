@@ -543,12 +543,12 @@ html {
     align-items: center;
     justify-content: space-between;
     /* padding: 1rem; */
-    color: white !important;
-    background-color: #000000 !important;
+    color: rgb(0, 0, 0) !important;
+    background-color: #dadada !important;
 }
 
 .td-header a {
-    color: white !important;
+    color: rgb(0, 0, 0) !important;
 }
 
 .widget-points li {
@@ -609,6 +609,13 @@ html {
     font-size: 1.2rem;
 }
 
+.a-btn {
+    padding: 3px 10px;
+    background-color: #414141;
+    color: white;
+    font-size: 1rem;
+}
+
 
 .i-btn {
     padding: 5px 15px;
@@ -667,7 +674,7 @@ html {
 .hr-style {
     color: #000 !important;
     background-color: #000000 !important;
-    height: 2rem !important;
+    height: 1.5rem !important;
 }
 
 .lines td {
@@ -739,7 +746,166 @@ html {
     background-color: orange;
 }
 
-.status.Pending, .status.pending {
+.status.Pending,
+.status.pending,
+.status.verifieds {
     color: black;
     background-color: lightgray;
+}
+
+.view-items-btn {
+    background-color: #343434;
+}
+
+.view-items-btn:hover {
+    background-color: #343434;
+    color: white;
+}
+
+.modal-backdrop {
+    z-index: 909;
+    /* Base backdrop z-index */
+}
+
+
+.modal-dialog {
+    z-index: 940;
+    /* Base modal z-index */
+}
+
+
+.warning {
+    background-color: rgba(255, 187, 0, 0.733);
+    color: #000;
+}
+
+.retry-request {
+    padding: 1px 2px;
+    align-items: center;
+    text-align: center;
+    justify-content: center;
+}
+
+/* Ensure the select2 dropdown appears above the modal */
+.select2-dropdown,
+.select2-search__field {
+    z-index: 2999 !important;
+    /* Increase z-index to ensure it's above the modal */
+}
+
+/* Styling the select input field */
+.select2-container .select2-selection--single {
+    height: 40px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding-left: 10px;
+    font-size: 16px;
+}
+
+/* Styling the dropdown */
+.select2-dropdown {
+    border-radius: 5px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Highlight the selected option */
+.select2-results__option--highlighted {
+    background-color: #007bff;
+    color: white;
+}
+
+/* Add a custom clear button */
+.select2-container .select2-selection__clear {
+    color: red;
+}
+
+/* Adjust the width */
+.select2-container--default .select2-selection--single {
+    width: 100% !important;
+    /* Make it full width */
+}
+
+.select2-container--open {
+    z-index: 3000 !important;
+}
+
+
+/* Form Styling */
+#createItemModal form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+/* Label Styling */
+#createItemModal label {
+    font-weight: bold;
+    display: block;
+    font-size: 18px;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+/* Input and Select Fields */
+#createItemModal input,
+#createItemModal select {
+    padding: 4px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 100% !important;
+    display: block;
+    /* Default width */
+    box-sizing: border-box;
+    /* Spacing between fields */
+}
+
+/* Focused Input Styling */
+#createItemModal input:focus,
+#createItemModal select:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+#createItemModal .select2 {
+    width: 100% !important;
+}
+
+/* Submit Button Styling */
+#createItemModal button[type="submit"] {
+    padding: 12px;
+    background-color: #000000;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 20px;
+}
+
+#createItemModal button[type="submit"]:hover {
+    background-color: #0056b3;
+}
+
+/* Close Button Styling */
+#createItemModal .modal-header .close {
+    font-size: 1.5em;
+    color: #000;
+    opacity: 1;
+}
+
+#createItemModal .modal-header .close:hover {
+    opacity: 0.7;
+}
+
+#createItemModal p {
+    width: 100%;
+}
+
+#sales_form label {
+    font-weight: bold;
+    display: block;
+    font-size: 18px;
+    margin-bottom: 8px;
+    color: #333;
 }

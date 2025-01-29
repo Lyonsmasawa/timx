@@ -1,10 +1,11 @@
 import json
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, OperationalError, transaction
 from django.urls import reverse
 from api_tracker.models import APIRequestLog
 from api_tracker.tasks import send_api_request
+from commons.item_classification_constants import ITEM_CLASS_CHOICES
 from item_movement.models import ItemMovement
 from organization.models import Organization
 from .models import Item
@@ -16,7 +17,7 @@ from dal import autocomplete
 from commons.constants import (
     COUNTRY_CHOICES, PRODUCT_TYPE_CHOICES, UNIT_CHOICES, PACKAGE_CHOICES, TAX_TYPE_CHOICES, TAXPAYER_STATUS_CHOICES
 )
-from commons.utils import get_choices_as_autocomplete
+from commons.utils import get_choices_as_autocomplete, get_item_class_choices
 # List Items
 
 
@@ -388,9 +389,12 @@ def save_item_composition(request):
             )
 
             # Send the request asynchronously
-            send_api_request.apply_async(args=[request_log.id])
-
-            return JsonResponse({"success": "Item composition saved and queued for API request."}, status=200)
+            try:
+                send_api_request.apply_async(args=[request_log.id])
+                return JsonResponse({"success": "Item composition saved and queued for API request."}, status=200)
+            except OperationalError as e:
+                print(f"Celery is mot reachable: {e}")
+                return JsonResponse({'success': True, 'data': "Processing request"})
 
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
@@ -398,65 +402,39 @@ def save_item_composition(request):
     return JsonResponse({"error": "Invalid request method."}, status=405)
 
 
-class CountryCodeAutocomplete(autocomplete.Select2QuerySetView):
-    def get_queryset(self):
-        # Start with all country codes
-        queryset = Item.objects.all()
+# def ajax_filter(request):
+#     term = request.GET.get('q', '')  # Get the search term
+#     if term:
+#         filtered_units = [unit for unit in UNIT_CHOICES if term.lower() in unit[1].lower()]  # Filter based on the term
+#     else:
+#         filtered_units = UNIT_CHOICES  # Return the full list if no search term is provided
 
-        # Filter by user input (search term)
-        if self.q:
-            queryset = queryset.filter(origin_nation_code__icontains=self.q)
+#     results = [{'id': unit[0], 'text': unit[1]} for unit in filtered_units]  # Prepare response data
+#     return JsonResponse({'results': results})
 
-        return queryset
+def ajax_filter(request, field_name):
+    term = request.GET.get('q', '')  # Get the search term
 
+    # Determine which field is being filtered
+    if field_name == 'quantity_unit_code':
+        choices = UNIT_CHOICES
+    elif field_name == 'origin_nation_code':
+        choices = COUNTRY_CHOICES
+    elif field_name == 'item_type_code':
+        choices = PRODUCT_TYPE_CHOICES
+    elif field_name == 'package_unit_code':
+        choices = PACKAGE_CHOICES
+    elif field_name == 'item_class_code':
+        choices = get_item_class_choices()
+    elif field_name == 'item_tax_code':
+        choices = TAX_TYPE_CHOICES
+    else:
+        choices = []
 
-class ItemTypeCodeAutocomplete(autocomplete.Select2QuerySetView):
-    def get_queryset(self):
-        # Start with all item type codes
-        queryset = Item.objects.all()
+    # Filter the list based on the search term
+    filtered_choices = [unit for unit in choices if term.lower(
+    ) in unit[1].lower()] if term else choices
 
-        # Filter by user input (search term)
-        if self.q:
-            queryset = queryset.filter(item_type_code__icontains=self.q)
-
-        return queryset
-
-
-class QuantityUnitCodeAutocomplete(autocomplete.Select2ListView):
-    def get(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return JsonResponse([], safe=False)
-
-        query = request.GET.get('q', '').lower()
-
-        filtered_choices = [
-            {"id": code, "text": name}
-            for code, name in UNIT_CHOICES
-            if query in name.lower() or query in code.lower()
-        ]
-
-        return JsonResponse({"results": filtered_choices}, safe=False)
-
-
-class PackageUnitCodeAutocomplete(View):
-    def get(self, request, *args, **kwargs):
-        query = request.GET.get('q', "")
-        results = get_choices_as_autocomplete(PACKAGE_CHOICES, query)
-        print(results)
-        return JsonResponse({"results": results})
-
-
-class ItemClassCodeAutocomplete(View):
-    def get(self, request, *args, **kwargs):
-        query = request.GET.get('q', "")
-        results = get_choices_as_autocomplete(TAX_TYPE_CHOICES, query)
-        print(results)
-        return JsonResponse({"results": results})
-
-
-class ItemTaxCodeAutocomplete(View):
-    def get(self, request, *args, **kwargs):
-        query = request.GET.get('q', "")
-        results = get_choices_as_autocomplete(TAXPAYER_STATUS_CHOICES, query)
-        print(results)
-        return JsonResponse({"results": results})
+    # Prepare the response data
+    results = [{'id': unit[0], 'text': unit[1]} for unit in filtered_choices]
+    return JsonResponse({'results': results})

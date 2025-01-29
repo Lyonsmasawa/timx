@@ -29,10 +29,10 @@ urlpatterns = [
     path('api/item/', include('item.urls')),                  # item URLs
     path('api/customer/', include('customer.urls')),          # customer URLs
     path('api/transaction/', include('transaction.urls')),    # transaction URLs
-    path('api/item_movement/', include('item_movement.urls')),        # inventory URLs
+    path('api/item_movement/', include('item_movement.urls')),  # inventory URLs
     path('api/sales_items/', include('sales_items.urls')),    # sales_items URLs
+    path("select2/", include("django_select2.urls")),
 ]
-
 
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

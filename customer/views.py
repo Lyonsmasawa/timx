@@ -2,7 +2,6 @@ from django.db import IntegrityError
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.urls import reverse
-from dal import autocomplete
 from organization.models import Organization
 from .models import Customer
 from .forms import CustomerForm
@@ -147,16 +146,3 @@ def customer_delete(request, pk):
     except Exception as e:
         return JsonResponse({'success': False, 'errors': {'general': ["Invalid request method."]}})
 
-
-# Customer Autocomplete
-class CustomerAutocomplete(autocomplete.Select2QuerySetView):
-    def get_queryset(self):
-        if not self.request.user.is_authenticated:
-            return Customer.objects.none()  # No results if not logged in
-
-        qs = Customer.objects.all()
-
-        if self.q:  # If user types a query
-            qs = qs.filter(customer_name__icontains=self.q)
-
-        return qs

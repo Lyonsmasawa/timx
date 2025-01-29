@@ -20,7 +20,7 @@ html {
     height: 60vh;
     background: linear-gradient(-45deg,
             rgba(0, 153, 145, 0),
-            rgba(0, 0, 0, 70)), url('../images/adminbg.jpg');
+            rgba(0, 0, 0, 70)), url("../images/adminbg.8bcd8ed0cbdb.jpg");
     background-size: cover;
     background-repeat: no-repeat;
     display: flex;

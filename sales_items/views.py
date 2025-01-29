@@ -235,6 +235,7 @@ def sales_items_create(request, pk):
                     return JsonResponse({'success': True, 'data': "Processing request"})
                 except OperationalError as e:
                     print(f"Celery is mot reachable: {e}")
+                    return JsonResponse({'success': True, 'data': "Processing request"})
 
                 # # Step 3: Generate the PDF Invoice and get the file path
                 # pdf_path = generate_transaction_pdf(
@@ -509,6 +510,7 @@ def sales_items_create_note(request, organization_id, transaction_id):
                     return JsonResponse({'success': True, 'data': "Processing request"})
                 except OperationalError as e:
                     print(f"Celery is mot reachable: {e}")
+                    return JsonResponse({'success': True, 'data': "Processing request"})
 
                 # # Generate PDF for Credit Note
                 # pdf_path = generate_transaction_pdf(
@@ -631,12 +633,12 @@ def generate_invoice_pdf(request, request_log_id, transaction_id,):
         issued_date
     )
 
-    # Open and send the PDF as a response to auto-download
-    with open(pdf_path, "rb") as pdf_file:
-        response = HttpResponse(
-            pdf_file.read(), content_type="application/pdf")
-        response['Content-Disposition'] = f'attachment; filename="invoice_{transaction.receipt_number}.pdf"'
-        return response
+    # # Open and send the PDF as a response to auto-download
+    # with open(pdf_path, "rb") as pdf_file:
+    #     response = HttpResponse(
+    #         pdf_file.read(), content_type="application/pdf")
+    #     response['Content-Disposition'] = f'attachment; filename="invoice_{transaction.receipt_number}.pdf"'
+    return True
 
 
 def generate_credit_note_pdf(request, request_log_id, transaction_id,):
@@ -685,11 +687,11 @@ def generate_credit_note_pdf(request, request_log_id, transaction_id,):
     )
 
     # Open and send the PDF as a response to auto-download
-    with open(pdf_path, "rb") as pdf_file:
-        response = HttpResponse(
-            pdf_file.read(), content_type="application/pdf")
-        response['Content-Disposition'] = f'attachment; filename="invoice_{transaction.receipt_number}.pdf"'
-        return response
+    # with open(pdf_path, "rb") as pdf_file:
+    #     response = HttpResponse(
+    #         pdf_file.read(), content_type="application/pdf")
+    #     response['Content-Disposition'] = f'attachment; filename="invoice_{transaction.receipt_number}.pdf"'
+    return True
 
 
 def generate_transaction_pdf(
@@ -925,17 +927,3 @@ def gxeenerate_transaction_pdf(organization, transaction, customer, sales_items_
     transaction.save()
 
     return pdf_path
-
-
-class ItemAutocomplete(autocomplete.Select2QuerySetView):
-    def get_queryset(self):
-        # Don't forget to filter out results depending on the visitor !
-        if not self.request.user.is_authenticated:
-            return Item.objects.none()
-
-        qs = Item.objects.filter()
-
-        if self.q:
-            qs = qs.filter(name__istartswith=self.q)
-
-        return qs

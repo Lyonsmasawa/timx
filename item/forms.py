@@ -1,16 +1,15 @@
+# forms.py
 from django import forms
-from dal import autocomplete
-from .models import Item
+from django.urls import reverse
+from django_select2.forms import Select2Widget
 
-# In the form definition
+from commons.item_classification_constants import ITEM_CLASS_CHOICES
+from commons.utils import get_item_class_choices
+from .models import Item
+from commons.constants import COUNTRY_CHOICES, PACKAGE_CHOICES, PRODUCT_TYPE_CHOICES, TAX_TYPE_CHOICES, UNIT_CHOICES
 
 
 class ItemForm(forms.ModelForm):
-    # quantity_unit_code = forms.CharField(
-    #     widget=autocomplete.ListSelect2(
-    #         url='item:quantity-unit-code-autocomplete')
-    # )
-
     class Meta:
         model = Item
         fields = [
@@ -27,23 +26,28 @@ class ItemForm(forms.ModelForm):
             "item_system_name",
         ]
 
-        # widgets = {
-        #     'origin_nation_code': autocomplete.ListSelect2(
-        #         url='item:country-code-autocomplete'
-        #     ),
-        #     'item_type_code': autocomplete.ListSelect2(
-        #         url='item:item-type-code-autocomplete'
-        #     ),
-        #     'quantity_unit_code': autocomplete.ListSelect2(
-        #         url='item:quantity-unit-code-autocomplete'
-        #     ),
-        #     'package_unit_code': autocomplete.ListSelect2(
-        #         url='item:package-unit-code-autocomplete'
-        #     ),
-        #     'item_class_code': autocomplete.ListSelect2(
-        #         url='item:item-class-code-autocomplete'
-        #     ),
-        #     'item_tax_code': autocomplete.ListSelect2(
-        #         url='item:item-tax-code-autocomplete'
-        #     ),
-        # }
+    # Define all choice fields
+    origin_nation_code = forms.ChoiceField(choices=COUNTRY_CHOICES)
+    item_type_code = forms.ChoiceField(choices=PRODUCT_TYPE_CHOICES)
+    item_class_code = forms.ChoiceField(choices=get_item_class_choices())
+    quantity_unit_code = forms.ChoiceField(choices=UNIT_CHOICES)
+    package_unit_code = forms.ChoiceField(choices=PACKAGE_CHOICES)
+    item_tax_code = forms.ChoiceField(choices=TAX_TYPE_CHOICES)
+
+    def __init__(self, *args, **kwargs):
+        super(ItemForm, self).__init__(*args, **kwargs)
+
+        # Apply Select2Widget to each field with choices
+        for field_name in ['quantity_unit_code', 'origin_nation_code', 'item_type_code', 'item_class_code', 'package_unit_code', 'item_tax_code']:
+            self.fields[field_name].widget = Select2Widget(attrs={
+                'data-placeholder': 'Select or type...',
+                'data-minimum-input-length': '0',
+                # Dynamically pass field_name
+                'data-ajax-url': reverse('item:ajax_filter', args=[field_name]),
+                'data-allow-clear': 'true',
+                'data-dropdown-parent': '#createItemModal .modal-content',  # Attach dropdown to modal
+            })
+
+            # Optionally set the initial value for each field
+            self.fields[field_name].initial = getattr(
+                self, field_name.upper() + '_CHOICES', [])

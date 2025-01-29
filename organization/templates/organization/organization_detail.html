@@ -1226,7 +1226,8 @@
 </div>
 
 <!-- Item Creation Modal -->
-<div class="modal fade" id="createItemModal" tabindex="-1" aria-labelledby="itemModalLabel" aria-hidden="true">
+<div class="modal fade" id="createItemModal" tabindex="-1" data-focus="false" aria-labelledby="itemModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered  modal-part">
         <div class="modal-content">
             <div class="modal-header">
@@ -1234,37 +1235,14 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
+
                 <form method="POST" id="itemForm" action="{% url 'item:item_create' organization.id %}">
-                    <div id="item-form-errorss" class="alert alert-danger d-none">
-                        <!-- Error messages will be inserted here -->
-                    </div>
                     {% csrf_token %}
-                    <input type="hidden" name="action_name" value="create_item">
-
-
-                    {{ form.media }}
-
-                    <div class="form-row">
-                        {% for field in item_form %}
-                        {% if forloop.counter0|divisibleby:2 %}
-                        <!-- Start a new row for every pair of fields -->
-                        <div class="row">
-                            {% endif %}
-
-                            <div class="col-md-6">
-                                {% bootstrap_field field %}
-                            </div>
-
-                            {% if forloop.counter|divisibleby:2 or forloop.last %}
-                        </div> <!-- End of row -->
-                        {% endif %}
-                        {% endfor %}
-                    </div>
-
-                    <div class="text-center">
-                        <button type="submit" class="mt-3 btn btn-danger btn-sm w-btn">Save Item</button>
-                    </div>
+                    {{ item_form.as_p }}
+                    {{ item_form.media }} <!-- This will load the JS and CSS for Select2 -->
+                    <button type="submit">Save Item</button>
                 </form>
+
             </div>
         </div>
     </div>
@@ -1273,85 +1251,52 @@
 
 {% block javascript %}
 <script>
-    $(document).ready(function () {
-        console.log("Initializing Select2 for id_quantity_unit_code...");
-
-        // Ensure jQuery is loaded before Select2
-        if (!$.fn.select2) {
-            console.error("Select2 is not loaded properly!");
-            return;
-        }
-
-        // Get the Select2 field
-        const quantity_unit_code = $("#id_dquantity_unit_code");
-
-        if (quantity_unit_code.length > 0) {
-            const dataUrl = quantity_unit_code.attr("data-autocomplete-light-url");
-
-            if (dataUrl) {
-                console.log("Initializing Select2 with AJAX for id_quantity_unit_code...");
-
-                quantity_unit_code.select2({
-                    placeholder: "Select a unit code",
-                    dropdownAutoWidth: true,
-                    ajax: {
-                        url: dataUrl,
-                        dataType: 'json',
-                        delay: 250,
-                        processResults: function (data) {
-                            console.log("Processing AJAX results...");
-                            return {
-                                results: data.results
-                            };
-                        },
-                        cache: true
-                    },
-                    minimumInputLength: 1
-                });
-            } else {
-                console.log("No data-autocomplete-light-url found. Initializing Select2 without AJAX.");
-                quantity_unit_code.select2({
-                    placeholder: "Select a unit code"
-                });
-            }
-        } else {
-            console.log("id_quantity_unit_code not found.");
-        }
-
-        // Fix Select2 inside Bootstrap modal
-        $('#createItemModal').on('shown.bs.modal', function () {
-            console.log("Modal opened. Re-initializing Select2...");
-            quantity_unit_code.select2({
-                dropdownParent: $("#createItemModal") // Ensures Select2 works inside the modal
-            });
-
-            // Delay focus to prevent Bootstrap stealing focus
-            setTimeout(function () {
-                let searchField = document.querySelector('.select2-container--open .select2-search__field');
-                if (searchField) {
-                    console.log("Focusing on Select2 search field...");
-                    searchField.focus();
-                }
-            }, 200);
-        });
-
-        // Reinitialize Select2 when switching Bootstrap tabs
-        $('a[data-bs-toggle="tab"]').on("shown.bs.tab", function () {
-            console.log("Tab switched. Re-initializing Select2...");
-            quantity_unit_code.select2();
-        });
-
-        // Detect dynamically added elements and initialize Select2
-        $(document).on('DOMNodeInserted', function (e) {
-            if ($(e.target).is("#id_quantity_unit_code")) {
-                console.log("New Select2 element detected. Initializing...");
-                $(e.target).select2();
-            }
-        });
-    });
 
 </script>
+
 {% endblock javascript %}
+
+
+
+<!-- Add Select2 CSS and JS -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        // Initialize Select2 on the customerSelect dropdown
+        $('#customerSelect').select2({
+            placeholder: '-- Select Customer --',
+            allowClear: true
+        });
+
+        // Event listener to update customer email when selection changes
+        $('#customerSelect').on('change', function () {
+            var selectedCustomer = $(this).find('option:selected');
+            var customerEmail = selectedCustomer.data('email'); // Get the email from the selected option
+            $('#customer_email').val(customerEmail); // Set the email field
+        });
+
+        // Initialize Select2 for itemSelect dropdown
+        $('#itemSelect').select2({
+            placeholder: '-- Select item --',
+        });
+
+        // Event listener for when an item is selected
+        $('#itemSelect').on('change', function () {
+            var selectedItem = $(this).find('option:selected');
+            var taxCode = selectedItem.data('tax-code');  // Get tax code
+            var currentBalance = selectedItem.data('current-balance');  // Get current balance (if needed)
+
+            // Set any necessary fields based on selected item (e.g., populate the tax-code-select dropdown)
+            $('.tax-code-select').val(taxCode).trigger('change');  // Preselect the tax code based on item selection
+
+            const row = $('.tax-code-select').closest('tr').get(0)
+            console.log(row)
+            var lineTotal = calculateLineTotal(row);
+        });
+    });
+</script>
 
 
 <!-- Scripts-->

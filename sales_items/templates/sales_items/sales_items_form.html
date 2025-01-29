@@ -1,9 +1,8 @@
 {% extends 'main.html' %}
 {% load bootstrap5 %}
-
 {% block content %}
 {% include 'res_nav.html' %}
-<div class="container res-form" style="max-width: 90rem; min-height: 90vh;">
+<div class="container res-form" id="sales_form" style="max-width: 90rem; min-height: 90vh;">
 
     {{ form.media }}
     <div class="container mt-3">
@@ -136,6 +135,47 @@
         </div>
     </div>
 </div>
+
+<!-- Add Select2 CSS and JS -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        // Initialize Select2 on the customerSelect dropdown
+        $('#customerSelect').select2({
+            placeholder: '-- Select Customer --',
+            allowClear: true
+        });
+
+        // Event listener to update customer email when selection changes
+        $('#customerSelect').on('change', function () {
+            var selectedCustomer = $(this).find('option:selected');
+            var customerEmail = selectedCustomer.data('email'); // Get the email from the selected option
+            $('#customer_email').val(customerEmail); // Set the email field
+        });
+
+        // Initialize Select2 for itemSelect dropdown
+        $('#itemSelect').select2({
+            placeholder: '-- Select item --',
+        });
+
+        // Event listener for when an item is selected
+        $('#itemSelect').on('change', function () {
+            var selectedItem = $(this).find('option:selected');
+            var taxCode = selectedItem.data('tax-code');  // Get tax code
+            var currentBalance = selectedItem.data('current-balance');  // Get current balance (if needed)
+
+            // Set any necessary fields based on selected item (e.g., populate the tax-code-select dropdown)
+            $('.tax-code-select').val(taxCode).trigger('change');  // Preselect the tax code based on item selection
+
+            const row = $('.tax-code-select').closest('tr').get(0)
+            console.log(row)
+            var lineTotal = calculateLineTotal(row);
+        });
+    });
+</script>
+
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const today = new Date();
@@ -256,16 +296,6 @@
         })
             .then(response => {
                 if (!response.ok) throw new Error('Failed to submit form.');
-                return response.blob(); // Expect a blob (PDF)
-            })
-            .then(blob => {
-                // If the response is a valid blob, trigger the download
-                const link = document.createElement('a');
-                const objectUrl = URL.createObjectURL(blob);
-                link.href = objectUrl;
-                link.download = 'invoice.pdf';
-                link.click();
-                URL.revokeObjectURL(objectUrl);
                 window.location.reload(true);
             })
             .catch(error => {
