@@ -543,12 +543,12 @@ html {
     align-items: center;
     justify-content: space-between;
     /* padding: 1rem; */
-    color: white !important;
-    background-color: #000000 !important;
+    color: rgb(0, 0, 0) !important;
+    background-color: #dadada !important;
 }
 
 .td-header a {
-    color: white !important;
+    color: rgb(0, 0, 0) !important;
 }
 
 .widget-points li {
@@ -674,7 +674,7 @@ html {
 .hr-style {
     color: #000 !important;
     background-color: #000000 !important;
-    height: 2rem !important;
+    height: 1.5rem !important;
 }
 
 .lines td {

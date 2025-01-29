@@ -33,28 +33,25 @@
             <table class="table table-striped">
                 <thead class="thead-dark">
                     <tr>
-                        <th scope="col">Organization</th>
+                        <th scope="col">Org Name</th>
+                        <th scope="col">Org Pin</th>
                         <th scope="col">Email</th>
-                        <th scope="col">Physical Address</th>
+                        <th scope="col">Address</th>
                         <th scope="col">Phone</th>
                         <th scope="col">Created At</th>
                         <th scope="col">Actions</th>
                     </tr>
-                    <tr>
-                        <td style="font-size: 2px;">
-                            &nbsp;
-                        </td>
-                    </tr>
+                  
                 </thead>
                 <tbody class="org-list">
                     {% for org in organizations %}
                     <tr id="org-{{ org.id }}" class="align-items-center justify-center lines">
                         <td class="td-header">
                             <a href="{% url 'organization:organization_detail' org.id %}" class="a-style">
-                                <strong class="td_title">{{ org.organization_name }}</strong><br>
-                                &nbsp;Pin: <small class="td_span">{{ org.organization_pin }}</small>
+                                <strong class="td_title">{{ org.organization_name }}</strong>
                             </a>
                         </td>
+                        <td>{{ org.organization_pin }}</td>
                         <td>{{ org.organization_email }}</td>
                         <td>{{ org.organization_physical_address }}</td>
                         <td>{{ org.organization_phone }}</td>
@@ -62,7 +59,7 @@
 
                         <td>
                             <div class="dropdown">
-                                <button class="btn btn-secondary btn-sm dropdown-toggle w-btn" type="button"
+                                <button class="btn btn-secondary btn-sm dropdown-toggle a-btn" type="button"
                                     id="dropdownMenuButton-{{ org.id }}" data-bs-toggle="dropdown"
                                     aria-expanded="false">
                                     Actions
@@ -82,11 +79,6 @@
                                     </li>
                                 </ul>
                             </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="font-size: 2px;">
-                            &nbsp;
                         </td>
                     </tr>
                     <!-- Edit Modal -->
