@@ -56,30 +56,25 @@
                     <thead class="thead-dark">
                         <tr>
                             <th scope="col">#</th>
-                            <th scope="col">Customer</th>
+                            <th scope="col">Name</th>
+                            <th scope="col">Pin</th>
                             <th scope="col">Phone</th>
                             <th scope="col">Email</th>
                             <th scope="col">Address</th>
                             <th scope="col">Status</th>
                             <th scope="col">Actions</th>
                         </tr>
-                        <tr>
-                            <td style="font-size: 2px;">
-                                &nbsp;
-                            </td>
-                        </tr>
+
                     </thead>
                     <tbody class="cust-list">
                         {% for customer in customers %}
                         <tr id="customer-{{ customer.id }}" class="align-items-center justify-center lines">
                             <td>{{forloop.counter}}</td>
 
-                            <td class="td-header ">
-                                <a class="a-style">
-                                    <strong class="td_title">{{ customer.customer_name }}</strong><br>
-                                    &nbsp;Pin: <small class="td_span">{{ customer.customer_pin }}</small>
-                                </a>
+                            <td>
+                                <strong>{{ customer.customer_name }}</strong>
                             </td>
+                            <td> {{ customer.customer_pin }} </td>
                             <td>{{ customer.customer_phone }}</td>
                             <td>{{ customer.customer_email }}</td>
                             <td>{{ customer.customer_address }}</td>
@@ -88,7 +83,7 @@
                                 <span class="status {{ customer_data.status }}">{{ customer_data.status }}</span>
 
                                 {% if customer_data.status == "failed" %}
-                                <button class="btn retry-request" data-type="saveCustomer"
+                                <button class="btn retry-request r-btn" data-type="saveCustomer"
                                     data-url="{% url 'organization:retry_failed_request' 'saveCustomer' customer.id %}"
                                     data-id="{{ customer_data.id }}">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="currentColor"
@@ -103,7 +98,7 @@
 
                             <td>
                                 <div class="dropdown">
-                                    <button class="btn btn-secondary btn-sm dropdown-toggle w-btn" type="button"
+                                    <button class="btn btn-secondary btn-sm dropdown-toggle a-btn" type="button"
                                         id="dropdownMenuButton-customer-{{ customer.id }}" data-bs-toggle="dropdown"
                                         aria-expanded="false">
                                         Actions
@@ -111,22 +106,20 @@
                                     <ul class="dropdown-menu"
                                         aria-labelledby="dropdownMenuButton-customer-{{ customer.id }}">
                                         <li>
-                                            <a href="#" class="dropdown-item" data-bs-toggle="modal"
+                                            <a href="#" class="dropdown-item py-0 my-0" data-bs-toggle="modal"
                                                 data-bs-target="#editModal-{{ customer.id }}">Edit</a>
                                         </li>
+                                        <hr style="height: 0.25px;">
                                         <li>
-                                            <a href="#" class="dropdown-item text-danger" data-bs-toggle="modal"
+                                            <a href="#" class="dropdown-item text-danger py-0 my-0"
+                                                data-bs-toggle="modal"
                                                 data-bs-target="#deleteModal-{{ customer.id }}">Delete</a>
                                         </li>
                                     </ul>
                                 </div>
                             </td>
                         </tr>
-                        <tr>
-                            <td style="font-size: 2px;">
-                                &nbsp;
-                            </td>
-                        </tr>
+
 
                         <!-- Edit Modal -->
                         <div class="modal fade" id="editModal-{{ customer.id }}" tabindex="-1"
@@ -242,30 +235,23 @@
                         <tr>
                             <th scope="col">#</th>
                             <th scope="col">Item</th>
-                            <th scope="col">Type</th>
+                            <th scope="col">itemCd</th>
                             <th scope="col">Class</th>
-                            <th scope="col">Tax</th>
+                            <th scope="col">Tax Code</th>
                             <th scope="col">Balance</th>
                             <th scope="col">Status</th>
                             <th scope="col">Actions</th>
                         </tr>
-                        <tr>
-                            <td style="font-size: 2px;">
-                                &nbsp;
-                            </td>
-                        </tr>
+
                     </thead>
                     <tbody class="it-list">
                         {% for item in items %}
                         <tr id="item-{{ item.id }}" class="align-items-center justify-center lines">
                             <td>{{forloop.counter}}</td>
-                            <td class="td-header">
-                                <a class="a-style">
-                                    <strong class="td_title">{{ item.item_name }}</strong><br>
-                                    &nbsp;Pin: <small class="td_span">{{ item.itemCd }}</small>
-                                </a>
+                            <td>
+                                <strong>{{ item.item_name }}</strong>
                             </td>
-                            <td>{{ item.item_type_code }}</td>
+                            <td>{{ item.itemCd }}</td>
                             <td>{{ item.item_class_code }}</td>
                             <td>{{ item.item_tax_code }}</td>
                             <td>{{ item.item_current_balance }}</td>
@@ -275,10 +261,10 @@
                                 <span class="status {{ item_data.status }}">{{ item_data.status }}</span>
 
                                 {% if item_data.status == "failed" %}
-                                <button class="btn retry-request" data-type="saveItem"
+                                <button class="btn retry-request r-btn" data-type="saveItem"
                                     data-url="{% url 'organization:retry_failed_request' 'saveItem' item.id %}"
                                     data-id="{{ item_data.id }}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="5" height="5" fill="currentColor"
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor"
                                         class="bi bi-repeat" viewBox="0 0 20 20">
                                         <path
                                             d="M11 5.466V4H5a4 4 0 0 0-3.584 5.777.5.5 0 1 1-.896.446A5 5 0 0 1 5 3h6V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m3.81.086a.5.5 0 0 1 .67.225A5 5 0 0 1 11 13H5v1.466a.25.25 0 0 1-.41.192l-2.36-1.966a.25.25 0 0 1 .41.192V12h6a4 4 0 0 0 3.585-5.777.5.5 0 0 1 .225-.67Z" />
@@ -291,41 +277,38 @@
 
                             <td>
                                 <div class="dropdown">
-                                    <button class="btn btn-secondary btn-sm dropdown-toggle w-btn" type="button"
+                                    <button class="btn btn-secondary btn-sm dropdown-toggle a-btn" type="button"
                                         id="dropdownMenuButton-item-{{ item.id }}" data-bs-toggle="dropdown"
                                         aria-expanded="false">
                                         Actions
                                     </button>
                                     <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton-item-{{ item.id }}">
-                                        <li>
-                                            <button class="btn btn-info btn-sm w-btn" data-bs-toggle="modal"
+                                        <li class=" w-100 py-0 my-0">
+                                            <button class="dropdown-item py-0 my-0" data-bs-toggle="modal"
                                                 data-bs-target="#updateQuantityModal" data-item-id="{{ item.id }}"
                                                 data-item-name="{{ item.item_name }}"
                                                 data-item-quantity="{{ item.item_quantity }}">
                                                 Update Quantity
                                             </button>
                                         </li>
-
-                                        <li>
-                                            <button class="btn btn-info btn-sm w-btn" data-bs-toggle="modal"
+                                        <hr>
+                                        <li class=" w-100 py-0 my-0">
+                                            <button class="dropdown-item py-0 my-0" data-bs-toggle="modal"
                                                 data-bs-target="#itemCompositionModal-{{ item.id }}">
                                                 Item Composition
                                             </button>
                                         </li>
-
-                                        <li>
-                                            <a href="#" class="dropdown-item text-danger" data-bs-toggle="modal"
+                                        <hr>
+                                        <li class="py-0 my-0">
+                                            <a href="#" class="dropdown-item text-danger py-0 my-0"
+                                                data-bs-toggle="modal"
                                                 data-bs-target="#deleteModalItem-{{ item.id }}">Delete</a>
                                         </li>
                                     </ul>
                                 </div>
                             </td>
                         </tr>
-                        <tr>
-                            <td style="font-size: 2px;">
-                                &nbsp;
-                            </td>
-                        </tr>
+
 
 
                         <!-- Update Quantity Modal -->
@@ -568,7 +551,8 @@
                                                     class="form-control" required>
                                             </div>
                                             <div class="text-end">
-                                                <button type="submit" class="btn btn-primary w-btn">Save Composition</button>
+                                                <button type="submit" class="btn btn-primary w-btn">Save
+                                                    Composition</button>
                                             </div>
                                         </form>
                                     </div>
@@ -629,40 +613,34 @@
                     <thead class="thead-dark">
                         <tr>
                             <th scope="col">#</th>
-                            <th scope="col">Customer</th>
-                            <th scope="col">Customer Phone</th>
-                            <th scope="col">Invoice Number</th>
+                            <th scope="col">InvNo.</th>
+                            <th scope="col">Cust Pin</th>
+                            <th scope="col">Cust Name</th>
+                            <th scope="col">Cust Phone</th>
                             <th class="col">Status</th>
                             <th scope="col">Download</th>
                         </tr>
-                        <tr>
-                            <td style="font-size: 2px;">
-                                &nbsp;
-                            </td>
-                        </tr>
+
                     </thead>
                     <tbody>
                         {% for invoice in invoices %}
                         <tr id="invoice-{{ invoice.id }}" class="align-items-center justify-center lines">
                             <td>{{forloop.counter}}</td>
-                            <td class="td-header">
-                                <a class="a-style">
-                                    <strong class="td_title">{{ invoice.customer.customer_name }}</strong>
-                                    <br>
-                                    &nbsp;Pin: <small class="td_span">{{ invoice.customer.customer_pin }}</small>
-                                </a>
+                            <td>{{ invoice.receipt_number }}</td>
+                            <td>{{ invoice.customer.customer_pin }}</td>
+                            <td>
+                                <strong>{{ invoice.customer.customer_name }}</strong>
                             </td>
                             <td>{{ invoice.customer.customer_phone }}</td>
-                            <td>{{ invoice.receipt_number }}</td>
                             <td class="dflex">
                                 {% with transaction_data=transaction_statuses|dict_get:invoice.id %}
                                 <span class="status {{ transaction_data.status }}">{{ transaction_data.status }}</span>
 
                                 {% if transaction_data.status == "failed" %}
-                                <button class="btn retry-request" data-type="saveTransaction"
+                                <button class="btn retry-request r-btn" data-type="saveTransaction"
                                     data-url="{% url 'organization:retry_failed_request' 'saveTransaction' invoice.id %}"
                                     data-id="{{ transaction_data.id }}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="5" height="5" fill="transparent"
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="transparent"
                                         class="bi bi-repeat" viewBox="0 0 20 20">
                                         <path
                                             d="M11 5.466V4H5a4 4 0 0 0-3.584 5.777.5.5 0 1 1-.896.446A5 5 0 0 1 5 3h6V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m3.81.086a.5.5 0 0 1 .67.225A5 5 0 0 1 11 13H5v1.466a.25.25 0 0 1-.41.192l-2.36-1.966a.25.25 0 0 1 .41-.192V12h6a4 4 0 0 0 3.585-5.777.5.5 0 0 1 .225-.67Z" />
@@ -678,36 +656,37 @@
                                     {% if transaction_data.status == "success" %}
 
                                     {% if invoice.document_path %}
-                                    <button class="btn btn-secondary btn-sm w-btn me-2 view-pdf-btn"
+                                    <button class="btn btn-secondary btn-sm a-btn me-2 view-pdf-btn gap-1"
                                         data-pdf-url="{{ invoice.document_path.url }}" data-bs-toggle="modal"
                                         data-bs-target="#pdfModal">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="white"
-                                            class="bi bi-arrow-down-circle" viewBox="0 0 16 16" style="fill: white;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="white"
+                                            class="bi bi-arrow-down-circle text-center" viewBox="0 0 18 18"
+                                            style="fill: white;">
                                             <path fill-rule="evenodd"
                                                 d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8m15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8.5 4.5a.5.5 0 0 0-1 0v5.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293z" />
-                                        </svg> View PDF
+                                        </svg>View PDF
                                     </button>
                                     {% else %}
                                     <a href="{% url 'sales_items:generate_invoice_pdf' transaction_data.id invoice.id %}"
-                                        class="btn btn-secondary btn-sm w-btn me-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="white"
-                                            class="bi bi-arrow-down-circle" viewBox="0 0 16 16" style="fill: white;">
+                                        class="btn btn-secondary btn-sm a-btn me-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="white"
+                                            class="bi bi-arrow-down-circle" viewBox="0 0 18 18" style="fill: white;">
                                             <path fill-rule="evenodd"
                                                 d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8m15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8.5 4.5a.5.5 0 0 0-1 0v5.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293z" />
                                         </svg> Generate PDF
                                     </a>
                                     {% endif %}
                                     <!-- Add Credit Note Button -->
-                                    <button class="btn btn-primary btn-sm w-btn" type="button"
+                                    <button class="btn btn-primary btn-sm a-btn gap-1" type="button"
                                         id="addCreditNoteButton-{{ invoice.id }}" data-bs-toggle="modal"
                                         data-bs-target="#addCreditNoteModal-{{ invoice.id }}">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="white"
-                                            class="bi bi-plus-circle" viewBox="0 0 16 16" style="fill: white;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="white"
+                                            class="bi bi-plus-circle" viewBox="0 0 18 18" style="fill: white;">
                                             <path
                                                 d="M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zm0 1a6 6 0 1 0 0 12A6 6 0 0 0 8 2z" />
                                             <path
                                                 d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
-                                        </svg> CR
+                                        </svg>CR
                                     </button>
                                     {% else %}
                                     <span class="status pending">pending</span>
@@ -717,11 +696,7 @@
 
                             </td>
                         </tr>
-                        <tr>
-                            <td style="font-size: 2px;">
-                                &nbsp;
-                            </td>
-                        </tr>
+
 
 
                         <!-- Add Credit Note Modal -->
@@ -859,39 +834,35 @@
                     <thead class="thead-dark">
                         <tr>
                             <th scope="col">#</th>
-                            <th scope="col">Customer</th>
-                            <th scope="col">Customer Phone</th>
-                            <th scope="col">CR Number</th>
+                            <th scope="col">CR No</th>
+                            <th scope="col">Cust Pin</th>
+                            <th scope="col">Cust Name</th>
+                            <th scope="col">Cust Phone</th>
+                            <th scope="col">Cr Reason</th>
                             <th scope="col">Status</th>
                             <th scope="col">Download</th>
                         </tr>
-                        <tr>
-                            <td style="font-size: 2px;">
-                                &nbsp;
-                            </td>
-                        </tr>
+
                     </thead>
                     <tbody>
                         {% for credit_note in credit_notes %}
                         <tr id="credit_note-{{ credit_note.id }}" class="align-items-center justify-center lines">
                             <td>{{forloop.counter}}</td>
-                            <td class="td-header">
-                                <a class="a-style">
-                                    <strong class="td_title">{{ credit_note.customer.customer_name }}</strong>
-                                    <br>
-                                    &nbsp;Pin: <small class="td_span">{{ credit_note.customer.customer_pin }}</small>
-                                </a>
+                            <td>{{ credit_note.receipt_number }}</td>
+                            <td>{{ credit_note.customer.customer_pin }}</td>
+                            <td>
+                                <strong>{{ credit_note.customer.customer_name }}</strong>
                             </td>
                             <td>{{ credit_note.customer.customer_phone }}</td>
-                            <td>{{ credit_note.receipt_number }}</td>
+                            <td>{{ credit_note.reason }}</td>
                             <td class="dflex">
                                 {% with transaction_data=transaction_statuses|dict_get:credit_note.id %}
                                 <span class="status {{ transaction_data.status }}">{{ transaction_data.status }}</span>
                                 {% if transaction_data.status == "failed" %}
-                                <button class="btn retry-request" data-type="saveTransaction"
+                                <button class="btn retry-request r-btn" data-type="saveTransaction"
                                     data-url="{% url 'organization:retry_failed_request' 'saveTransaction' credit_note.id %}"
                                     data-id="{{ transaction_data.id }}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="5" height="5" fill="transparent"
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="transparent"
                                         class="bi bi-repeat" viewBox="0 0 20 20">
                                         <path
                                             d="M11 5.466V4H5a4 4 0 0 0-3.584 5.777.5.5 0 1 1-.896.446A5 5 0 0 1 5 3h6V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m3.81.086a.5.5 0 0 1 .67.225A5 5 0 0 1 11 13H5v1.466a.25.25 0 0 1-.41.192l-2.36-1.966a.25.25 0 0 1 .41-.192V12h6a4 4 0 0 0 3.585-5.777.5.5 0 0 1 .225-.67Z" />
@@ -906,11 +877,11 @@
                                     {% if transaction_data.status == "success" %}
 
                                     {% if credit_note.document_path %}
-                                    <button class="btn btn-secondary btn-sm w-btn me-2 view-pdf-btn"
+                                    <button class="btn btn-secondary btn-sm a-btn me-2 view-pdf-btn gap-1"
                                         data-pdf-url="{{ credit_note.document_path.url }}" data-bs-toggle="modal"
                                         data-bs-target="#pdfModal">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="white"
-                                            class="bi bi-arrow-down-circle" viewBox="0 0 16 16" style="fill: white;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="white"
+                                            class="bi bi-arrow-down-circle" viewBox="0 0 20 20" style="fill: white;">
                                             <path fill-rule="evenodd"
                                                 d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8m15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8.5 4.5a.5.5 0 0 0-1 0v5.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293z" />
                                         </svg> View PDF
@@ -918,8 +889,8 @@
                                     {% else %}
                                     <a href="{% url 'sales_items:generate_credit_note_pdf' transaction_data.id credit_note.id %}"
                                         class="btn btn-secondary btn-sm w-btn me-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="white"
-                                            class="bi bi-arrow-down-circle" viewBox="0 0 16 16" style="fill: white;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="white"
+                                            class="bi bi-arrow-down-circle" viewBox="0 0 20 20" style="fill: white;">
                                             <path fill-rule="evenodd"
                                                 d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8m15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8.5 4.5a.5.5 0 0 0-1 0v5.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293z" />
                                         </svg> Generate PDF
@@ -932,11 +903,7 @@
                                 </div>
                             </td>
                         </tr>
-                        <tr>
-                            <td style="font-size: 2px;">
-                                &nbsp;
-                            </td>
-                        </tr>
+
 
 
                         {% endfor %}
@@ -966,7 +933,7 @@
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Invoice Number</th>
+                            <th>InvNo.</th>
                             <th>Supplier Name</th>
                             <th>Supplier TIN</th>
                             <th>Confirmation Date</th>
@@ -1166,21 +1133,21 @@
                                 <span class="status {{ purchases_data.status }}">{{ purchases_data.status }}</span>
 
                                 {% if purchases_data.status == "failed"%}
-                                <button class="btn retry-request" data-type="verifyPurchase"
+                                <button class="btn retry-request r-btn" data-type="verifyPurchase"
                                     data-url="{% url 'organization:retry_failed_request' 'verifyPurchase' purchase.id %}"
                                     data-id="{{ purchases_data.id }}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="5" height="5" fill="transparent"
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor"
                                         class="bi bi-repeat" viewBox="0 0 20 20">
                                         <path
-                                            d="M11 5.466V4H5a4 4 0 0 0-3.584 5.777.5.5 0 1 1-.896.446A5 5 0 0 1 5 3h6V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m3.81.086a.5.5 0 0 1 .67.225A5 5 0 0 1 11 13H5v1.466a.25.25 0 0 1-.41.192l-2.36-1.966a.25.25 0 0 1 .41-.192V12h6a4 4 0 0 0 3.585-5.777.5.5 0 0 1 .225-.67Z" />
+                                            d="M11 5.466V4H5a4 4 0 0 0-3.584 5.777.5.5 0 1 1-.896.446A5 5 0 0 1 5 3h6V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m3.81.086a.5.5 0 0 1 .67.225A5 5 0 0 1 11 13H5v1.466a.25.25 0 0 1-.41.192l-2.36-1.966a.25.25 0 0 1 .41.192V12h6a4 4 0 0 0 3.585-5.777.5.5 0 0 1 .225-.67Z" />
                                     </svg>
                                 </button>
                                 {% elif purchases_data.status == "Not verified" %}
-                                <button class="btn verify-request" data-type="verifyPurchase"
+                                <button class="btn verify-request r-btn" data-type="verifyPurchase"
                                     data-url="{% url 'organization:verify_purchase' 'verifyPurchase' purchase.invoice_number purchase.id  %}"
                                     data-id="{{ purchase.imvoice_number }}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="currentColor"
-                                        class="bi bi-repeat" viewBox="0 0 22 22">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor"
+                                        class="bi bi-repeat" viewBox="0 0 20 20">
                                         <path
                                             d="M11 5.466V4H5a4 4 0 0 0-3.584 5.777.5.5 0 1 1-.896.446A5 5 0 0 1 5 3h6V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m3.81.086a.5.5 0 0 1 .67.225A5 5 0 0 1 11 13H5v1.466a.25.25 0 0 1-.41.192l-2.36-1.966a.25.25 0 0 1 .41.192V12h6a4 4 0 0 0 3.585-5.777.5.5 0 0 1 .225-.67Z" />
                                     </svg>
@@ -1240,7 +1207,7 @@
 
 <!-- Bootstrap Modal for Viewing PDF -->
 <div class="modal fade" id="pdfModal" tabindex="-1" aria-labelledby="pdfModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog ">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="pdfModalLabel">PDF Viewer</h5>
@@ -1251,8 +1218,8 @@
                 <iframe id="pdfIframe" style="width:100%; height:500px;" frameborder="0"></iframe>
             </div>
             <div class="modal-footer">
-                <a id="downloadPdfBtn" href="#" class="btn btn-primary w-btn" download>Download PDF</a>
-                <button type="button" class="btn btn-secondary w-btn" id="printPdfBtn">Print PDF</button>
+                <a id="downloadPdfBtn" href="#" class="btn btn-primary a-btn" download>Download PDF</a>
+                <button type="button" class="btn btn-secondary a-btn" id="printPdfBtn">Print PDF</button>
             </div>
         </div>
     </div>
@@ -2124,11 +2091,7 @@
                                 </div>
                             </td>
                         </tr>
-                        <tr>
-                            <td style="font-size: 2px;">
-                                &nbsp;
-                            </td>
-                        </tr>
+                        
 
                         <!-- Edit Modal -->
                         <div class="modal fade" id="editModal-${data.customer_id}" tabindex="-1"
@@ -2293,11 +2256,7 @@
                                 </div>
                             </td>
                         </tr>
-                        <tr>
-                            <td style="font-size: 2px;">
-                                &nbsp;
-                            </td>
-                        </tr>
+                        
                     `;
                 itemList && itemList.insertAdjacentHTML('beforeend', newItem);
 

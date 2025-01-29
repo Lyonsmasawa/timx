@@ -609,6 +609,13 @@ html {
     font-size: 1.2rem;
 }
 
+.a-btn {
+    padding: 3px 10px;
+    background-color: #414141;
+    color: white;
+    font-size: 1rem;
+}
+
 
 .i-btn {
     padding: 5px 15px;
@@ -786,4 +793,11 @@ html {
 .warning {
     background-color: rgba(255, 187, 0, 0.733);
     color: #000;
+}
+
+.retry-request {
+    padding: 1px 2px;
+    align-items: center;
+    text-align: center;
+    justify-content: center;
 }
