@@ -18,7 +18,7 @@ app.autodiscover_tasks()
 app.conf.beat_schedule = {
     "update_item_classification_daily": {
         "task": "api_tracker.tasks.fetch_and_update_item_classification",
-        "schedule": 5000000,
+        "schedule": crontab(hour=3, minute=0),
     },
     "retry_failed_requests": {
         "task": "api_tracker.tasks.retry_failed_requests",

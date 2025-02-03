@@ -2,10 +2,10 @@
 {% load bootstrap5 %}
 {% block content %}
 {% include 'res_nav.html' %}
-<div class="container res-form" id="sales_form" style="max-width: 90rem; min-height: 90vh;">
+<div class="container-fluid res-form" id="sales_form" style="width: 100vw; min-height: 90vh; padding: 20px;">
 
     {{ form.media }}
-    <div class="container mt-3">
+    <div class="container-fluid mt-3">
         <h1>Create Invoice</h1>
         <p>Please fill in the details below</p>
 
@@ -15,7 +15,7 @@
         </div>
         {% endfor %}
 
-        <div class="container mt-2">
+        <div class="container-fluid mt-2">
             <!-- Invoice Header -->
             <div class="row mb-4">
                 <div class="col-md-6">
@@ -97,12 +97,12 @@
                             </select>
                         </td>
                         <td><input type="text" class="form-control"></td>
-                        <td><input type="number" class="form-control quantity" min="0" step="1">
+                        <td style="max-width:120px;"><input type="number" class="form-control quantity" min="0" step="1">
                         <td>
                             <input type="number" class="form-control rate" min="0" step="1">
                         </td>
                         <td><input type="number" class="form-control discount" min="0" step="0.01"></td>
-                        <td>
+                        <td style="max-width:160px;">
                             <select class="form-select tax-code-select">
                                 <option value="">-- Select tax type --</option>
                                 <option value="A">A-Exempt</option>

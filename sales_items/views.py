@@ -633,12 +633,12 @@ def generate_invoice_pdf(request, request_log_id, transaction_id,):
         issued_date
     )
 
-    # # Open and send the PDF as a response to auto-download
-    # with open(pdf_path, "rb") as pdf_file:
-    #     response = HttpResponse(
-    #         pdf_file.read(), content_type="application/pdf")
-    #     response['Content-Disposition'] = f'attachment; filename="invoice_{transaction.receipt_number}.pdf"'
-    return True
+    # Open and send the PDF as a response to auto-download
+    with open(pdf_path, "rb") as pdf_file:
+        response = HttpResponse(
+            pdf_file.read(), content_type="application/pdf")
+        response['Content-Disposition'] = f'attachment; filename="invoice_{transaction.receipt_number}.pdf"'
+    return response
 
 
 def generate_credit_note_pdf(request, request_log_id, transaction_id,):
@@ -687,11 +687,11 @@ def generate_credit_note_pdf(request, request_log_id, transaction_id,):
     )
 
     # Open and send the PDF as a response to auto-download
-    # with open(pdf_path, "rb") as pdf_file:
-    #     response = HttpResponse(
-    #         pdf_file.read(), content_type="application/pdf")
-    #     response['Content-Disposition'] = f'attachment; filename="invoice_{transaction.receipt_number}.pdf"'
-    return True
+    with open(pdf_path, "rb") as pdf_file:
+        response = HttpResponse(
+            pdf_file.read(), content_type="application/pdf")
+        response['Content-Disposition'] = f'attachment; filename="invoice_{transaction.receipt_number}.pdf"'
+    return response
 
 
 def generate_transaction_pdf(
