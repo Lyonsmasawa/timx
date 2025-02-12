@@ -49,6 +49,8 @@ VSCU_API_BASE_URL = env(
 
 # Installed apps
 INSTALLED_APPS = [
+    'rest_framework',
+    'rest_framework.authtoken',
     'django_celery_beat',
     'django_celery_results',
     'api_tracker',
@@ -62,7 +64,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_select2',
-    'rest_framework',
     'crispy_forms',
     'accounts',
     'commons',

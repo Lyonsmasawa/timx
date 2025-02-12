@@ -1,7 +1,12 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from . import views
 
 app_name = 'organization'  # This is the namespace
+
+
+router = DefaultRouter()
+router.register(r'organizations', views.OrganizationViewSet)
 
 urlpatterns = [
     path("", views.organization_list, name="organization_list"),
@@ -19,4 +24,9 @@ urlpatterns = [
          views.update_purchases_view, name="update_purchases_view"),
     path("verify/<str:request_type>/<str:inv_no>/<int:purchase_id>",
          views.verify_purchase, name="verify_purchase"),
+    path('api/', include(router.urls)),
+    path('api/retry/<str:request_type>/<int:request_id>/', views.retry_failed_request, name='api-retry-failed-request'),
+    path('api/update_purchases/<int:org_id>/', views.update_purchases_view, name='api-update-purchases'),
+    path('api/verify/<str:request_type>/<str:inv_no>/<int:purchase_id>/', views.verify_purchase, name='api-verify-purchase'),
+
 ]

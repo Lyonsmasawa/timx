@@ -1,8 +1,14 @@
-from django.urls import path
+from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from . import views
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import UserViewSet, login_api, register_api, logout_api
 
 app_name = 'accounts'
+
+router = DefaultRouter()
+router.register(r'users', UserViewSet)
 
 urlpatterns = [
     # Custom registration view
@@ -18,4 +24,11 @@ urlpatterns = [
     path('password-reset/', views.ResetPasswordView.as_view(), name='password_reset'),
     path('password-reset-confirm/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name='users/password_reset_confirm.html'),
          name='password_reset_confirm'),
+    
+    
+    path('api/', include(router.urls)),
+    path('api/login/', login_api, name='api-login'),
+    path('api/register/', register_api, name='api-register'),
+    path('api/logout/', logout_api, name='api-logout'),
+
 ]

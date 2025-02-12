@@ -25,8 +25,12 @@ from customer.models import Customer
 from django.contrib.auth.decorators import login_required
 from item.forms import ItemForm
 from customer.forms import CustomerForm
+from .serializers import OrganizationSerializer
 from celery.exceptions import OperationalError
-
+from rest_framework import viewsets, status
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 # List Organizations
 
 
@@ -445,3 +449,68 @@ def verify_purchase(request, request_type, inv_no, purchase_id):
             return JsonResponse({"error": f"{request_type.capitalize()} request not found or not failed."}, status=404)
 
     return JsonResponse({"error": "Invalid request method."}, status=405)
+
+
+class OrganizationViewSet(viewsets.ModelViewSet):
+    queryset = Organization.objects.all()
+    serializer_class = OrganizationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return self.queryset.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        organization = serializer.save()
+        organization.user.add(self.request.user)
+        return organization
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def retry_failed_request(request, request_type, request_id):
+    try:
+        request_log = APIRequestLog.objects.get(pk=request_id, status="failed")
+        send_api_request.apply_async(args=[request_log.id])
+        request_log.retries = 0
+        request_log.mark_retrying()
+        request_log.save()
+        return JsonResponse({"success": True, "message": f"Retry for {request_type} initiated successfully!"})
+    except APIRequestLog.DoesNotExist:
+        return JsonResponse({"error": "Request not found or not failed."}, status=404)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def update_purchases_view(request, org_id):
+    try:
+        organization = get_object_or_404(Organization, id=org_id, user=request.user)
+        request_payload = {"lastReqDt": "20231010000000"}
+        request_log = APIRequestLog.objects.create(
+            request_type="updatePurchases",
+            request_payload=request_payload,
+            organization=organization,
+        )
+        send_api_request.apply_async(args=[request_log.id])
+        return JsonResponse({"success": True, "message": "Purchase update initiated"}, status=200)
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def verify_purchase(request, request_type, inv_no, purchase_id):
+    try:
+        purchase = get_object_or_404(Purchase, pk=purchase_id, invoice_number=inv_no)
+        purchase.payload["modrId"] = "Admin"
+        purchase.payload["modrNm"] = "Admin"
+        purchase.payload["pchsSttsCd"] = "02"
+        request_log = APIRequestLog.objects.create(
+            request_type="verifyPurchase",
+            request_payload=purchase.payload,
+            user=request.user,
+            purchase=purchase,
+            organization=purchase.organization,
+        )
+        send_api_request.apply_async(args=[request_log.id])
+        return JsonResponse({"success": True, "message": "Verification initiated successfully!"})
+    except Purchase.DoesNotExist:
+        return JsonResponse({"error": "Purchase not found."}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
