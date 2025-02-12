@@ -1,5 +1,6 @@
 import json
 from django.db.models import Sum
+from django.forms import ValidationError
 from django.views.decorators.csrf import csrf_exempt
 from api_tracker.tasks import fetch_and_update_purchases, send_api_request
 from api_tracker.models import APIRequestLog
@@ -464,6 +465,19 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         organization.user.add(self.request.user)
         return organization
 
+    def perform_update(self, serializer):
+        try:
+            serializer.save()
+        except ValidationError as e:
+            print(f"Validation Error: {e}")
+            # 🔹 Ensure this raises an error
+            raise ValidationError({"error": str(e)})
+        except Exception as e:
+            print(f"Unexpected Error: {e}")
+            # 🔹 Raise ValidationError to return JSON response
+            raise ValidationError({"error": "An unexpected error occurred."})
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def retry_failed_request(request, request_type, request_id):
@@ -477,11 +491,13 @@ def retry_failed_request(request, request_type, request_id):
     except APIRequestLog.DoesNotExist:
         return JsonResponse({"error": "Request not found or not failed."}, status=404)
 
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def update_purchases_view(request, org_id):
     try:
-        organization = get_object_or_404(Organization, id=org_id, user=request.user)
+        organization = get_object_or_404(
+            Organization, id=org_id, user=request.user)
         request_payload = {"lastReqDt": "20231010000000"}
         request_log = APIRequestLog.objects.create(
             request_type="updatePurchases",
@@ -493,11 +509,13 @@ def update_purchases_view(request, org_id):
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)}, status=500)
 
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def verify_purchase(request, request_type, inv_no, purchase_id):
     try:
-        purchase = get_object_or_404(Purchase, pk=purchase_id, invoice_number=inv_no)
+        purchase = get_object_or_404(
+            Purchase, pk=purchase_id, invoice_number=inv_no)
         purchase.payload["modrId"] = "Admin"
         purchase.payload["modrNm"] = "Admin"
         purchase.payload["pchsSttsCd"] = "02"
