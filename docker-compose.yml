@@ -15,6 +15,7 @@ services:
 
   # RabbitMQ - queue
   rabbitmq3:
+    restart: always
     container_name: rabbitmq
     image: rabbitmq:3-management
     ports:
@@ -27,6 +28,7 @@ services:
 
   etimsx:
     container_name: etimsx
+    restart: always
     build:
       context: ./
     command: python manage.py runserver 0.0.0.0:8000

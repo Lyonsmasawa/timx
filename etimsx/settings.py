@@ -33,7 +33,8 @@ SECRET_KEY = env("SECRET_KEY", default="django-insecure-key")
 DEBUG = env.bool("DEBUG", default=True)
 
 # Allowed hosts
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"])
+
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1", "etimsx.herokuapp.com", "*.ngrok-free.app"])
 
 # VSCU Configuration
 VSCU_TIN = env("VSCU_TIN", default="A123456789Z")
@@ -120,6 +121,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'etimsx.wsgi.application'
 
 # Celery Configuration
+# CELERT_BROKER_URL ='pyamqp://guest@localhost//'
 CELERY_BROKER_URL = env(
     "CELERY_BROKER_URL", default="amqp://admin:mysecurepassword@rabbitmq:5672/")
 CELERY_ACCEPT_CONTENT = ['json']
@@ -147,11 +149,42 @@ DATABASES = {
 # }
 
 # CORS settings
-CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "http://localhost:3002"
-])
+# CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[
+#     "http://localhost:3000",
+#     "http://localhost:3001",
+#     "http://localhost:3002"
+# ])
+
+CORS_ALLOWED_ORIGINS = [
+    "https://fdeb-41-90-172-242.ngrok-free.app",
+    "http://localhost:3000",  # React frontend
+    "http://127.0.0.1:8000",  # Django itself
+    "https://etimsx.herokuapp.com",  # Heroku app
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://fdeb-41-90-172-242.ngrok-free.app"
+]
+
+CORS_ALLOW_ALL_ORIGINS = True  # Allow requests from any domain
+CORS_ALLOW_CREDENTIALS = True
+CORS_ORIGIN_ALLOW_ALL = True
+
+CORS_ALLOW_METHODS = [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS",
+]
+
+CORS_ALLOW_HEADERS = [
+    "content-type",
+    "authorization",
+    "x-requested-with",
+]
+
 
 
 REST_FRAMEWORK = {

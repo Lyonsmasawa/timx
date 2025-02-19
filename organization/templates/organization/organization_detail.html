@@ -146,6 +146,12 @@
                                                     value="{{ customer.customer_name }}">
                                             </div>
                                             <div class="mb-3">
+                                                <label for="customerEmail" class="form-label">Customer Pin</label>
+                                                <input type="email" class="form-control"
+                                                    id="customerEmail-{{ customer.id }}" name="customer_pin"
+                                                    value="{{ customer.customer_pin }}">
+                                            </div>
+                                            <div class="mb-3">
                                                 <label for="customerEmail" class="form-label">Customer Email</label>
                                                 <input type="email" class="form-control"
                                                     id="customerEmail-{{ customer.id }}" name="customer_email"

@@ -452,83 +452,83 @@ def verify_purchase(request, request_type, inv_no, purchase_id):
     return JsonResponse({"error": "Invalid request method."}, status=405)
 
 
-class OrganizationViewSet(viewsets.ModelViewSet):
-    queryset = Organization.objects.all()
-    serializer_class = OrganizationSerializer
-    permission_classes = [IsAuthenticated]
+# class OrganizationViewSet(viewsets.ModelViewSet):
+#     queryset = Organization.objects.all()
+#     serializer_class = OrganizationSerializer
+#     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        return self.queryset.filter(user=self.request.user)
+#     def get_queryset(self):
+#         return self.queryset.filter(user=self.request.user)
 
-    def perform_create(self, serializer):
-        organization = serializer.save()
-        organization.user.add(self.request.user)
-        return organization
+#     def perform_create(self, serializer):
+#         organization = serializer.save()
+#         organization.user.add(self.request.user)
+#         return organization
 
-    def perform_update(self, serializer):
-        try:
-            serializer.save()
-        except ValidationError as e:
-            print(f"Validation Error: {e}")
-            # 🔹 Ensure this raises an error
-            raise ValidationError({"error": str(e)})
-        except Exception as e:
-            print(f"Unexpected Error: {e}")
-            # 🔹 Raise ValidationError to return JSON response
-            raise ValidationError({"error": "An unexpected error occurred."})
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def retry_failed_request(request, request_type, request_id):
-    try:
-        request_log = APIRequestLog.objects.get(pk=request_id, status="failed")
-        send_api_request.apply_async(args=[request_log.id])
-        request_log.retries = 0
-        request_log.mark_retrying()
-        request_log.save()
-        return JsonResponse({"success": True, "message": f"Retry for {request_type} initiated successfully!"})
-    except APIRequestLog.DoesNotExist:
-        return JsonResponse({"error": "Request not found or not failed."}, status=404)
+#     def perform_update(self, serializer):
+#         try:
+#             serializer.save()
+#         except ValidationError as e:
+#             print(f"Validation Error: {e}")
+#             # 🔹 Ensure this raises an error
+#             raise ValidationError({"error": str(e)})
+#         except Exception as e:
+#             print(f"Unexpected Error: {e}")
+#             # 🔹 Raise ValidationError to return JSON response
+#             raise ValidationError({"error": "An unexpected error occurred."})
 
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def update_purchases_view(request, org_id):
-    try:
-        organization = get_object_or_404(
-            Organization, id=org_id, user=request.user)
-        request_payload = {"lastReqDt": "20231010000000"}
-        request_log = APIRequestLog.objects.create(
-            request_type="updatePurchases",
-            request_payload=request_payload,
-            organization=organization,
-        )
-        send_api_request.apply_async(args=[request_log.id])
-        return JsonResponse({"success": True, "message": "Purchase update initiated"}, status=200)
-    except Exception as e:
-        return JsonResponse({"success": False, "error": str(e)}, status=500)
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated])
+# def retry_failed_request(request, request_type, request_id):
+#     try:
+#         request_log = APIRequestLog.objects.get(pk=request_id, status="failed")
+#         send_api_request.apply_async(args=[request_log.id])
+#         request_log.retries = 0
+#         request_log.mark_retrying()
+#         request_log.save()
+#         return JsonResponse({"success": True, "message": f"Retry for {request_type} initiated successfully!"})
+#     except APIRequestLog.DoesNotExist:
+#         return JsonResponse({"error": "Request not found or not failed."}, status=404)
 
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def verify_purchase(request, request_type, inv_no, purchase_id):
-    try:
-        purchase = get_object_or_404(
-            Purchase, pk=purchase_id, invoice_number=inv_no)
-        purchase.payload["modrId"] = "Admin"
-        purchase.payload["modrNm"] = "Admin"
-        purchase.payload["pchsSttsCd"] = "02"
-        request_log = APIRequestLog.objects.create(
-            request_type="verifyPurchase",
-            request_payload=purchase.payload,
-            user=request.user,
-            purchase=purchase,
-            organization=purchase.organization,
-        )
-        send_api_request.apply_async(args=[request_log.id])
-        return JsonResponse({"success": True, "message": "Verification initiated successfully!"})
-    except Purchase.DoesNotExist:
-        return JsonResponse({"error": "Purchase not found."}, status=404)
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated])
+# def update_purchases_view_api(request, org_id):
+#     try:
+#         organization = get_object_or_404(
+#             Organization, id=org_id, user=request.user)
+#         request_payload = {"lastReqDt": "20231010000000"}
+#         request_log = APIRequestLog.objects.create(
+#             request_type="updatePurchases",
+#             request_payload=request_payload,
+#             organization=organization,
+#         )
+#         send_api_request.apply_async(args=[request_log.id])
+#         return JsonResponse({"success": True, "message": "Purchase update initiated"}, status=200)
+#     except Exception as e:
+#         return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated])
+# def verify_purchase_api(request, request_type, inv_no, purchase_id):
+#     try:
+#         purchase = get_object_or_404(
+#             Purchase, pk=purchase_id, invoice_number=inv_no)
+#         purchase.payload["modrId"] = "Admin"
+#         purchase.payload["modrNm"] = "Admin"
+#         purchase.payload["pchsSttsCd"] = "02"
+#         request_log = APIRequestLog.objects.create(
+#             request_type="verifyPurchase",
+#             request_payload=purchase.payload,
+#             user=request.user,
+#             purchase=purchase,
+#             organization=purchase.organization,
+#         )
+#         send_api_request.apply_async(args=[request_log.id])
+#         return JsonResponse({"success": True, "message": "Verification initiated successfully!"})
+#     except Purchase.DoesNotExist:
+#         return JsonResponse({"error": "Purchase not found."}, status=404)
+#     except Exception as e:
+#         return JsonResponse({"error": str(e)}, status=500)

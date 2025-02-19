@@ -2,11 +2,16 @@ from django.db import IntegrityError
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.urls import reverse
+from requests import Response
+from customer.serializers import CustomerSerializer
 from organization.models import Organization
 from .models import Customer
 from .forms import CustomerForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from rest_framework import viewsets, status
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 
 
 # List Customers
@@ -108,7 +113,7 @@ def customer_update(request, pk):
     customer = get_object_or_404(Customer, pk=pk)
 
     if request.method == "POST":
-        # Create a dictionary to track updates
+        # Create a dictionary to track updates 
         updates = {}
 
         # Iterate through the submitted data and update only changed fields
@@ -146,3 +151,37 @@ def customer_delete(request, pk):
     except Exception as e:
         return JsonResponse({'success': False, 'errors': {'general': ["Invalid request method."]}})
 
+
+# class CustomerViewSet(viewsets.ModelViewSet):
+#     queryset = Customer.objects.all()
+#     serializer_class = CustomerSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     def get_queryset(self):
+#         return self.queryset.filter(organization__user=self.request.user)
+
+#     def perform_create(self, serializer):
+#         organization = get_object_or_404(Organization, pk=self.request.data.get('organization_id'), user=self.request.user  # ✅ Ensure the user owns the org
+#                                          )
+#         print(organization)
+#         customer = serializer.save(organization=organization)
+#         return customer
+
+
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated])
+# def customer_update(request, pk):
+#     customer = get_object_or_404(Customer, pk=pk)
+#     serializer = CustomerSerializer(customer, data=request.data, partial=True)
+#     if serializer.is_valid():
+#         serializer.save()
+#         return Response({"success": True, "message": "Customer updated successfully."})
+#     return Response({"success": False, "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# @api_view(['DELETE'])
+# @permission_classes([IsAuthenticated])
+# def customer_delete(request, pk):
+#     customer = get_object_or_404(Customer, pk=pk)
+    # customer.delete()
+    # return Response({"success": True, "message": "Customer deleted successfully."})

@@ -22,8 +22,8 @@ class ItemForm(forms.ModelForm):
             "item_tax_code",
             "item_opening_balance",
             "item_current_balance",
-            "item_system_id",
-            "item_system_name",
+            # "item_system_id",
+            # "item_system_name",
         ]
 
     # Define all choice fields

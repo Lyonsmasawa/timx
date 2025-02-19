@@ -19,7 +19,7 @@
             <!-- Invoice Header -->
             <div class="row mb-4">
                 <div class="col-md-6">
-                    <h3>Invoice No. <span><input id="invoiceNumber" readonly disabled type="text"
+                    <h3>Invoice No. <span><input id="invoiceNumber" type="text"
                                 value="{{ invoice_number }}" class="p-1"
                                 style="max-width: 5rem; font-size: 1.5rem; "></span></h3>
                 </div>
@@ -53,6 +53,10 @@
                     <div class="flex-4">
                         <label for="customer" class="form-label">Customer email</label>
                         <input type="text" id="customer_email" class="form-control" readonly>
+                    </div>
+                    <div class="flex-4">
+                        <label for="customer" class="form-label">Customer Pin</label>
+                        <input type="text" id="customer_pin" class="form-control" readonly>
                     </div>
                 </div>
 
@@ -153,6 +157,14 @@
             var selectedCustomer = $(this).find('option:selected');
             var customerEmail = selectedCustomer.data('email'); // Get the email from the selected option
             $('#customer_email').val(customerEmail); // Set the email field
+        });
+
+
+        // Event listener to update customer email when selection changes
+        $('#customerSelect').on('change', function () {
+            var selectedCustomer = $(this).find('option:selected');
+            var customerPin = selectedCustomer.data('pin'); // Get the email from the selected option
+            $('#customer_pin').val(customerPin); // Set the email field
         });
 
         // Initialize Select2 for itemSelect dropdown
@@ -264,7 +276,8 @@
             invoiceNumber: document.getElementById('invoiceNumber').value,
             customerId: document.getElementById('customerSelect').value,
             customerName: document.getElementById('customerSelect').options[document.getElementById('customerSelect').selectedIndex].text,
-            customerPin: customerSelect.options[customerSelect.selectedIndex]?.getAttribute('data-pin') || '',
+            // customerPin: customerSelect.options[customerSelect.selectedIndex]?.getAttribute('data-pin') || '',
+            customerPin: document.getElementById('customer_pin').value,
             customerEmail: document.getElementById('customer_email').value,
             items: getItemsData(),
             invoiceDate: document.getElementById('invoiceDate').value,
