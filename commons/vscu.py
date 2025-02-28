@@ -1,7 +1,8 @@
 import json
 import logging
 from django.conf import settings
-from commons.utils import send_vscu_request
+from commons.constants import API_ENDPOINTS
+from commons.utils import send_vscu_request, update_constants_file
 from device.models import Device
 from api_tracker.models import APIRequestLog
 from item.models import Item
@@ -37,11 +38,22 @@ def initialize_vscu_device():
         request_type="initializeDevice",
         request_payload=payload
     )
+    
+
+    url = API_ENDPOINTS.get(request_log.request_type)
 
     # Send request to VSCU API
-    response = send_vscu_request("/initializer/selectInitInfo", payload)
+    response = send_vscu_request(
+        endpoint=url,
+        method="POST",
+        data=request_log.request_payload,
+    )
+    
+    # # Send request to VSCU API
+    # response = send_vscu_request(url, payload)
 
     if response and response.get("resultCd") == "000":
+        print (response)
         device, created = Device.objects.get_or_create(
             tin=tin, branch_id=branch_id, device_serial_number=device_serial_number
         )
@@ -62,8 +74,8 @@ def initialize_vscu_device():
     # Log failed response
     request_log.mark_failed(response)
     logger.error(f"❌ VSCU Device initialization failed: {response}")
+    print (response)
     return False
-
 
 def register_item_with_vscu(self, item_id):
     """

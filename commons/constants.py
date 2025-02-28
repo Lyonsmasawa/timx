@@ -13,7 +13,9 @@ API_ENDPOINTS = {
     "selectTrnsPurchaseSalesList": "/selectTrnsPurchaseSalesList",
     "updatePurchases": "/selectTrnsPurchaseSalesList",
     "verifyPurchase": "/insertTrnsPurchase",
-    "saveItemComposition": "/saveItemComposition"
+    "saveItemComposition": "/saveItemComposition",
+    "fetchImports": "/selectImportItemList",
+    "initializeDevice": "/initializer/selectInitInfo"
 }
  
 # SAR Type Codes

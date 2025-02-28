@@ -12,7 +12,8 @@ from django.http import JsonResponse, HttpResponse
 import plotly.graph_objs as go
 from api_tracker.models import APIRequestLog
 from commons.constants import API_ENDPOINTS, COUNTRY_CHOICES, PACKAGE_CHOICES, PRODUCT_TYPE_CHOICES, TAX_TYPE_CHOICES, TAXPAYER_STATUS_CHOICES, UNIT_CHOICES
-from commons.utils import compute_tax_summary, process_purchases, send_vscu_request
+from commons.utils import compute_tax_summary, initialize_vscu_device, process_purchases, fetch_and_update_item_classification, fetch_and_imports
+from device.models import Device
 from item_movement.models import ItemMovement
 from purchases.models import Purchase
 from .models import Organization
@@ -33,6 +34,54 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 # List Organizations
+
+
+
+@login_required
+def initialize_device_view(request):
+    if request.method == "POST":
+        success = initialize_vscu_device()
+        if success:
+            return JsonResponse({"success": True, "message": "VSCU Device initialized successfully!"})
+        return JsonResponse({"success": False, "message": "VSCU Device initialization failed."})
+
+    return JsonResponse({"error": "Invalid request method."}, status=405)
+
+
+
+@login_required
+def fetch_classifications_view(request):
+    if request.method == "POST":
+        success = fetch_and_update_item_classification()
+        if success:
+            return JsonResponse({"success": True, "message": "Item Classifications updated successfully!"})
+        return JsonResponse({"success": False, "message": "Item Classifications update failed."})
+
+    return JsonResponse({"error": "Invalid request method."}, status=405)
+
+@login_required
+def organization_settings(request, organization_id):
+    """View to manage organization settings including device configuration."""
+    organization = get_object_or_404(Organization, id=organization_id)
+    
+    # Fetch the associated device if available
+    device = Device.objects.filter(organization=organization).first()
+
+    return render(request, "organization/settings.html", {
+        "organization": organization,
+        "device": device,
+    })
+
+
+@login_required
+def fetch_imports_view(request):
+    if request.method == "POST":
+        success = fetch_and_imports()
+        if success:
+            return JsonResponse({"success": True, "message": "Imports updated successfully!"})
+        return JsonResponse({"success": False, "message": "Imports update failed."})
+
+    return JsonResponse({"error": "Invalid request method."}, status=405)
 
 
 @login_required

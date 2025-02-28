@@ -24,6 +24,21 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: admin
       RABBITMQ_DEFAULT_PASS: mysecurepassword
+
+  # Celery Beat (New Service)
+  celery-beat:
+    restart: always
+    build:
+      context: .
+    command: celery -A etimsx beat --loglevel=info
+    volumes:
+      - ./:/usr/src/app/
+    env_file:
+      - .env
+    depends_on:
+      - etimsx
+      - celery
+      - rabbitmq3
       
 
   etimsx:

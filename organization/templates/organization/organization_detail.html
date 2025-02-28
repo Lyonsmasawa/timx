@@ -34,6 +34,34 @@
         </ul>
         <h4 class="text-muted weight-bold">Organization: {{ organization.organization_name }}</h4>
 
+        <!-- <li class="nav-item">
+            <a class="nav-link" href="{% url 'organization:organization_settings' organization.id %}">Settings</a>
+        </li> -->
+        
+
+        <form id="initializeDeviceForm" method="POST">
+            {% csrf_token %}
+            <button type="button" id="initializeDeviceBtn" class="btn btn-primary">
+                Initialize VSCU Device
+            </button>
+        </form>
+        
+
+        <form id="FetchItemClassificationForm" method="POST">
+            {% csrf_token %}
+            <button type="button" id="FetchItemClassificationBtn" class="btn btn-primary">
+                Update Item Classifications
+            </button>
+        </form>
+
+        <form id="FetchImportsForm" method="POST">
+            {% csrf_token %}
+            <button type="button" id="fetchImportsBtn" class="btn btn-primary">
+                Update Imports
+            </button>
+        </form>
+
+
     </div>
     <div class="container-fluid py-3 " style="min-height: 90vh; background-color:white;">
         <div class="tab-content add-tab" id="organizationTabContent">
@@ -2360,6 +2388,72 @@
                 });
         });
     });
+
+
+    document.getElementById("initializeDeviceBtn").addEventListener("click", function () {
+        if (confirm("Are you sure you want to initialize the VSCU device?")) {
+            fetch("{% url 'organization:initialize_device' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+                    "Content-Type": "application/json"
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("✅ " + data.message);
+                    } else {
+                        alert("❌ " + data.message);
+                    }
+                })
+                .catch(error => console.error("Error:", error));
+        }
+    });
+
+    document.getElementById("FetchItemClassificationBtn").addEventListener("click", function () {
+        if (confirm("Are you sure you want to Update Item Classifications?")) {
+            fetch("{% url 'organization:fetchItemClassification' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+                    "Content-Type": "application/json"
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("✅ " + data.message);
+                    } else {
+                        alert("❌ " + data.message);
+                    }
+                })
+                .catch(error => console.error("Error:", error));
+        }
+    });
+    
+    document.getElementById("fetchImportsBtn").addEventListener("click", function () {
+        if (confirm("Are you sure you want to Update Imports?")) {
+            fetch("{% url 'organization:fetchImports' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+                    "Content-Type": "application/json"
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("✅ " + data.message);
+                    } else {
+                        alert("❌ " + data.message);
+                    }
+                })
+                .catch(error => console.error("Error:", error));
+        }
+    });
+    
+    
 
 </script>
 

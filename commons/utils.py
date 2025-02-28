@@ -9,6 +9,7 @@ import requests
 import logging
 from django.conf import settings
 
+from commons.constants import API_ENDPOINTS
 from commons.item_classification_constants import ITEM_CLASS_CHOICES
 
 
@@ -246,6 +247,151 @@ def initialize_vscu_device():
         else:
             request_log.mark_failed(purchase_item)
             return None
+    except Exception as e:
+        request_log.mark_failed({"error": str(e)})
+        return None
+    
+    
+
+
+def fetch_and_update_item_classification():
+    """
+    Celery task to fetch item classifications from the VSCU API and update constants dynamically.
+    """
+    from api_tracker.models import APIRequestLog
+     
+    try:
+        # Define request payload
+        request_payload = {"lastReqDt": "20221011150845"}
+
+        # Log API request in the tracker
+        request_log = APIRequestLog.objects.create(
+            request_type="fetchItemClassification",
+            request_payload=request_payload
+        )
+
+        url = API_ENDPOINTS.get(request_log.request_type)
+
+        # API Call
+        response = send_vscu_request(
+            endpoint=url,
+            method="POST",
+            data=request_payload,
+        )
+
+        # Log API Request
+        logger.info(
+            f"📤 Requesting item classifications with payload: {json.dumps(request_payload, indent=2)}")
+
+        # Validate response
+        if not response or response.status_code != 200:
+            error_msg = f"API Error: {response.text if response else 'No response'}"
+            request_log.mark_failed({"error": error_msg})
+            raise Exception(error_msg)
+
+        logger.info(f"📥 Response Status Code: {response.status_code}")
+
+        # Ensure response is in JSON format
+        try:
+            response_data = response.json()
+        except ValueError:
+            request_log.mark_failed({"error": "Invalid JSON response"})
+            raise Exception("Invalid JSON response received")
+
+        logger.info(
+            f"📥 Response Content: {json.dumps(response_data, indent=2)}")
+        
+        
+        print(f"📥 Response Content: {json.dumps(response_data, indent=2)}")
+
+        # ✅ Log response before accessing `itemClsList`
+        data_content = response_data.get("data")
+        if not isinstance(data_content, dict):
+            logger.error(
+                f"⚠️ Unexpected response format: {json.dumps(response_data, indent=2)}")
+            request_log.mark_failed({"error": "Invalid response format"})
+            raise Exception("Invalid response format")
+
+        item_classifications = data_content.get("itemClsList", [])
+        # ✅ Ensure it's a list, not a tuple or None
+        if not isinstance(item_classifications, list):
+            logger.error(
+                f"⚠️ Invalid item classification structure: {json.dumps(data_content, indent=2)}")
+            request_log.mark_failed(
+                {"error": "Invalid item classification structure"})
+            raise Exception("Invalid item classification structure")
+
+        if not item_classifications:
+            logger.warning(
+                f"⚠️ No item classification data found in response: {json.dumps(response_data, indent=2)}")
+            request_log.mark_failed({
+                "error": "No item classification data found",
+                "response": response_data
+            })
+            raise Exception("No item classification data received")
+
+        # ✅ Extract & format for constants update
+        item_class_choices = [
+            {"itemClsCd": item["itemClsCd"],
+                "itemClsNm": item["itemClsNm"], "useYn": item["useYn"]}
+            for item in item_classifications
+        ]
+
+        # ✅ Update `commons/constants.py`
+        update_constants_file(item_class_choices)
+
+        # ✅ Mark the request as successful
+        request_log.mark_success({
+            "message": "Item classification updated successfully",
+            "updated_classes": len(item_class_choices),
+            "response": item_class_choices
+        })
+
+        # return None
+        return {"status": "success", "updated_classes": len(item_class_choices)}
+
+    except Exception as exc:
+        # ✅ Save full response data in tracker model
+        request_log.mark_retrying()
+        return None
+
+        # raise retry(exc=exc, countdown=60)  # Retry after 1 min
+
+
+
+
+def fetch_and_imports():
+    from api_tracker.models import APIRequestLog
+     
+
+    # Define request payload
+    request_payload = {"lastReqDt": "20221011150845"}
+
+    # Log API request in the tracker
+    request_log = APIRequestLog.objects.create(
+        request_type="fetchImports",
+        request_payload=request_payload
+    )
+
+    url = API_ENDPOINTS.get(request_log.request_type)
+
+    # API Call
+    response = send_vscu_request(
+        endpoint=url,
+        method="POST",
+        data=request_payload,
+    )
+
+    try:
+        res_item = response.json()
+
+        if res_item.get("resultCd") == "000":
+            request_log.mark_success(res_item)
+            return res_item
+        else:
+            request_log.mark_failed(res_item)
+            return None
+        
     except Exception as e:
         request_log.mark_failed({"error": str(e)})
         return None

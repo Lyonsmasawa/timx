@@ -39,7 +39,7 @@ ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1", "et
 # VSCU Configuration
 VSCU_TIN = env("VSCU_TIN", default="A123456789Z")
 VSCU_BRANCH_ID = env("VSCU_BRANCH_ID", default="00")
-VSCU_DEVICE_SERIAL = env("VSCU_DEVICE_SERIAL", default="dvc999993204")
+VSCU_DEVICE_SERIAL = env("VSCU_DEVICE_SERIAL", default="Interactive00")
 
 # API Configuration
 API_BASE_URL = env(

@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>Organization Settings</h2>
+    <p><strong>Organization:</strong> {{ organization.name }}</p>
+
+    <!-- Device Configuration Section -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h4>Device Configuration</h4>
+        </div>
+        <div class="card-body">
+            <p>Current Mode: <span id="device-mode">{{ device.mode|default:"Not Configured" }}</span></p>
+            <p>Device Serial: <strong>{{ device.device_serial_number|default:"N/A" }}</strong></p>
+
+            <!-- Actions for Configuring Device -->
+            <div class="btn-group">
+                <button class="btn btn-success" id="go-live-btn"
+                    data-org-id="{{ organization.id }}">Go Live</button>
+
+                <button class="btn btn-secondary" id="demo-mode-btn"
+                    data-org-id="{{ organization.id }}">Use Demo Mode</button>
+
+                <button class="btn btn-info" data-bs-toggle="modal"
+                    data-bs-target="#importDeviceKeysModal">Import Keys</button>
+            </div>
+
+            <!-- Display Current Keys (Masked) -->
+            <div class="mt-3">
+                <h5>Stored Keys</h5>
+                <ul class="list-group">
+                    <li class="list-group-item">Device ID: <span class="masked">{{ device.device_id|default:"Not Set" }}</span></li>
+                    <li class="list-group-item">Control Unit ID: <span class="masked">{{ device.control_unit_id|default:"Not Set" }}</span></li>
+                    <li class="list-group-item">Internal Key: <span class="masked">{{ device.internal_key|default:"Not Set" }}</span></li>
+                    <li class="list-group-item">Sign Key: <span class="masked">{{ device.sign_key|default:"Not Set" }}</span></li>
+                    <li class="list-group-item">Communication Key: <span class="masked">{{ device.communication_key|default:"Not Set" }}</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Keys Modal -->
+<div class="modal fade" id="importDeviceKeysModal" tabindex="-1"
+    aria-labelledby="importDeviceKeysModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Import Device Keys</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="importDeviceKeysForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label>Device ID</label>
+                        <input type="text" name="device_id" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Control Unit ID</label>
+                        <input type="text" name="control_unit_id" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Internal Key</label>
+                        <input type="password" name="internal_key" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Sign Key</label>
+                        <input type="password" name="sign_key" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Communication Key</label>
+                        <input type="password" name="communication_key" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Import Keys</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -24,6 +24,11 @@ urlpatterns = [
          views.update_purchases_view, name="update_purchases_view"),
     path("verify/<str:request_type>/<str:inv_no>/<int:purchase_id>",
          views.verify_purchase, name="verify_purchase"),
+    path('settings/<int:organization_id>/', views.organization_settings, name='organization_settings'),
+    path('initialize-device/', views.initialize_device_view, name='initialize_device'),
+    path('update-classifications/', views.fetch_classifications_view, name='fetchItemClassification'),
+    path('update-imports/', views.fetch_imports_view, name='fetchImports'),
+
 #     path('api/', include(router.urls)),
 #     path('api/retry/<str:request_type>/<int:request_id>/', views.retry_failed_request, name='api-retry-failed-request'),
 #     path('api/update_purchases/<int:org_id>/', views.update_purchases_view, name='api-update-purchases'),
