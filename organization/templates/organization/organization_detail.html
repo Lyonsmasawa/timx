@@ -33,34 +33,52 @@
             </li>
         </ul>
         <h4 class="text-muted weight-bold">Organization: {{ organization.organization_name }}</h4>
+        <td>
+            <div class="dropdown">
+                <button class="btn btn-secondary btn-sm dropdown-toggle a-btn" type="button"
+                    id="dropdownMenuButton-customer-{{ customer.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                    Settings
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton-customer-{{ customer.id }}">
+                    <li class="nav-item">
+                        <a class="nav-link"
+                            href="{% url 'organization:organization_settings' organization.id %}">Settings</a>
+                    </li>
+                    <li>
+                        <form id="initializeDeviceForm" method="POST">
+                            {% csrf_token %}
+                            <button type="button" id="initializeDeviceBtn" class="btn btn-primary w-btn">
+                                Initialize VSCU Device
+                            </button>
+                        </form>
+                    </li>
+                    <hr style="height: 0.25px;">
+                    <li>
 
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'organization:organization_settings' organization.id %}">Settings</a>
-        </li>
+                        <form id="FetchItemClassificationForm" method="POST">
+                            {% csrf_token %}
+                            <button type="button" id="FetchItemClassificationBtn" class="btn btn-primary">
+                                Update Item Classifications
+                            </button>
+                        </form>
+                    </li>
+                    <li>
 
+                        <form id="FetchImportsForm" method="POST">
+                            {% csrf_token %}
+                            <button type="button" id="fetchImportsBtn" class="btn btn-primary">
+                                Update Imports
+                            </button>
+                        </form>
 
-        <form id="initializeDeviceForm" method="POST">
-            {% csrf_token %}
-            <button type="button" id="initializeDeviceBtn" class="btn btn-primary">
-                Initialize VSCU Device
-            </button>
-        </form>
-
-
-        <form id="FetchItemClassificationForm" method="POST">
-            {% csrf_token %}
-            <button type="button" id="FetchItemClassificationBtn" class="btn btn-primary">
-                Update Item Classifications
-            </button>
-        </form>
-
-        <form id="FetchImportsForm" method="POST">
-            {% csrf_token %}
-            <button type="button" id="fetchImportsBtn" class="btn btn-primary">
-                Update Imports
-            </button>
-        </form>
-
+                    </li>
+                    <li>
+                        <a href="#" class="dropdown-item text-danger py-0 my-0" data-bs-toggle="modal"
+                            data-bs-target="#deleteModal-{{ customer.id }}">Delete</a>
+                    </li>
+                </ul>
+            </div>
+        </td>
 
     </div>
     <div class="container-fluid py-3 " style="min-height: 90vh; background-color:white;">
