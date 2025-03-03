@@ -67,7 +67,7 @@ def organization_settings(request, organization_id):
     # Fetch the associated device if available
     device = Device.objects.filter(organization=organization).first()
 
-    return render(request, "organization/settings.html", {
+    return render(request, "organization/organization_settings.html", {
         "organization": organization,
         "device": device,
     })

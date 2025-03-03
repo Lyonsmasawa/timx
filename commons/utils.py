@@ -8,7 +8,9 @@ from django.db import transaction
 import requests
 import logging
 from django.conf import settings
-
+from cryptography.fernet import Fernet
+import base64
+import os
 from commons.constants import API_ENDPOINTS
 from commons.item_classification_constants import ITEM_CLASS_CHOICES
 
@@ -572,3 +574,25 @@ def process_purchase_data(sales_list, organization_id):
             created_purchases.append(purchase)
 
     return created_purchases
+
+# Generate a secret key if it does not exist (You should securely store this key)
+def generate_secret_key():
+    return base64.urlsafe_b64encode(os.urandom(32))
+
+# Store the secret key securely (Ideally, in environment variables)
+SECRET_KEY = settings.ENCRYPTION_SECRET_KEY.encode()  # Use Django's secret key as a base key
+FERNET_KEY = base64.urlsafe_b64encode(SECRET_KEY[:32])  # Ensure 32-byte key
+
+cipher_suite = Fernet(FERNET_KEY)
+
+def encrypt_value(value):
+    """Encrypts a string value."""
+    if value is None:
+        return None
+    return cipher_suite.encrypt(value.encode()).decode()
+
+def decrypt_value(value):
+    """Decrypts an encrypted string value."""
+    if value is None:
+        return None
+    return cipher_suite.decrypt(value.encode()).decode()

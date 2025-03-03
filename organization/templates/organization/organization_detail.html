@@ -34,10 +34,10 @@
         </ul>
         <h4 class="text-muted weight-bold">Organization: {{ organization.organization_name }}</h4>
 
-        <!-- <li class="nav-item">
+        <li class="nav-item">
             <a class="nav-link" href="{% url 'organization:organization_settings' organization.id %}">Settings</a>
-        </li> -->
-        
+        </li>
+
 
         <form id="initializeDeviceForm" method="POST">
             {% csrf_token %}
@@ -45,7 +45,7 @@
                 Initialize VSCU Device
             </button>
         </form>
-        
+
 
         <form id="FetchItemClassificationForm" method="POST">
             {% csrf_token %}
@@ -2431,7 +2431,7 @@
                 .catch(error => console.error("Error:", error));
         }
     });
-    
+
     document.getElementById("fetchImportsBtn").addEventListener("click", function () {
         if (confirm("Are you sure you want to Update Imports?")) {
             fetch("{% url 'organization:fetchImports' %}", {
@@ -2452,8 +2452,8 @@
                 .catch(error => console.error("Error:", error));
         }
     });
-    
-    
+
+
 
 </script>
 

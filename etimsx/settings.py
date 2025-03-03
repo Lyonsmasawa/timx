@@ -28,6 +28,7 @@ if not os.path.exists(LOG_DIR):
 
 # SECURITY WARNING: keep the secret key secret!
 SECRET_KEY = env("SECRET_KEY", default="django-insecure-key")
+ENCRYPTION_SECRET_KEY = env("ENCRYPTION_SECRET_KEY", default="5WjRuOGuaxo-OSNlvL3eKKWmK5KBCYHzpIJjFxi9mZk=")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool("DEBUG", default=True)
@@ -266,6 +267,17 @@ TIME_ZONE = 'Africa/Nairobi'
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
+
+DEFAULT_DEMO_CONFIG = {
+    "tin": "DEMO123456789",
+    "branch_id": "00",
+    "device_serial_number": "DEMO-DEVICE-001",
+    "device_id": "DEMO-DEVICE-ID",
+    "control_unit_id": "DEMO-CU-ID",
+    "internal_key": "DEMO-INTERNAL-KEY",
+    "sign_key": "DEMO-SIGN-KEY",
+    "communication_key": "DEMO-COMM-KEY",
+}
 
 JAZZMIN_SETTINGS = {
     # title of the window (Will default to current_admin_site.site_title if absent or None)
