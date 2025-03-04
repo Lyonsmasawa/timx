@@ -37,7 +37,7 @@ DEBUG = env.bool("DEBUG", default=True)
 # Allowed hosts
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "etimsx.herokuapp.com",
-                 "*.ngrok-free.app", "4524-217-199-146-205.ngrok-free.app", "35.202.130.226"]
+                 "*.ngrok-free.app", "4524-217-199-146-205.ngrok-free.app", "34.60.172.27"]
 # ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1", "etimsx.herokuapp.com", "*.ngrok-free.app", "https://4524-217-199-146-205.ngrok-free.app"])
 
 # VSCU Configuration
@@ -164,13 +164,13 @@ CORS_ALLOWED_ORIGINS = [
     "https://4524-217-199-146-205.ngrok-free.app",
     "http://localhost:3000",  # React frontend
     "http://127.0.0.1:8000",  # Django itself
-    "http://35.202.130.226",
+    "http://34.60.172.27:8001",
     "https://etimsx.herokuapp.com",  # Heroku app
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     "https://4524-217-199-146-205.ngrok-free.app",
-    "http://35.202.130.226"
+    "http://34.60.172.27"
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True  # Allow requests from any domain
