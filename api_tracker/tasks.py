@@ -7,7 +7,7 @@ from celery import shared_task
 from api_tracker.models import APIRequestLog
 from django.conf import settings
 from commons.constants import API_ENDPOINTS
-from commons.utils import process_purchase_data, send_vscu_request, update_constants_file
+from commons.utils import process_import_data, process_purchase_data, send_vscu_request, update_constants_file
 from celery.exceptions import OperationalError
 
 logger = logging.getLogger("vscu_api")
@@ -171,6 +171,13 @@ def send_api_request(self, request_id):
         response = send_vscu_request(
             endpoint=url, method="POST", data=request_log.request_payload)
 
+        # Handle case where response is None
+        if response is None:
+            error_message = "API request failed, no response received."
+            print(f"❌ {error_message}")
+            request_log.mark_failed({"error": error_message})
+            return
+
         print(f"📥 Response Status Code: {response.status_code}")
         print(f"📥 Response Content: {response.text}")
 
@@ -245,6 +252,54 @@ def send_api_request(self, request_id):
                     request_log.mark_failed({"error": str(e)})
                     raise requests.exceptions.RequestException(
                         f"API returned resultCd: {request_log.purchase}, msg: {e}, response: {response_data}")
+
+            elif request_log.request_type == "updateImports":
+                # Ensure response is in JSON format
+                try:
+                    response_data = response.json()
+                except ValueError:
+                    request_log.mark_failed({"error": "Invalid JSON response"})
+                    raise Exception("Invalid JSON response received")
+
+                logger.info(
+                    f"📥 Response Content: {json.dumps(response_data, indent=2)}")
+
+                # ✅ Log response before accessing `sales list`
+                data_content = response_data.get("data")
+                if not isinstance(data_content, dict):
+                    logger.error(
+                        f"⚠️ Unexpected response format: {json.dumps(response_data, indent=2)}")
+                    request_log.mark_failed(
+                        {"error": "Invalid response format"})
+                    raise Exception("Invalid response format")
+
+                import_list = data_content.get("itemList", [])
+                # ✅ Ensure it's a list, not a tuple or None
+                if not isinstance(import_list, list):
+                    logger.error(
+                        f"⚠️ Invalid import structure: {json.dumps(data_content, indent=2)}")
+                    request_log.mark_failed(
+                        {"error": "Invalid import structure"})
+                    raise Exception("Invalid import structure")
+
+                if not import_list:
+                    logger.warning(
+                        f"⚠️ No import data found in response: {json.dumps(response_data, indent=2)}")
+                    request_log.mark_failed({
+                        "error": "No import data found",
+                        "response": response_data
+                    })
+                    raise Exception("No import data received")
+
+                # ✅ Update `purchases db`
+                created_imports = process_import_data(
+                    import_list, request_log.organization.id)
+
+                # ✅ Mark the request as successful
+                request_log.mark_success({
+                    "message": "Imports updated successfully",
+                    "response": created_imports
+                })
             else:
                 request_log.mark_success(response_data)
                 print(f"✅ Request successful: {response_data}")
@@ -282,6 +337,10 @@ def retry_failed_requests():
         status__in=["pending", "failed", "retrying"], retries__lt=4)
 
     for request_log in failed_requests:
+        # Increment retry count before re-queuing the request
+        request_log.retries += 1
+        request_log.status = "retrying"
+        request_log.save()  # ✅ Ensure the retry count is updated in the DB
         wait_time = 5 * (request_log.retries + 1)  # Exponential backoff
 
         print(

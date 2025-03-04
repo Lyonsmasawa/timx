@@ -1,0 +1,169 @@
+<!-- Modal for Viewing Items -->
+<div class="modal fade" id="importModal-{{import.invoice_number}}" tabindex="-1"
+aria-labelledby="importModalLabel-{{import.invoice_number}}" aria-hidden="true">
+<div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="itemsModalLabel">
+                #{{import.invoice_number}} - Import Items</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <div>
+                <button type="button" class="btn add" data-toggle="modal"
+                    data-bs-toggle="modal"
+                    data-bs-target="#addImportItemsModal-{{ import.invoice_number }}"
+                    data-modal-id="addImportItemsModal-{{ import.invoice_number }}">
+                    + Add Items
+                </button>
+            </div>
+            {% include "organization/invoice_template.html" with import=import%}
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- Add Import Items Modal -->
+<div class="modal fade" id="addImportItemsModal-{{ import.invoice_number }}"
+tabindex="-1" aria-labelledby="addItemsModalLabel-{{ import.invoice_number }}"
+aria-hidden="true" data-bs-backdrop="static">
+<div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title"
+                id="addItemsModalLabel-{{ import.invoice_number }}">
+                Create items from Import Invoice
+                {{ import.invoice_number }}
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <ul class="nav nav-tabs" id="addItemsTabs-{{ import.invoice_number }}"
+                role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active"
+                        id="create-items-tab-{{ import.invoice_number }}"
+                        data-bs-toggle="tab"
+                        data-bs-target="#create-items-{{ import.invoice_number }}"
+                        type="button" role="tab" aria-controls="create-items"
+                        aria-selected="true">Create Item(s)</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link"
+                        id="add-existing-tab-{{ import.invoice_number }}"
+                        data-bs-toggle="tab"
+                        data-bs-target="#add-existing-{{ import.invoice_number }}"
+                        type="button" role="tab" aria-controls="add-existing"
+                        aria-selected="false">Add to Existing
+                        Item(s)</button>
+                </li>
+            </ul>
+            <div class="tab-content mt-3"
+                id="addItemsTabsContent-{{ import.invoice_number }}">
+                <!-- Create Items Tab -->
+                <div class="tab-pane fade show active"
+                    id="create-items-{{ import.invoice_number }}" role="tabpanel"
+                    aria-labelledby="create-items-tab-{{ import.invoice_number }}">
+                    <form>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Item Name</th>
+                                    <th>Quantity</th>
+                                    <th>Unit Price</th>
+                                    <th>Create Item?</th>
+                                </tr>
+                            </thead>
+                            <tbody
+                                id="create-items-body-{{ import.invoice_number }}"
+                                action="{% url 'item:create_items_from_import' organization.id %}">
+                                {% for item in import.items %}
+                                <tr>
+                                    <td data-attr="{{item}}">{{ item.itemNm }}</td>
+                                    <td>{{ item.qty }}</td>
+                                    <td>{{ item.prc }}</td>
+                                    <td><input type="checkbox"
+                                            name="stock-item-{{ forloop.counter }}">
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+
+                        <div class="text-end">
+                            <button type="button" class="btn cancel"
+                                data-bs-dismiss="modal">Cancel</button>
+                            <form method="POST"
+                                id="createItemStockForm-{{ import.invoice_number }}">
+                                {% csrf_token %}
+                                &nbsp;
+                                <button type="submit" class="btn w-btn"
+                                    onclick="submitCreateItemStockForm(event, '{{import.invoice_number}}')">
+                                    Create Items</button>
+                            </form>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Add to Existing Items Tab -->
+                <div class="tab-pane fade"
+                    id="add-existing-{{ import.invoice_number }}" role="tabpanel"
+                    aria-labelledby="add-existing-tab-{{ import.invoice_number }}">
+                    <form>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Item Name</th>
+                                    <th>Quantity</th>
+                                    <th>Map to Item</th>
+                                    <th>Deselect</th>
+                                </tr>
+                            </thead>
+                            <tbody
+                                id="existing-items-body-{{ import.invoice_number }}"
+                                action="{% url 'item:update_mapped_item_quantity' %}">
+                                {% for item in import.items %}
+                                <tr>
+                                    <td data-attr="{{item}}">{{ item.itemNm }}</td>
+                                    <td>{{ item.qty }}</td>
+                                    <td>
+                                        <select class="form-control"
+                                            id="select-{{ forloop.counter }}"
+                                            name="map-to-item-{{ forloop.counter }}">
+                                            <option value="">Select...</option>
+                                            {% for existing_item in items %}
+                                            <option value="{{ existing_item.id }}">
+                                                {{ existing_item.item_name}}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <button type="button"
+                                            class="btn  btn-warning warning"
+                                            onclick="resetSelection('{{ forloop.counter }}')">
+                                            Reset
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        <div class="text-end">
+                            <button type="button" class="btn cancel"
+                                data-bs-dismiss="modal">Cancel</button>
+                            &nbsp;
+                            &nbsp;
+                            <button type="submit" class="btn w-btn"
+                                onclick="submitUpdateItemStockForm(event, '{{import.invoice_number}}')">
+                                Add Stock</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>

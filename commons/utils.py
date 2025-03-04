@@ -1,4 +1,5 @@
 import base64
+from datetime import datetime
 from io import BytesIO
 import json
 import os
@@ -252,8 +253,6 @@ def initialize_vscu_device():
     except Exception as e:
         request_log.mark_failed({"error": str(e)})
         return None
-    
-    
 
 
 def fetch_and_update_item_classification():
@@ -261,7 +260,7 @@ def fetch_and_update_item_classification():
     Celery task to fetch item classifications from the VSCU API and update constants dynamically.
     """
     from api_tracker.models import APIRequestLog
-     
+
     try:
         # Define request payload
         request_payload = {"lastReqDt": "20221011150845"}
@@ -302,8 +301,7 @@ def fetch_and_update_item_classification():
 
         logger.info(
             f"📥 Response Content: {json.dumps(response_data, indent=2)}")
-        
-        
+
         print(f"📥 Response Content: {json.dumps(response_data, indent=2)}")
 
         # ✅ Log response before accessing `itemClsList`
@@ -360,11 +358,8 @@ def fetch_and_update_item_classification():
         # raise retry(exc=exc, countdown=60)  # Retry after 1 min
 
 
-
-
 def fetch_and_imports():
     from api_tracker.models import APIRequestLog
-     
 
     # Define request payload
     request_payload = {"lastReqDt": "20221011150845"}
@@ -393,7 +388,7 @@ def fetch_and_imports():
         else:
             request_log.mark_failed(res_item)
             return None
-        
+
     except Exception as e:
         request_log.mark_failed({"error": str(e)})
         return None
@@ -575,21 +570,83 @@ def process_purchase_data(sales_list, organization_id):
 
     return created_purchases
 
+
+def parse_date(date_str):
+    """Convert date from DDMMYYYY format to YYYY-MM-DD."""
+    try:
+        return datetime.strptime(date_str, "%d%m%Y").strftime("%Y-%m-%d")
+    except ValueError:
+        return None
+
+
+def process_import_data(import_list, organization_id):
+    """
+    Process and store purchase data from the API.
+    """
+    from imports.models import Import
+    from django.db import transaction
+    from django.utils.dateparse import parse_datetime
+
+    created_imports = []
+    with transaction.atomic():
+        for import_data in import_list:
+            declaration_number = import_data.get("dclNo")
+
+            # Skip existing invoices
+            if Import.objects.filter(declaration_number=declaration_number, organization_id=organization_id).exists():
+                continue
+
+            # Parse confirmation date
+            confirmation_date = parse_date(import_data.get(
+                "dclDe")) or import_data.get("taskCd")
+
+            # Create import record
+            import_ = Import.objects.create(
+                declaration_date=confirmation_date,
+                declaration_number=import_data["dclNo"],
+                hs_code=import_data["hsCd"],
+                item_name=import_data["itemNm"],
+                import_status_code=import_data["imptItemsttsCd"],
+                origin_country=import_data["orgnNatCd"],
+                export_country=import_data["exptNatCd"],
+                package_count=import_data["pkg"],
+                package_unit_code=import_data["pkgUnitCd"],
+                quantity=import_data["qty"],
+                quantity_unit_code=import_data["qtyUnitCd"],
+                total_weight=import_data["totWt"],
+                net_weight=import_data["netWt"],
+                supplier_name=import_data["spplrNm"],
+                agent_name=import_data["agntNm"],
+                invoice_amount=import_data["invcFcurAmt"],
+                invoice_currency=import_data["invcFcurCd"],
+                invoice_exchange_rate=import_data["invcFcurExcrt"],
+                verified=False,
+                payload=import_data,  # Store raw data
+            )
+            created_imports.append(import_)
+
+    return created_imports
+
+
 # Generate a secret key if it does not exist (You should securely store this key)
 def generate_secret_key():
     return base64.urlsafe_b64encode(os.urandom(32))
 
+
 # Store the secret key securely (Ideally, in environment variables)
-SECRET_KEY = settings.ENCRYPTION_SECRET_KEY.encode()  # Use Django's secret key as a base key
+# Use Django's secret key as a base key
+SECRET_KEY = settings.ENCRYPTION_SECRET_KEY.encode()
 FERNET_KEY = base64.urlsafe_b64encode(SECRET_KEY[:32])  # Ensure 32-byte key
 
 cipher_suite = Fernet(FERNET_KEY)
+
 
 def encrypt_value(value):
     """Encrypts a string value."""
     if value is None:
         return None
     return cipher_suite.encrypt(value.encode()).decode()
+
 
 def decrypt_value(value):
     """Decrypts an encrypted string value."""

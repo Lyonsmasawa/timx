@@ -19,14 +19,16 @@
 
                 <!-- Actions for Configuring Device -->
                 <div class="btn-group">
-                    <button class="btn btn-success w-btn" id="go-live-btn" data-org-id="{{ organization.id }}">Go
+                    <button class="btn btn-success w-btn" disabled id="go-live-btn"
+                        data-org-id="{{ organization.id }}">Go
                         Live</button>
 
-                    <button class="btn btn-secondary w-btn" id="demo-mode-btn" data-org-id="{{ organization.id }}">Use
+                    <button class="btn btn-secondary w-btn" disabled id="demo-mode-btn"
+                        data-org-id="{{ organization.id }}">Use
                         Demo
                         Mode</button>
 
-                    <button class="btn btn-info w-btn" data-bs-toggle="modal"
+                    <button class="btn btn-info w-btn" disabled data-bs-toggle="modal"
                         data-bs-target="#importDeviceKeysModal">Import
                         Keys</button>
                 </div>

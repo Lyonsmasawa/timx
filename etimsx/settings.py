@@ -76,6 +76,7 @@ INSTALLED_APPS = [
     'item',
     'sales_items',
     'purchases',
+    'imports',
     'corsheaders',
     'bootstrap5',
     "crispy_bootstrap5",

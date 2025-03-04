@@ -12,7 +12,8 @@ API_ENDPOINTS = {
     "saveCreditNote": "/saveTrnsSalesOsdc",
     "selectTrnsPurchaseSalesList": "/selectTrnsPurchaseSalesList",
     "updatePurchases": "/selectTrnsPurchaseSalesList",
-    "verifyPurchase": "/insertTrnsPurchase",
+    "verifyPurchase": "/selectImportItemList",
+    "updateImports": "/selectImportList",
     "saveItemComposition": "/saveItemComposition",
     "fetchImports": "/selectImportItemList",
     "initializeDevice": "/initializer/selectInitInfo"

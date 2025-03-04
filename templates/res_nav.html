@@ -15,15 +15,24 @@
             <ul class="navbar-nav me-auto mb-2 mb-lg-0 bg-tr mr-3">
                 <div class="d-flex"> </div>
                 <li class="nav-item"></li>
-                <li class="nav-item"></li>
                 <li class="nav-item">
-                        <a href="{% url 'organization:organization_list' %}" class="nav-a"
-                            style="color: #00251D !important">
-                            <h1 class="navlogo">
-                                My Organizations
-                            </h1>
-                        </a>
+                    <a href="{% url 'organization:organization_list' %}" class="nav-a"
+                        style="color: #00251D !important">
+                        <h1 class="navlogo">
+                            My Organizations
+                        </h1>
+                    </a>
                 </li>
+
+                <li class="nav-item">
+                    <!-- Display Current Organization Name if Available -->
+                    {% if organization %}
+                    <h4 class="text-muted weight-bold">{{ organization.organization_name }}</h4>
+                    {% endif %}
+                </li>
+
+
+
 
                 <li class="nav-item dropdown" ">
                     <a class=" nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"

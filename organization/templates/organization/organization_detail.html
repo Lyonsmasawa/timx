@@ -31,8 +31,12 @@
                 <a class="nav-link" id="purchases-tab" data-bs-toggle="tab" href="#purchases" role="tab"
                     aria-controls="purchases" aria-selected="false">Purchases</a>
             </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" id="imports-tab" data-bs-toggle="tab" href="#imports" role="tab"
+                    aria-controls="imports" aria-selected="false">Imports</a>
+            </li>
         </ul>
-        <h4 class="text-muted weight-bold">Organization: {{ organization.organization_name }}</h4>
+        <h4 class="text-muted weight-bold"> {{ organization.organization_name }}</h4>
         <td>
             <div class="dropdown">
                 <button class="btn btn-secondary btn-sm dropdown-toggle a-btn" type="button"
@@ -41,40 +45,8 @@
                 </button>
                 <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton-customer-{{ customer.id }}">
                     <li class="nav-item">
-                        <a class="nav-link"
-                            href="{% url 'organization:organization_settings' organization.id %}">Settings</a>
-                    </li>
-                    <li>
-                        <form id="initializeDeviceForm" method="POST">
-                            {% csrf_token %}
-                            <button type="button" id="initializeDeviceBtn" class="btn btn-primary w-btn">
-                                Initialize VSCU Device
-                            </button>
-                        </form>
-                    </li>
-                    <hr style="height: 0.25px;">
-                    <li>
-
-                        <form id="FetchItemClassificationForm" method="POST">
-                            {% csrf_token %}
-                            <button type="button" id="FetchItemClassificationBtn" class="btn btn-primary">
-                                Update Item Classifications
-                            </button>
-                        </form>
-                    </li>
-                    <li>
-
-                        <form id="FetchImportsForm" method="POST">
-                            {% csrf_token %}
-                            <button type="button" id="fetchImportsBtn" class="btn btn-primary">
-                                Update Imports
-                            </button>
-                        </form>
-
-                    </li>
-                    <li>
-                        <a href="#" class="dropdown-item text-danger py-0 my-0" data-bs-toggle="modal"
-                            data-bs-target="#deleteModal-{{ customer.id }}">Delete</a>
+                        <a class="nav-link" href="{% url 'organization:organization_settings' organization.id %}">VSCU
+                            key configurations</a>
                     </li>
                 </ul>
             </div>
@@ -89,6 +61,10 @@
                 <div class="d-flex justify-content-between align-items-center p-0 pt-1">
                     <h3><span style="color: #000000;">{{ customers.count }}</span> Customers</h3>
                     <div>
+                        <button type="button" class="btn add " disabled data-toggle="modal" data-bs-toggle="modal"
+                            data-bs-target="#createCustomerModal">
+                            + Verify Pin
+                        </button>
                         <button type="button" class="btn add" data-toggle="modal" data-bs-toggle="modal"
                             data-bs-target="#createCustomerModal">
                             + New Customer
@@ -1230,6 +1206,103 @@
                 {% endif %}
 
             </div>
+
+            <!-- Imports tab -->
+            <div class="tab-pane fade " id="imports" role="tabpanel" aria-labelledby="imports-tab">
+                <h3></h3>
+                <div class="d-flex justify-content-between align-items-center p-0 pt-1">
+                    <h3><span style="color: #000000;">{{ imports_s.count }}</span> Imports</h3>
+                    <div>
+                        <button data-url="{% url 'organization:update_imports_view' organization.id %}" type="button"
+                            class="btn add import_-request">
+                            Update Imports list
+                        </button>
+                    </div>
+                </div>
+                <hr class="hr-style" />
+                <ul class="list-group imports-list"></ul>
+                {% if imports_s %}
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Dec No.</th>
+                            <th>Dec Date:</th>
+                            <th>Supplier</th>
+                            <th>Item Name</th>
+                            <th>Qty (Unit)</th>
+                            <th>Qty Unit</th>
+                            <th>Amount</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for import_ in imports_s %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ import_.declaration_number }}</td>
+                            <td>{{ import_.declaration_date}}</td>
+                            <td>{{ import_.supplier_name }}</td>
+                            <td>{{ import_.item_name }}</td>
+                            <td>{{ import_.quantity }} ({{ import_.quantity_unit_code }})</td>
+                            <td>{{ import_.supplier_name }}</td>
+                            <td>{{ import_.supplier_name }}</td>
+                            <td>{{ import_.invoice_currency }} {{ import_.invoice_amount|floatformat:2 }}</td>
+                            <td>
+                                <button class="btn btn-sm view-items-btn" disabled data-items="{{ import_ |escapejs }}"
+                                    data-bs-toggle="modal" data-bs-target="#importModal-{{import_.declaration_number}}"
+                                    data-modal-id="importModalBody-{{ import_.declaration_number }}">
+                                    View Item
+                                </button>
+
+                            </td>
+                            <td class="dflex">
+                                {% if not import_.verified %}
+                                {% with imports_data=imports_statuses|dict_get_p:import_.id %}
+                                <span class="status {{ imports_data.status }}">{{ imports_data.status }}</span>
+
+                                {% if imports_data.status == "failed"%}
+                                <button class="btn retry-request r-btn" data-type="verifyImport"
+                                    data-url="{% url 'organization:retry_failed_request' 'verifyImport' import_.id %}"
+                                    data-id="{{ imports_data.id }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor"
+                                        class="bi bi-repeat" viewBox="0 0 20 20">
+                                        <path
+                                            d="M11 5.466V4H5a4 4 0 0 0-3.584 5.777.5.5 0 1 1-.896.446A5 5 0 0 1 5 3h6V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m3.81.086a.5.5 0 0 1 .67.225A5 5 0 0 1 11 13H5v1.466a.25.25 0 0 1-.41.192l-2.36-1.966a.25.25 0 0 1 .41.192V12h6a4 4 0 0 0 3.585-5.777.5.5 0 0 1 .225-.67Z" />
+                                    </svg>
+                                </button>
+                                {% elif imports_data.status == "Not verified" %}
+                                <button class="btn verify-request r-btn" data-type="verifyImport"
+                                    data-url="{% url 'organization:verify_import' 'verifyImport' import_.invoice_number import_.id  %}"
+                                    data-id="{{ import_.imvoice_number }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor"
+                                        class="bi bi-repeat" viewBox="0 0 20 20">
+                                        <path
+                                            d="M11 5.466V4H5a4 4 0 0 0-3.584 5.777.5.5 0 1 1-.896.446A5 5 0 0 1 5 3h6V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m3.81.086a.5.5 0 0 1 .67.225A5 5 0 0 1 11 13H5v1.466a.25.25 0 0 1-.41.192l-2.36-1.966a.25.25 0 0 1 .41.192V12h6a4 4 0 0 0 3.585-5.777.5.5 0 0 1 .225-.67Z" />
+                                    </svg>
+                                </button>
+                                {% else %}
+
+                                {% endif %}
+                                {% endwith %}
+
+                                {% else %}
+                                <span class="status success">
+                                    Verified
+                                </span>
+                                {% endif %}
+
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                {% else %}
+                <p>No imports found for this organization.</p>
+                {% endif %}
+
+            </div>
         </div>
     </div>
 </div>
@@ -1688,6 +1761,57 @@
                     })
                     .catch((error) => {
                         console.error("Error verifyinging request:", error);
+                    });
+            });
+        });
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".import_-request").forEach((button) => {
+            button.addEventListener("click", function () {
+                const dataUrl = this.getAttribute("data-url");
+                const DISABLE_MINUTES = 5;
+                const disableMs = DISABLE_MINUTES * 60 * 1000;
+
+                // If you have multiple, consider unique IDs, e.g. `purchaseRequestLastClicked_<some_id>`.
+                const storageKey = "importRequestLastClicked";
+
+                // Check if we have a previous timestamp
+                const lastClickedTime = localStorage.getItem(storageKey);
+                const currentTime = Date.now();
+
+                // If the last clicked time exists and is within 5 minutes, disable the button
+                if (lastClickedTime && currentTime - lastClickedTime < disableMs) {
+                    button.disabled = true;
+                    button.textContent = "Updating...";
+                    return
+                }
+                console.log(disableMs);
+                fetch(dataUrl, {
+                    method: "GET",
+                    headers: {
+                        "X-CSRFToken": "{{ csrf_token }}",
+                    },
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.success) {
+                            // 1) Show a toast
+                            showToast("Update in progress...");
+
+                            // 2) Change the text and disable the button
+                            button.textContent = "Updating...";
+                            button.disabled = true;
+
+                            // 3) Store the current timestamp in localStorage
+                            localStorage.setItem(storageKey, new Date().getTime());
+
+                            console.log(data)
+                            // window.location.reload();
+                        }
+                    })
+                    .catch((error) => {
+                        console.error("Error retrying request:", error);
                     });
             });
         });

@@ -14,6 +14,7 @@ from api_tracker.models import APIRequestLog
 from commons.constants import API_ENDPOINTS, COUNTRY_CHOICES, PACKAGE_CHOICES, PRODUCT_TYPE_CHOICES, TAX_TYPE_CHOICES, TAXPAYER_STATUS_CHOICES, UNIT_CHOICES
 from commons.utils import compute_tax_summary, initialize_vscu_device, process_purchases, fetch_and_update_item_classification, fetch_and_imports
 from device.models import Device
+from imports.models import Import
 from item_movement.models import ItemMovement
 from purchases.models import Purchase
 from .models import Organization
@@ -36,7 +37,6 @@ from rest_framework.response import Response
 # List Organizations
 
 
-
 @login_required
 def initialize_device_view(request):
     if request.method == "POST":
@@ -46,7 +46,6 @@ def initialize_device_view(request):
         return JsonResponse({"success": False, "message": "VSCU Device initialization failed."})
 
     return JsonResponse({"error": "Invalid request method."}, status=405)
-
 
 
 @login_required
@@ -59,11 +58,12 @@ def fetch_classifications_view(request):
 
     return JsonResponse({"error": "Invalid request method."}, status=405)
 
+
 @login_required
 def organization_settings(request, organization_id):
     """View to manage organization settings including device configuration."""
     organization = get_object_or_404(Organization, id=organization_id)
-    
+
     # Fetch the associated device if available
     device = Device.objects.filter(organization=organization).first()
 
@@ -214,6 +214,63 @@ def organization_detail(request, pk):
         purchases_data = Purchase.objects.select_related("organization").filter(
             organization=organization).order_by('-created_at')
         purchases = process_purchases(purchases_data)
+        imports = Import.objects.select_related("organization").filter(
+            organization=organization).order_by('-created_at')
+
+        imports_ = [
+            {
+                "id": 1,
+                "task_code": "20230209023992",
+                "declaration_date": "2023-02-01",
+                "item_sequence": 1,
+                "declaration_number": "23NBOIM401167364",
+                "hs_code": "63079000",
+                "item_name": "ORANGES",
+                "import_status_code": "2",
+                "origin_country": "DE",
+                "export_country": "DE",
+                "package_count": 17,
+                "package_unit_code": "KGM",
+                "quantity": 14,
+                "quantity_unit_code": "KGM",
+                "total_weight": 140,
+                "net_weight": 14,
+                "supplier_name": "SEITZ GMGH",
+                "agent_name": "SCHENKER LIMITED",
+                "invoice_amount": 11817.5,
+                "invoice_currency": "EUR",
+                "invoice_exchange_rate": 135.73,
+                "verified": False,
+                "organization_id": 1,
+                "created_at": "2025-02-26T17:37:38Z"
+            },
+            # {
+            #     "id": 2,
+            #     "task_code": "20230209023991",
+            #     "declaration_date": "2023-02-01",
+            #     "item_sequence": 1,
+            #     "declaration_number": "23NBOIM401167364",
+            #     "hs_code": "63079000",
+            #     "item_name": "ORANGES",
+            #     "import_status_code": "2",
+            #     "origin_country": "DE",
+            #     "export_country": "DE",
+            #     "package_count": 17,
+            #     "package_unit_code": "KGM",
+            #     "quantity": 14,
+            #     "quantity_unit_code": "KGM",
+            #     "total_weight": 140,
+            #     "net_weight": 14,
+            #     "supplier_name": "SEITZ GMGH",
+            #     "agent_name": "SCHENKER LIMITED",
+            #     "invoice_amount": 11817.5,
+            #     "invoice_currency": "EUR",
+            #     "invoice_exchange_rate": 135.73,
+            #     "verified": False,
+            #     "organization_id": 1,
+            #     "created_at": "2025-02-26T17:37:38Z"
+            # }
+        ]
 
         # Fetch latest API status for each item, customer, and transaction
         item_statuses = {log.item.id: {"id": log.id, "status": log.status} for log in APIRequestLog.objects.filter(
@@ -246,6 +303,7 @@ def organization_detail(request, pk):
         # print(f" Customer, {customer_statuses}")
         # print(f" Items, {item_statuses}")
         # print(f" Transaction, {transaction_statuses}")
+        # print(f"Imports {imports_}")
 
         # Render the page for regular requests
         return render(request, "organization/organization_detail.html", {
@@ -254,6 +312,8 @@ def organization_detail(request, pk):
             "customers": customers,
             "invoices": invoices,
             "credit_notes": credit_notes,
+            "imports": imports,
+            "imports_s": imports_,
             "item_statuses": item_statuses,
             "customer_statuses": customer_statuses,
             "transaction_statuses": transaction_statuses,
@@ -499,6 +559,39 @@ def verify_purchase(request, request_type, inv_no, purchase_id):
             return JsonResponse({"error": f"{request_type.capitalize()} request not found or not failed."}, status=404)
 
     return JsonResponse({"error": "Invalid request method."}, status=405)
+
+
+@login_required
+def update_imports_view(request, org_id):
+    try:
+        try:
+            organization = Organization.objects.get(
+                id=org_id, user=request.user)
+        except Organization.DoesNotExist:
+            return JsonResponse({"error": "Organization not found."}, status=404)
+
+        # Define request payload
+        request_payload = {"lastReqDt": "20231010000000"}
+
+        # Log API request in the tracker
+        request_log = APIRequestLog.objects.create(
+            request_type="updateImports",
+            request_payload=request_payload,
+            organization=organization,
+        )
+
+        # ✅ Retry the request using Celery
+        try:
+            send_api_request.apply_async(args=[request_log.id])
+        except OperationalError as e:
+            # Log the error and allow the application to proceed
+            print(f"Celery is not reachable: {e}")
+
+        return JsonResponse({"success": True, "message": "Import update initiated"}, status=200)
+    except AttributeError:
+        return JsonResponse({"error": "User is not associated with an organization"}, status=400)
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
 # class OrganizationViewSet(viewsets.ModelViewSet):
