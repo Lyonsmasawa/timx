@@ -28,14 +28,17 @@ if not os.path.exists(LOG_DIR):
 
 # SECURITY WARNING: keep the secret key secret!
 SECRET_KEY = env("SECRET_KEY", default="django-insecure-key")
-ENCRYPTION_SECRET_KEY = env("ENCRYPTION_SECRET_KEY", default="5WjRuOGuaxo-OSNlvL3eKKWmK5KBCYHzpIJjFxi9mZk=")
+ENCRYPTION_SECRET_KEY = env(
+    "ENCRYPTION_SECRET_KEY", default="5WjRuOGuaxo-OSNlvL3eKKWmK5KBCYHzpIJjFxi9mZk=")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool("DEBUG", default=True)
 
 # Allowed hosts
 
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1", "etimsx.herokuapp.com", "*.ngrok-free.app"])
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "etimsx.herokuapp.com",
+                 "*.ngrok-free.app", "4524-217-199-146-205.ngrok-free.app", "35.202.130.226"]
+# ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1", "etimsx.herokuapp.com", "*.ngrok-free.app", "https://4524-217-199-146-205.ngrok-free.app"])
 
 # VSCU Configuration
 VSCU_TIN = env("VSCU_TIN", default="A123456789Z")
@@ -158,14 +161,16 @@ DATABASES = {
 # ])
 
 CORS_ALLOWED_ORIGINS = [
-    "https://fdeb-41-90-172-242.ngrok-free.app",
+    "https://4524-217-199-146-205.ngrok-free.app",
     "http://localhost:3000",  # React frontend
     "http://127.0.0.1:8000",  # Django itself
+    "http://35.202.130.226",
     "https://etimsx.herokuapp.com",  # Heroku app
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://fdeb-41-90-172-242.ngrok-free.app"
+    "https://4524-217-199-146-205.ngrok-free.app",
+    "http://35.202.130.226"
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True  # Allow requests from any domain
@@ -186,7 +191,6 @@ CORS_ALLOW_HEADERS = [
     "authorization",
     "x-requested-with",
 ]
-
 
 
 REST_FRAMEWORK = {
