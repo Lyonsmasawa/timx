@@ -155,6 +155,8 @@ def send_api_request(self, request_id):
     Celery task to send API requests asynchronously.
     Automatically retries up to 3 times with exponential backoff.
     """
+    from device.models import Device
+
     request_log = APIRequestLog.objects.get(id=request_id)
     url = API_ENDPOINTS.get(request_log.request_type)
 
@@ -300,6 +302,26 @@ def send_api_request(self, request_id):
                     "message": "Imports updated successfully",
                     "response": created_imports
                 })
+            elif request_log.request_type == "initializeDevice":
+                try:
+                    data = response_data.get("data", {})
+                    Device.objects.filter(tin=request_log.request_payload["tin"]).update(
+                        initialized=True,
+                        device_id=data.get("deviceId"),
+                        control_unit_id=data.get("controlUnitId"),
+                        internal_key=data.get("internalKey"),
+                        sign_key=data.get("signKey"),
+                        communication_key=data.get("communicationKey"),
+                        active=True
+                    )
+                    # Mark the purchase as verified
+                    request_log.mark_success(response_data)
+                    logger.info(f"✅ Request successful: {response_data}")
+                except Exception as e:
+                    request_log.mark_failed({"error": str(e)})
+                    raise requests.exceptions.RequestException(
+                        f"API returned resultCd: {request_log.purchase}, msg: {e}, response: {response_data}")
+
             else:
                 request_log.mark_success(response_data)
                 print(f"✅ Request successful: {response_data}")

@@ -113,7 +113,7 @@ def get_item_class_choices():
     return [(item["itemClsCd"], item["itemClsNm"]) for item in ITEM_CLASS_CHOICES if "itemClsCd" in item and "itemClsNm" in item]
 
 
-def send_vscu_request(endpoint, method="POST", data=None, headers=None):
+def send_vscu_request(endpoint, method="POST", data=None, headers=None, org=None):
     """
     Sends API requests to VSCU and logs EVERYTHING.
 
@@ -123,9 +123,38 @@ def send_vscu_request(endpoint, method="POST", data=None, headers=None):
     :param headers: Additional headers (if needed)
     :return: Response object
     """
+    from device.models import Device
+    from organization.models import organization
 
     base_url = os.getenv("VSCU_API_BASE_URL", settings.VSCU_API_BASE_URL)
     url = f"{base_url}{endpoint}"
+
+    # if org:
+    #     # Fetch the organization's active device (or create a demo device if none exists)
+    #     device, _ = Device.objects.get_or_create(
+    #         organization=org,
+    #         defaults={
+    #             "mode": "demo",
+    #             "tin": "A123456789Z",
+    #             "branch_id": "00",
+    #             "device_serial_number": "dvc999993204",
+    #             "communication_key": os.getenv("VSCU_CMC_KEY"),
+    #         }
+    #     )
+
+    #     # Determine which keys to use (Live, Imported, or Demo)
+    #     if device.mode == "live":
+    #         tin = device.tin
+    #         branch_id = device.branch_id
+    #         cmc_key = device.communication_key
+    #     elif device.mode == "imported":
+    #         tin = device.tin
+    #         branch_id = device.branch_id
+    #         cmc_key = device.communication_key
+    #     else:  # Default to Demo mode
+    #         tin = "A123456789Z"
+    #         branch_id = "00"
+    #         cmc_key = os.getenv("VSCU_CMC_KEY")
 
     # Default headers
     default_headers = {
@@ -154,7 +183,7 @@ def send_vscu_request(endpoint, method="POST", data=None, headers=None):
             json=data,
             timeout=50  # Prevent indefinite hanging
         )
-        
+
         # with httpx.Client(timeout=50) as client:  # Uses connection pooling
         #     response = client.request(
         #         method=method,

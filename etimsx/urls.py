@@ -26,6 +26,7 @@ urlpatterns = [
 
     # Include each app's URLs under its own unique prefix
     path('api/organization/', include('organization.urls')),  # organization URLs
+    path('api/device/', include('device.urls')),  # organization URLs
     path('api/item/', include('item.urls')),                  # item URLs
     path('api/customer/', include('customer.urls')),          # customer URLs
     path('api/transaction/', include('transaction.urls')),    # transaction URLs

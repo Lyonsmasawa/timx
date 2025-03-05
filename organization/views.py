@@ -1,3 +1,4 @@
+from django.conf import settings
 from api_tracker.tasks import send_api_request
 from .models import Organization
 from django.http import JsonResponse
@@ -87,40 +88,126 @@ def fetch_imports_view(request):
     return JsonResponse({"error": "Invalid request method."}, status=405)
 
 
-def initialize_device(request, organization_id):
-    """API endpoint to initialize a device for an organization."""
+# def initialize_device(request, organization_id):
+#     """API endpoint to initialize a device for an organization."""
+#     if request.method == "POST":
+#         organization = Organization.objects.get(id=organization_id)
+
+#         # Simulated API request to initialize device
+#         request_payload = {
+#             "tin": organization.tin,
+#             "branch_id": "00",
+#             "device_serial_number": f"dvc{organization.id}99999"
+#         }
+
+#         # Log the request in API tracker
+#         request_log = APIRequestLog.objects.create(
+#             request_type="initializeDevice",
+#             request_payload=request_payload,
+#             organization=organization,
+#         )
+
+#         # Send request to the actual API
+#         send_api_request.apply_async(args=[request_log.id])
+
+#         # Create a new Device entry (assumes API will return this data)
+#         device = Device.objects.create(
+#             organization=organization,
+#             tin=request_payload["tin"],
+#             branch_id=request_payload["branch_id"],
+#             device_serial_number=request_payload["device_serial_number"],
+#             initialized=True
+#         )
+
+#         return JsonResponse({"message": "Device initialized successfully!", "device_id": device.id})
+
+#     return JsonResponse({"error": "Invalid request method."}, status=400)
+
+@csrf_exempt
+def initialize_device(request):
+    """
+    Initializes a device for an organization and switches it to live mode.
+    """
     if request.method == "POST":
-        organization = Organization.objects.get(id=organization_id)
+        data = json.loads(request.body)
 
-        # Simulated API request to initialize device
-        request_payload = {
-            "tin": organization.tin,
-            "branch_id": "00",
-            "device_serial_number": f"dvc{organization.id}99999"
-        }
+        tin = data.get("tin")
+        bhf_id = data.get("bhfId")
+        dvc_srl_no = data.get("dvcSrlNo")
+        org_id = data.get("organization_id")
 
-        # Log the request in API tracker
-        request_log = APIRequestLog.objects.create(
-            request_type="initializeDevice",
-            request_payload=request_payload,
-            organization=organization,
-        )
+        if not all([tin, bhf_id, dvc_srl_no, org_id]):
+            return JsonResponse({"error": "Missing required fields"}, status=400)
 
-        # Send request to the actual API
-        send_api_request.apply_async(args=[request_log.id])
+        try:
+            device = Device.objects.get(organization_id=org_id)
+            device.set_live(tin, bhf_id, dvc_srl_no)
 
-        # Create a new Device entry (assumes API will return this data)
-        device = Device.objects.create(
-            organization=organization,
-            tin=request_payload["tin"],
-            branch_id=request_payload["branch_id"],
-            device_serial_number=request_payload["device_serial_number"],
-            initialized=True
-        )
+            # Send initialization request to API
+            request_payload = {"tin": tin,
+                               "bhfId": bhf_id, "dvcSrlNo": dvc_srl_no}
+            request_log = APIRequestLog.objects.create(
+                request_type="initializeDevice",
+                request_payload=request_payload,
+                organization_id=org_id,
+            )
 
-        return JsonResponse({"message": "Device initialized successfully!", "device_id": device.id})
+            send_api_request.apply_async(args=[request_log.id])
 
-    return JsonResponse({"error": "Invalid request method."}, status=400)
+            return JsonResponse({"success": True, "message": "Device initialization started."})
+
+        except Device.DoesNotExist:
+            return JsonResponse({"error": "Device not found for this organization"}, status=404)
+
+
+@login_required
+def get_available_devices(request, org_id):
+    """
+    Returns all available device configurations for an organization.
+    """
+    try:
+        organization = Organization.objects.get(id=org_id, user=request.user)
+        devices = Device.objects.filter(organization=organization)
+
+        device_list = [
+            {
+                "id": device.id,
+                "tin": device.tin,
+                "branch_id": device.branch_id,
+                "device_serial_number": device.device_serial_number,
+                "mode": device.mode,
+            }
+            for device in devices
+        ]
+
+        return JsonResponse({"devices": device_list}, status=200)
+
+    except Organization.DoesNotExist:
+        return JsonResponse({"error": "Organization not found."}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+    
+@login_required
+def set_active_device(request, org_id, device_id):
+    """
+    Updates the active device for an organization.
+    """
+    try:
+        organization = Organization.objects.get(id=org_id, user=request.user)
+        device = Device.objects.get(id=device_id, organization=organization)
+
+        # Set this device as the active one
+        device.mode = "live"
+        device.save()
+
+        return JsonResponse({"success": True, "message": "Device activated successfully!"})
+
+    except Organization.DoesNotExist:
+        return JsonResponse({"error": "Organization not found."}, status=404)
+    except Device.DoesNotExist:
+        return JsonResponse({"error": "Device not found."}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 @login_required
