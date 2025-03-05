@@ -7,7 +7,7 @@ import qrcode
 from django.db.models import QuerySet
 from django.db import transaction
 import requests
-import httpx
+# import httpx
 import logging
 from django.conf import settings
 from cryptography.fernet import Fernet
