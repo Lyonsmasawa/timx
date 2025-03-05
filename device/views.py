@@ -12,21 +12,29 @@ import json
 @login_required
 def get_device_status(request, org_id):
     """
-    Fetches the current device configuration for the organization.
-    If no device exists, it automatically creates a Demo Mode device using default values.
+    Fetches the active device for the organization.
+    If no active device exists, it returns the demo mode device.
+    If no device exists, it creates a default Demo Mode device.
     """
     try:
-        device, created = Device.objects.get_or_create(
-            organization_id=org_id,
-            defaults={
-                "mode": "demo",
-                "tin": settings.VSCU_TIN,
-                "branch_id": settings.VSCU_BRANCH_ID,
-                "device_serial_number": settings.VSCU_DEVICE_SERIAL,
-                "initialized": False,
-                "communication_key": settings.VSCU_CMC_KEY
-            },
-        )
+        # Check if an active device exists
+        device = Device.objects.filter(organization_id=org_id, active=True).first()
+        print(device)
+
+        # If no active device, fallback to demo
+        if not device:
+            device, created = Device.objects.get_or_create(
+                organization_id=org_id,
+                mode="demo",
+                defaults={
+                    "tin": settings.VSCU_TIN,
+                    "branch_id": settings.VSCU_BRANCH_ID,
+                    "device_serial_number": settings.VSCU_DEVICE_SERIAL,
+                    "communication_key": settings.VSCU_CMC_KEY,
+                    "initialized": False,
+                    "active": True  # Mark default demo device as active if none exist
+                }
+            )
 
         return JsonResponse({
             "mode": device.mode,
@@ -145,10 +153,12 @@ def switch_to_demo_mode(request, org_id):
 
 
 @login_required
-def set_active_device(request, device_id):
+def set_active_device(request, org_id, device_id):
     """Sets the selected device as active and deactivates others."""
     try:
-        device = Device.objects.get(id=device_id)
+        organization = Organization.objects.get(id=org_id, user=request.user)
+
+        device = Device.objects.get(id=device_id, organization=organization)
         device.set_active()
         return JsonResponse({"success": True, "message": "Device activated successfully."})
     except Device.DoesNotExist:
@@ -181,6 +191,7 @@ def get_available_devices(request, org_id):
         return JsonResponse({"error": "Organization not found."}, status=404)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
 
 @login_required
 def initialize_device(request):

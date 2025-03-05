@@ -52,7 +52,7 @@
                 </div>
                 <div class="modal-body">
                     <select class="form-control" id="device-selection">
-                        <option value="" dataUrl="">Loading devices...</option>
+                        <option value="">Loading devices...</option>
                     </select>
                     <div class="text-center mt-3">
                         <button class="btn btn-primary w-btn" id="activate-device-btn">Activate Device</button>
@@ -140,6 +140,23 @@
 
         const deviceSelect = document.getElementById("device-selection");
 
+        // **🔹 Load Active Device Status on Page Load**
+        fetch(deviceStatusUrl)
+            .then(response => response.json())
+            .then(data => {
+                console.log("Active Device Data:", data);
+                document.getElementById("device-mode").innerText = data.mode || "Not Configured";
+
+                if (data.mode === "live") {
+                    document.getElementById("go-live-btn").disabled = true;
+                    document.getElementById("demo-mode-btn").disabled = false;
+                } else if (data.mode === "demo") {
+                    document.getElementById("go-live-btn").disabled = false;
+                    document.getElementById("demo-mode-btn").disabled = true;
+                }
+            })
+            .catch(error => console.error("Error fetching device status:", error));
+
         document.addEventListener("DOMContentLoaded", function () {
             const orgId = "{{ organization.id }}";
             const goLiveUrl = "{% url 'device:set_live_mode' organization.id %}";
@@ -195,7 +212,7 @@
                         data.devices.forEach(device => {
                             let option = document.createElement("option");
                             option.value = device.id;
-                            option.dataUrl = `{% url 'device:set_active_device' organization.id device.id %}`
+                            option.setAttribute("data-url", `{% url 'device:set_active_device' organization.id device.id %}`.replace("device.id", device.id));
                             option.textContent = `${device.mode.toUpperCase()} - ${device.device_serial_number} ${device.active ? "(Active)" : ""}`;
                             deviceSelect.appendChild(option);
                         });
@@ -206,20 +223,22 @@
 
         // **🔹 Activate Selected Device**
         document.getElementById("activate-device-btn").addEventListener("click", function () {
-            const selectedDeviceId = document.getElementById("device-selection").value;
-            const deviceSelectDevicesUrl = document.getElementById("device-selection").dataUrl
+            const selectedOption = deviceSelect.options[deviceSelect.selectedIndex];
 
-            if (!selectedDeviceId) {
+            if (!selectedOption.value) {
                 alert("Please select a device.");
                 return;
             }
 
-            fetch(deviceSelectDevicesUrl, {
+            const activateDeviceUrl = selectedOption.getAttribute("data-url");
+
+            fetch(activateDeviceUrl, {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": "{{ csrf_token }}"
-                }
+                    "X-CSRFToken": "{{ csrf_token }}",
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ device_id: selectedOption.value })
             })
                 .then(response => response.json())
                 .then(data => {
@@ -230,7 +249,7 @@
                         alert("❌ Error: " + data.error);
                     }
                 })
-                .catch(error => console.error("❌ Error activating device:", error));
+                .catch(error => console.error("Error activating device:", error));
         });
 
 
