@@ -113,7 +113,7 @@ def get_item_class_choices():
     return [(item["itemClsCd"], item["itemClsNm"]) for item in ITEM_CLASS_CHOICES if "itemClsCd" in item and "itemClsNm" in item]
 
 
-def send_vscu_request(endpoint, method="POST", data=None, headers=None, org=None):
+def send_vscu_request(endpoint, method="POST", data=None, headers=None, active_device=None):
     """
     Sends API requests to VSCU and logs EVERYTHING.
 
@@ -123,54 +123,43 @@ def send_vscu_request(endpoint, method="POST", data=None, headers=None, org=None
     :param headers: Additional headers (if needed)
     :return: Response object
     """
-    from device.models import Device
-    from organization.models import organization
 
     base_url = os.getenv("VSCU_API_BASE_URL", settings.VSCU_API_BASE_URL)
     url = f"{base_url}{endpoint}"
 
-    # if org:
-    #     # Fetch the organization's active device (or create a demo device if none exists)
-    #     device, _ = Device.objects.get_or_create(
-    #         organization=org,
-    #         defaults={
-    #             "mode": "demo",
-    #             "tin": "A123456789Z",
-    #             "branch_id": "00",
-    #             "device_serial_number": "dvc999993204",
-    #             "communication_key": os.getenv("VSCU_CMC_KEY"),
-    #         }
-    #     )
-
-    #     # Determine which keys to use (Live, Imported, or Demo)
-    #     if device.mode == "live":
-    #         tin = device.tin
-    #         branch_id = device.branch_id
-    #         cmc_key = device.communication_key
-    #     elif device.mode == "imported":
-    #         tin = device.tin
-    #         branch_id = device.branch_id
-    #         cmc_key = device.communication_key
-    #     else:  # Default to Demo mode
-    #         tin = "A123456789Z"
-    #         branch_id = "00"
-    #         cmc_key = os.getenv("VSCU_CMC_KEY")
+    if active_device:
+        tin = active_device.tin
+        branch_id = active_device.branch_id
+        cmc_key = active_device.communication_key
+    else:
+        tin = settings.VSCU_TIN
+        branch_id = settings.VSCU_BRANCH_ID
+        cmc_key = os.getenv("VSCU_CMC_KEY")
 
     # Default headers
     default_headers = {
         "Content-Type": "application/json",
-        "tin": settings.VSCU_TIN,
-        "bhfid": settings.VSCU_BRANCH_ID,
-        "cmcKey": os.getenv("VSCU_CMC_KEY"),
+        "tin": tin,
+        "bhfid": branch_id,
+        "cmcKey": cmc_key,
     }
 
     # Merge headers if provided
     if headers:
         default_headers.update(headers)
 
+        # Log request details
+        logger.debug(
+            f"🔍 Sending {method} request to: {url} headers: {default_headers}")
+        logger.debug(
+            f"📤 Headers: {json.dumps(default_headers, indent=2, ensure_ascii=False)}")
+        logger.debug(
+            f"📤 Payload: {json.dumps(data, indent=2, ensure_ascii=False)}")
+
     try:
         # Log request details
-        logger.debug(f"🔍 Sending {method} request to: {url}")
+        logger.debug(
+            f"🔍 Sending {method} request to: {url} headers: {default_headers}")
         logger.debug(
             f"📤 Headers: {json.dumps(default_headers, indent=2, ensure_ascii=False)}")
         logger.debug(

@@ -1,3 +1,4 @@
+import os
 from django.http import JsonResponse
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -17,23 +18,26 @@ def get_device_status(request, org_id):
     If no device exists, it creates a default Demo Mode device.
     """
     try:
-        # Check if an active device exists
-        device = Device.objects.filter(organization_id=org_id, active=True).first()
-        print(device)
+        organization = Organization.objects.get(id=org_id)
+        # ✅ First, Check for an Active Device
+        device = Device.objects.filter(
+            organization_id=org_id, active=True).first()
 
-        # If no active device, fallback to demo
+        # ✅ If No Active Device, Use an Existing Demo Device
         if not device:
-            device, created = Device.objects.get_or_create(
-                organization_id=org_id,
+            device = Device.objects.filter(
+                organization_id=org_id, mode="demo").first()
+
+        # ✅ If No Demo Device Exists, Create One
+        if not device:
+            device = Device.objects.create(
+                organization=organization,
                 mode="demo",
-                defaults={
-                    "tin": settings.VSCU_TIN,
-                    "branch_id": settings.VSCU_BRANCH_ID,
-                    "device_serial_number": settings.VSCU_DEVICE_SERIAL,
-                    "communication_key": settings.VSCU_CMC_KEY,
-                    "initialized": False,
-                    "active": True  # Mark default demo device as active if none exist
-                }
+                tin=settings.VSCU_TIN,
+                branch_id=settings.VSCU_BRANCH_ID,
+                device_serial_number=settings.VSCU_DEVICE_SERIAL,
+                communication_key=settings.VSCU_CMC_KEY,
+                active=True
             )
 
         return JsonResponse({
@@ -42,9 +46,11 @@ def get_device_status(request, org_id):
             "branch_id": device.branch_id,
             "device_serial_number": device.device_serial_number,
             "initialized": device.initialized,
+            "active": device.active
         })
 
     except Exception as e:
+        print(e)
         return JsonResponse({"error": str(e)}, status=500)
 
 
@@ -153,27 +159,57 @@ def switch_to_demo_mode(request, org_id):
 
 
 @login_required
-def set_active_device(request, org_id, device_id):
-    """Sets the selected device as active and deactivates others."""
+def set_active_device(request, org_id,  device_id=None):
+    """
+    Activates a selected device and deactivates all others.
+    """
     try:
-        organization = Organization.objects.get(id=org_id, user=request.user)
+        organization = Organization.objects.get(id=org_id)
 
-        device = Device.objects.get(id=device_id, organization=organization)
-        device.set_active()
+        # ✅ Deactivate all other devices
+        Device.objects.filter(organization=organization).update(active=False)
+
+        # ✅ Activate the selected device
+        selected_device = Device.objects.get(
+            id=device_id, organization=organization)
+        selected_device.active = True
+        selected_device.save()
+
         return JsonResponse({"success": True, "message": "Device activated successfully."})
+
     except Device.DoesNotExist:
         return JsonResponse({"error": "Device not found."}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 @login_required
 def get_available_devices(request, org_id):
     """
     Returns all available device configurations for an organization.
+    Ensures there is at least one Demo Mode device if no active device exists.
     """
     try:
         organization = Organization.objects.get(id=org_id, user=request.user)
-        devices = Device.objects.filter(organization=organization)
 
+        # Check for existing devices
+        devices = Device.objects.filter(organization=organization)
+        # print(f"sssssssssssssssss")
+
+        if not devices.exists():
+            # ✅ If no devices exist, create a new Demo Mode device
+            demo_device = Device.objects.create(
+                organization=organization,
+                mode="demo",
+                tin=settings.VSCU_TIN,
+                branch_id=settings.VSCU_BRANCH_ID,
+                device_serial_number=settings.VSCU_DEVICE_SERIAL,
+                communication_key=settings.VSCU_CMC_KEY,
+                active=True
+            )
+            devices = Device.objects.filter(organization=organization)
+
+        # ✅ Convert device objects to JSON response
         device_list = [
             {
                 "id": device.id,
@@ -181,6 +217,7 @@ def get_available_devices(request, org_id):
                 "branch_id": device.branch_id,
                 "device_serial_number": device.device_serial_number,
                 "mode": device.mode,
+                "active": device.active,
             }
             for device in devices
         ]

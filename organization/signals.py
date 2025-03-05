@@ -17,5 +17,6 @@ def create_demo_device(sender, instance, created, **kwargs):
             tin=settings.VSCU_TIN,
             branch_id=settings.VSCU_BRANCH_ID,
             device_serial_number=settings.VSCU_DEVICE_SERIAL,
-            communication_key=settings.VSCU_CMC_KEY
+            communication_key=settings.VSCU_CMC_KEY,
+            active=True
         )

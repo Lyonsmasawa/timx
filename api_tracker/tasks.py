@@ -165,13 +165,23 @@ def send_api_request(self, request_id):
             {"error": f"Unknown API endpoint {request_log.request_type}"})
         return
 
+    # ✅ Retrieve Organization's Active Device
+    active_device = Device.objects.filter(
+        organization=request_log.organization, active=True
+    ).first()
+
+    # ✅ If no active device, fallback to Demo Mode for this Organization
+    if not active_device:
+        active_device = Device.objects.filter(mode="demo").first()
+
     try:
         print(f"🔍 Sending request to: {url}")
-        print(
-            f"📤 Payload: {json.dumps(request_log.request_payload, indent=2)}")
+        print(f"📤 Payload: {json.dumps(request_log.request_payload, indent=2)}")
+        print(f"🖥️ Active Device Details: {vars(active_device) if active_device else 'No active device found'}")
+
 
         response = send_vscu_request(
-            endpoint=url, method="POST", data=request_log.request_payload)
+            endpoint=url, method="POST", data=request_log.request_payload,  active_device=active_device)
 
         # Handle case where response is None
         if response is None:

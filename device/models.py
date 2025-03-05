@@ -12,7 +12,7 @@ class Device(models.Model):
 
     organization = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="devices")
-    tin = models.CharField(max_length=15, unique=True)
+    tin = models.CharField(max_length=15)
     branch_id = models.CharField(max_length=5)
     device_serial_number = models.CharField(max_length=50)
     initialized = models.BooleanField(default=False)

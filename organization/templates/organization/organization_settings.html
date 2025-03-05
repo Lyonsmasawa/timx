@@ -20,7 +20,7 @@
                 </p>
 
                 <div class="btn-group">
-                    <button class="btn btn-success w-btn" data-bs-toggle="modal" data-bs-target="#goLiveModal"
+                    <button class="btn btn-success w-btn" id="go-live-btn" data-bs-toggle="modal" data-bs-target="#goLiveModal"
                         data-url="{% url 'device:set_live_mode' organization.id %}">
                         Go Live
                     </button>
@@ -146,6 +146,8 @@
             .then(data => {
                 console.log("Active Device Data:", data);
                 document.getElementById("device-mode").innerText = data.mode || "Not Configured";
+                document.getElementById("device-tin").innerText = data.tin || "Not Configured";
+                document.getElementById("device-serial").innerText = data.device_serial_number || "Not Configured";
 
                 if (data.mode === "live") {
                     document.getElementById("go-live-btn").disabled = true;
@@ -206,10 +208,10 @@
                 .then(response => response.json())
                 .then(data => {
                     deviceSelect.innerHTML = "";
-                    if (data.devices.length === 0) {
+                    if (!data?.devices?.[0]?.mode || data.devices.length === 0) {
                         deviceSelect.innerHTML = "<option>No devices available</option>";
                     } else {
-                        data.devices.forEach(device => {
+                        data?.devices?.forEach(device => {
                             let option = document.createElement("option");
                             option.value = device.id;
                             option.setAttribute("data-url", `{% url 'device:set_active_device' organization.id device.id %}`.replace("device.id", device.id));
