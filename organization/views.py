@@ -1,3 +1,6 @@
+from api_tracker.tasks import send_api_request
+from .models import Organization
+from django.http import JsonResponse
 import json
 from django.db.models import Sum
 from django.forms import ValidationError
@@ -82,6 +85,42 @@ def fetch_imports_view(request):
         return JsonResponse({"success": False, "message": "Imports update failed."})
 
     return JsonResponse({"error": "Invalid request method."}, status=405)
+
+
+def initialize_device(request, organization_id):
+    """API endpoint to initialize a device for an organization."""
+    if request.method == "POST":
+        organization = Organization.objects.get(id=organization_id)
+
+        # Simulated API request to initialize device
+        request_payload = {
+            "tin": organization.tin,
+            "branch_id": "00",
+            "device_serial_number": f"dvc{organization.id}99999"
+        }
+
+        # Log the request in API tracker
+        request_log = APIRequestLog.objects.create(
+            request_type="initializeDevice",
+            request_payload=request_payload,
+            organization=organization,
+        )
+
+        # Send request to the actual API
+        send_api_request.apply_async(args=[request_log.id])
+
+        # Create a new Device entry (assumes API will return this data)
+        device = Device.objects.create(
+            organization=organization,
+            tin=request_payload["tin"],
+            branch_id=request_payload["branch_id"],
+            device_serial_number=request_payload["device_serial_number"],
+            initialized=True
+        )
+
+        return JsonResponse({"message": "Device initialized successfully!", "device_id": device.id})
+
+    return JsonResponse({"error": "Invalid request method."}, status=400)
 
 
 @login_required
@@ -563,6 +602,7 @@ def verify_purchase(request, request_type, inv_no, purchase_id):
 
 @login_required
 def update_imports_view(request, org_id):
+    print(request)
     try:
         try:
             organization = Organization.objects.get(
@@ -572,6 +612,7 @@ def update_imports_view(request, org_id):
 
         # Define request payload
         request_payload = {"lastReqDt": "20231010000000"}
+        print(request_payload)
 
         # Log API request in the tracker
         request_log = APIRequestLog.objects.create(

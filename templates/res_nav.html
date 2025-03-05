@@ -19,19 +19,22 @@
                     <a href="{% url 'organization:organization_list' %}" class="nav-a"
                         style="color: #00251D !important">
                         <h1 class="navlogo">
-                            My Organizations
+                            All Organizations
                         </h1>
                     </a>
                 </li>
 
+
+                {% if organization.id %}
                 <li class="nav-item">
-                    <!-- Display Current Organization Name if Available -->
-                    {% if organization %}
-                    <h4 class="text-muted weight-bold">{{ organization.organization_name }}</h4>
-                    {% endif %}
+                    <a href="{% url 'organization:organization_detail' organization.id %}" class="nav-a"
+                        style="color: #00251D !important">
+                        <h1 class="navlogo">
+                            {{organization.organization_name }}
+                        </h1>
+                    </a>
                 </li>
-
-
+                {% endif %}
 
 
                 <li class="nav-item dropdown" ">

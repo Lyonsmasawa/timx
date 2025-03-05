@@ -7,6 +7,7 @@ import qrcode
 from django.db.models import QuerySet
 from django.db import transaction
 import requests
+import httpx
 import logging
 from django.conf import settings
 from cryptography.fernet import Fernet
@@ -151,8 +152,16 @@ def send_vscu_request(endpoint, method="POST", data=None, headers=None):
             url=url,
             headers=default_headers,
             json=data,
-            timeout=30  # Prevent indefinite hanging
+            timeout=50  # Prevent indefinite hanging
         )
+        
+        # with httpx.Client(timeout=50) as client:  # Uses connection pooling
+        #     response = client.request(
+        #         method=method,
+        #         url=url,
+        #         headers=default_headers,
+        #         json=data
+        #     )
 
         # Log response details
         logger.info(f"📥 Response Status Code: {response.status_code}")

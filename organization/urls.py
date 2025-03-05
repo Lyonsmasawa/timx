@@ -24,7 +24,7 @@ urlpatterns = [
          views.update_purchases_view, name="update_purchases_view"),
     path("verify/<str:request_type>/<str:inv_no>/<int:purchase_id>",
          views.verify_purchase, name="verify_purchase"),
-    path("update_purchases_view/<int:org_id>/",
+    path("update_imports_view/<int:org_id>/",
          views.update_imports_view, name="update_imports_view"),
 #     path("verify/<str:request_type>/<str:inv_no>/<int:import_id>",
 #          views.verify_import, name="verify_import"),

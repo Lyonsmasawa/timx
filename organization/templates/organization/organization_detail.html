@@ -36,7 +36,7 @@
                     aria-controls="imports" aria-selected="false">Imports</a>
             </li>
         </ul>
-        <h4 class="text-muted weight-bold"> {{ organization.organization_name }}</h4>
+        <!-- <h4 class="text-muted weight-bold"> {{ organization.organization_name }}</h4> -->
         <td>
             <div class="dropdown">
                 <button class="btn btn-secondary btn-sm dropdown-toggle a-btn" type="button"
@@ -954,7 +954,7 @@
                     <div>
                         <button data-url="{% url 'organization:update_purchases_view' organization.id %}" type="button"
                             class="btn add purchase-request">
-                            Update Items
+                            Update Purchase List
                         </button>
                     </div>
                 </div>
@@ -1211,17 +1211,17 @@
             <div class="tab-pane fade " id="imports" role="tabpanel" aria-labelledby="imports-tab">
                 <h3></h3>
                 <div class="d-flex justify-content-between align-items-center p-0 pt-1">
-                    <h3><span style="color: #000000;">{{ imports_s.count }}</span> Imports</h3>
+                    <h3><span style="color: #000000;">{{ imports.count }}</span> Imports</h3>
                     <div>
                         <button data-url="{% url 'organization:update_imports_view' organization.id %}" type="button"
-                            class="btn add import_-request">
+                            class="btn add import-request">
                             Update Imports list
                         </button>
                     </div>
                 </div>
                 <hr class="hr-style" />
                 <ul class="list-group imports-list"></ul>
-                {% if imports_s %}
+                {% if imports %}
                 <table class="table table-striped">
                     <thead>
                         <tr>
@@ -1237,7 +1237,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for import_ in imports_s %}
+                        {% for import_ in imports %}
                         <tr>
                             <td>{{ forloop.counter }}</td>
                             <td>{{ import_.declaration_number }}</td>
@@ -1249,49 +1249,77 @@
                             <td>{{ import_.supplier_name }}</td>
                             <td>{{ import_.invoice_currency }} {{ import_.invoice_amount|floatformat:2 }}</td>
                             <td>
-                                <button class="btn btn-sm view-items-btn" disabled data-items="{{ import_ |escapejs }}"
+                            <td>
+                                <button class="btn btn-sm view-items-btn" data-items="{{ import_ |escapejs }}"
                                     data-bs-toggle="modal" data-bs-target="#importModal-{{import_.declaration_number}}"
                                     data-modal-id="importModalBody-{{ import_.declaration_number }}">
                                     View Item
                                 </button>
 
-                            </td>
-                            <td class="dflex">
-                                {% if not import_.verified %}
-                                {% with imports_data=imports_statuses|dict_get_p:import_.id %}
-                                <span class="status {{ imports_data.status }}">{{ imports_data.status }}</span>
-
-                                {% if imports_data.status == "failed"%}
-                                <button class="btn retry-request r-btn" data-type="verifyImport"
-                                    data-url="{% url 'organization:retry_failed_request' 'verifyImport' import_.id %}"
-                                    data-id="{{ imports_data.id }}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor"
-                                        class="bi bi-repeat" viewBox="0 0 20 20">
-                                        <path
-                                            d="M11 5.466V4H5a4 4 0 0 0-3.584 5.777.5.5 0 1 1-.896.446A5 5 0 0 1 5 3h6V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m3.81.086a.5.5 0 0 1 .67.225A5 5 0 0 1 11 13H5v1.466a.25.25 0 0 1-.41.192l-2.36-1.966a.25.25 0 0 1 .41.192V12h6a4 4 0 0 0 3.585-5.777.5.5 0 0 1 .225-.67Z" />
-                                    </svg>
-                                </button>
-                                {% elif imports_data.status == "Not verified" %}
-                                <button class="btn verify-request r-btn" data-type="verifyImport"
-                                    data-url="{% url 'organization:verify_import' 'verifyImport' import_.invoice_number import_.id  %}"
-                                    data-id="{{ import_.imvoice_number }}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor"
-                                        class="bi bi-repeat" viewBox="0 0 20 20">
-                                        <path
-                                            d="M11 5.466V4H5a4 4 0 0 0-3.584 5.777.5.5 0 1 1-.896.446A5 5 0 0 1 5 3h6V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m3.81.086a.5.5 0 0 1 .67.225A5 5 0 0 1 11 13H5v1.466a.25.25 0 0 1-.41.192l-2.36-1.966a.25.25 0 0 1 .41.192V12h6a4 4 0 0 0 3.585-5.777.5.5 0 0 1 .225-.67Z" />
-                                    </svg>
-                                </button>
-                                {% else %}
-
-                                {% endif %}
-                                {% endwith %}
-
-                                {% else %}
-                                <span class="status success">
-                                    Verified
-                                </span>
-                                {% endif %}
-
+                                <!--  Modal for import Items -->
+                                <div class="modal fade" id="importModal-{{import_.declaration_number}}" tabindex="-1"
+                                    aria-labelledby="importModalLabel" aria-hidden="true">
+                                    <!--  Modal for import Items -->
+                                    <div class="modal-dialog modal-md">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="importModalLabel">Import Item Details</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                    aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <ul class="list-group">
+                                                    <li class="list-group-item"><strong>Task Code:</strong>
+                                                        {{ import_.task_code }}</li>
+                                                    <li class="list-group-item"><strong>Declaration Date:</strong>
+                                                        {{ import_.declaration_date }}</li>
+                                                    <li class="list-group-item"><strong>Item Sequence:</strong>
+                                                        {{ import_.item_sequence }}</li>
+                                                    <li class="list-group-item"><strong>Declaration Number:</strong>
+                                                        {{ import_.declaration_number }}</li>
+                                                    <li class="list-group-item"><strong>HS Code:</strong>
+                                                        {{ import_.hs_code }}</li>
+                                                    <li class="list-group-item"><strong>Item Name:</strong>
+                                                        {{ import_.item_name }}</li>
+                                                    <li class="list-group-item"><strong>Import Status Code:</strong>
+                                                        {{ import_.import_status_code }}</li>
+                                                    <li class="list-group-item"><strong>Origin Country:</strong>
+                                                        {{ import_.origin_country }}</li>
+                                                    <li class="list-group-item"><strong>Export Country:</strong>
+                                                        {{ import_.export_country }}</li>
+                                                    <li class="list-group-item"><strong>Package Count:</strong>
+                                                        {{ import_.package_count }}</li>
+                                                    <li class="list-group-item"><strong>Package Unit Code:</strong>
+                                                        {{ import_.package_unit_code }}</li>
+                                                    <li class="list-group-item"><strong>Quantity:</strong>
+                                                        {{ import_.quantity }} ({{ import_.quantity_unit_code }})</li>
+                                                    <li class="list-group-item"><strong>Total Weight:</strong>
+                                                        {{ import_.total_weight }}</li>
+                                                    <li class="list-group-item"><strong>Net Weight:</strong>
+                                                        {{ import_.net_weight }}</li>
+                                                    <li class="list-group-item"><strong>Supplier Name:</strong>
+                                                        {{ import_.supplier_name }}</li>
+                                                    <li class="list-group-item"><strong>Agent Name:</strong>
+                                                        {{ import_.agent_name }}</li>
+                                                    <li class="list-group-item"><strong>Invoice Amount:</strong>
+                                                        {{ import_.invoice_currency }}
+                                                        {{ import_.invoice_amount|floatformat:2 }}</li>
+                                                    <li class="list-group-item"><strong>Invoice Currency:</strong>
+                                                        {{ import_.invoice_currency }}</li>
+                                                    <li class="list-group-item"><strong>Invoice Exchange Rate:</strong>
+                                                        {{ import_.invoice_exchange_rate }}</li>
+                                                    <li class="list-group-item"><strong>Converted:</strong>
+                                                        {% if import_.verified %}Yes{% else %}No{% endif %}</li>
+                                                </ul>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary cancel"
+                                                    data-bs-dismiss="modal">Close</button>
+                                                <button type="button" class="btn w-btn" disabled>Convert Item</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -1306,6 +1334,8 @@
         </div>
     </div>
 </div>
+
+
 
 <!-- Customer Creation Modal -->
 <div class="modal fade" id="createCustomerModal" tabindex="-1" aria-labelledby="customerModalLabel" aria-hidden="true">
@@ -1426,6 +1456,45 @@
         });
     });
 </script>
+
+<!-- 
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Attach event listener to the table or parent container (not the button itself)
+        document.body.addEventListener("click", function (event) {
+            if (event.target.classList.contains("view-import-items-btn")) {
+                let importData = JSON.parse(event.target.dataset.import);
+                console.log(importData)
+
+                // Populate modal dynamically
+                document.getElementById("modal-id").textContent = importData.id;
+                document.getElementById("modal-task-code").textContent = importData.task_code;
+                document.getElementById("modal-declaration-date").textContent = importData.declaration_date;
+                document.getElementById("modal-item-sequence").textContent = importData.item_sequence;
+                document.getElementById("modal-declaration-number").textContent = importData.declaration_number;
+                document.getElementById("modal-hs-code").textContent = importData.hs_code;
+                document.getElementById("modal-item-name").textContent = importData.item_name;
+                document.getElementById("modal-import-status-code").textContent = importData.import_status_code;
+                document.getElementById("modal-origin-country").textContent = importData.origin_country;
+                document.getElementById("modal-export-country").textContent = importData.export_country;
+                document.getElementById("modal-package-count").textContent = importData.package_count;
+                document.getElementById("modal-package-unit-code").textContent = importData.package_unit_code;
+                document.getElementById("modal-quantity").textContent = importData.quantity;
+                document.getElementById("modal-quantity-unit-code").textContent = importData.quantity_unit_code;
+                document.getElementById("modal-total-weight").textContent = importData.total_weight;
+                document.getElementById("modal-net-weight").textContent = importData.net_weight;
+                document.getElementById("modal-supplier-name").textContent = importData.supplier_name;
+                document.getElementById("modal-agent-name").textContent = importData.agent_name;
+                document.getElementById("modal-invoice-amount").textContent = importData.invoice_currency + " " + parseFloat(importData.invoice_amount).toFixed(2);
+                document.getElementById("modal-invoice-currency").textContent = importData.invoice_currency;
+                document.getElementById("modal-invoice-exchange-rate").textContent = importData.invoice_exchange_rate;
+                document.getElementById("modal-verified").textContent = importData.verified ? "Yes" : "No";
+                document.getElementById("modal-organization-id").textContent = importData.organization_id;
+                document.getElementById("modal-created-at").textContent = importData.created_at;
+            }
+        });
+    });
+</script> -->
 
 
 <!-- Scripts-->
@@ -1767,9 +1836,10 @@
     });
 
     document.addEventListener("DOMContentLoaded", function () {
-        document.querySelectorAll(".import_-request").forEach((button) => {
+        document.querySelectorAll(".import-request").forEach((button) => {
             button.addEventListener("click", function () {
                 const dataUrl = this.getAttribute("data-url");
+                console.log(dataUrl)
                 const DISABLE_MINUTES = 5;
                 const disableMs = DISABLE_MINUTES * 60 * 1000;
 
@@ -2594,8 +2664,6 @@
                 .catch(error => console.error("Error:", error));
         }
     });
-
-
 
 </script>
 

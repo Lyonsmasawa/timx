@@ -41,7 +41,7 @@ ALLOWED_HOSTS = ["localhost", "127.0.0.1", "etimsx.herokuapp.com",
 # ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1", "etimsx.herokuapp.com", "*.ngrok-free.app", "https://4524-217-199-146-205.ngrok-free.app"])
 
 # VSCU Configuration
-VSCU_TIN = env("VSCU_TIN", default="A123456789Z")
+VSCU_TIN = env("VSCU_TIN", default="P0000000K")
 VSCU_BRANCH_ID = env("VSCU_BRANCH_ID", default="00")
 VSCU_DEVICE_SERIAL = env("VSCU_DEVICE_SERIAL", default="Interactive00")
 
