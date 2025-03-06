@@ -130,33 +130,37 @@ def send_vscu_request(endpoint, method="POST", data=None, headers=None, active_d
     if active_device:
         tin = active_device.tin
         branch_id = active_device.branch_id
-        cmc_key = active_device.communication_key
+        cmc_key_decrypted = cmc_key_decrypted = decrypt_value(
+            active_device.communication_key) if active_device.communication_key else None
     else:
         tin = settings.VSCU_TIN
         branch_id = settings.VSCU_BRANCH_ID
-        cmc_key = os.getenv("VSCU_CMC_KEY")
+        cmc_key_decrypted = os.getenv("VSCU_CMC_KEY")
+
+
+    cmc_key_decrypted = os.getenv("VSCU_CMC_KEY")
 
     # Default headers
     default_headers = {
         "Content-Type": "application/json",
         "tin": tin,
         "bhfid": branch_id,
-        "cmcKey": cmc_key,
+        "cmcKey": cmc_key_decrypted,
     }
 
     # Merge headers if provided
     if headers:
         default_headers.update(headers)
 
+    try:
         # Log request details
-        logger.debug(
+        print(
             f"🔍 Sending {method} request to: {url} headers: {default_headers}")
-        logger.debug(
+        print(
             f"📤 Headers: {json.dumps(default_headers, indent=2, ensure_ascii=False)}")
-        logger.debug(
+        print(
             f"📤 Payload: {json.dumps(data, indent=2, ensure_ascii=False)}")
 
-    try:
         # Log request details
         logger.debug(
             f"🔍 Sending {method} request to: {url} headers: {default_headers}")
@@ -677,6 +681,7 @@ def encrypt_value(value):
 
 def decrypt_value(value):
     """Decrypts an encrypted string value."""
+    print(value)
     if value is None:
         return None
     return cipher_suite.decrypt(value.encode()).decode()

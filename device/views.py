@@ -107,16 +107,20 @@ def import_device_keys(request, org_id):
             if not all([tin, bhf_id, cmc_key]):
                 return JsonResponse({"error": "All fields are required"}, status=400)
 
-            device, _ = Device.objects.update_or_create(
+            device = Device.objects.create(
                 organization_id=org_id,
-                defaults={
-                    "mode": "imported",
-                    "tin": tin,
-                    "branch_id": bhf_id,
-                    "communication_key": cmc_key,
-                    "initialized": True,
-                },
+                mode="imported",
+                tin=tin,
+                branch_id=bhf_id,
+                communication_key=cmc_key
             )
+
+            # Deactivate all other devices for this organization
+            Device.objects.filter(organization_id=org_id).update(active=False)
+
+            # Set this device as active
+            device.active = True
+            device.save()
 
             return JsonResponse({"success": True, "message": "Keys imported successfully", "device": {
                 "tin": device.tin,
