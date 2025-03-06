@@ -1,5 +1,5 @@
 from django.conf import settings
-from api_tracker.tasks import fetch_and_update_branches, fetch_and_update_notices, send_api_request
+from api_tracker.tasks import fetch_and_update_branches, fetch_and_update_notices, fetch_and_update_tax_code, send_api_request
 from commons.notices_constants import NOTICES_LIST
 from .models import Organization
 from django.http import JsonResponse
@@ -61,6 +61,17 @@ def fetch_classifications_view(request):
         if success:
             return JsonResponse({"success": True, "message": "Item Classifications updated successfully!"})
         return JsonResponse({"success": False, "message": "Item Classifications update failed."})
+
+    return JsonResponse({"error": "Invalid request method."}, status=405)
+
+
+@login_required
+def fetch_tax_codes_view(request):
+    if request.method == "POST":
+        success = fetch_and_update_tax_code()
+        if success:
+            return JsonResponse({"success": True, "message": "Tax Codes updated successfully!"})
+        return JsonResponse({"success": False, "message": "Tax Codes update failed."})
 
     return JsonResponse({"error": "Invalid request method."}, status=405)
 

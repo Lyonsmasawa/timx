@@ -20,6 +20,10 @@ app.conf.beat_schedule = {
         "task": "api_tracker.tasks.fetch_and_update_item_classification",
         "schedule": crontab(hour=3, minute=0),
     },
+    "update_tax_codes_daily": {
+        "task": "api_tracker.tasks.fetch_and_update_tax_code",
+        "schedule": crontab(hour=3, minute=0),
+    },
     "update_branch_list_daily": {
         "task": "api_tracker.tasks.fetch_and_update_branches",
         "schedule": crontab(hour=3, minute=0),

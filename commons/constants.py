@@ -1,12 +1,15 @@
 # constants.py
 from django.conf import settings
 
+from commons.tax_code_constants import ITEM_TAX_CODE_CHOICES
+
 # API Endpoints
 API_ENDPOINTS = {
     "saveItem": "/saveItem",
     "saveCustomer": "/saveBhfCustomer",
     "saveTransaction": "/saveTransaction",
     "fetchItemClassification": "/selectItemClsList",
+    "fetchTaxCode": "/selectCodeList",
     "saveStockMovement": "/insertStockIO",
     "saveSalesTransaction": "/saveTrnsSalesOsdc",
     "saveCreditNote": "/saveTrnsSalesOsdc",
@@ -71,13 +74,31 @@ COUNTRY_CHOICES = [
 ]
 
 # Tax Type Choices
-TAX_TYPE_CHOICES = [
-    ("A", "A-Exempt"),
-    ("B", "B-16.00%"),
-    ("C", "C-0%"),
-    ("D", "D-Non-VAT"),
-    ("E", "E-8%"),
-]
+# TAX_TYPE_CHOICES = [
+#     ("A", "A-Exempt"),
+#     ("B", "B-16.00%"),
+#     ("C", "C-0%"),
+#     ("D", "D-Non-VAT"),
+#     ("E", "E-8%"),
+# ]
+
+
+def get_tax_type_choices():
+    for item in ITEM_TAX_CODE_CHOICES:
+        if item["cdClsNm"] == "Taxation Type":  # Find the correct class
+            return [(tax["cd"], tax["cdNm"]) for tax in item["dtlList"]]
+
+    return [
+        ("A", "A-Exempt"),
+        ("B", "B-16.00%"),
+        ("C", "C-0%"),
+        ("D", "D-Non-VAT"),
+        ("E", "E-8%"),
+    ]  # Return  if not found
+
+
+TAX_TYPE_CHOICES = get_tax_type_choices()
+
 
 TAX_RATES = {
     "A": 0,    # Exempt

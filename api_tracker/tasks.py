@@ -7,7 +7,7 @@ from celery import shared_task
 from api_tracker.models import APIRequestLog
 from django.conf import settings
 from commons.constants import API_ENDPOINTS
-from commons.utils import process_import_data, process_purchase_data, replace_nulls, send_vscu_request, update_branches_file, update_constants_file, update_notices_file
+from commons.utils import process_import_data, process_purchase_data, replace_nulls, send_vscu_request, update_branches_file, update_constants_file, update_notices_file, update_tax_code_constants_file
 from celery.exceptions import OperationalError
 
 logger = logging.getLogger("vscu_api")
@@ -687,6 +687,125 @@ def fetch_and_update_notices(self):
         })
 
         return {"status": "success", "updated_branches": len(notices_list)}
+
+    except Exception as exc:
+        # ✅ Save full response data in tracker model
+        request_log.mark_retrying()
+
+        raise self.retry(exc=exc, countdown=60)  # Retry after 1 min
+
+
+@shared_task(bind=True, max_retries=3)
+def fetch_and_update_tax_code(self):
+    """
+    Celery task to fetch item codes from the VSCU API and update constants dynamically.
+    """
+    try:
+        # Define request payload
+        request_payload = {
+            "lastReqDt": "20211101000000"
+        }
+        # Log API request in the tracker
+        request_log = APIRequestLog.objects.create(
+            request_type="fetchTaxCode",
+            request_payload=request_payload
+        )
+
+        url = API_ENDPOINTS.get(request_log.request_type)
+
+        # API Call
+        response = send_vscu_request(
+            endpoint=url,
+            method="POST",
+            data=request_payload,
+        )
+
+        # Log API Request
+        logger.info(
+            f"📤 Requesting item codes with payload: {json.dumps(request_payload, indent=2)}")
+
+        # Validate response
+        if not response or response.status_code != 200:
+            error_msg = f"API Error: {response.text if response else 'No response'}"
+            request_log.mark_failed({"error": error_msg})
+            raise Exception(error_msg)
+
+        logger.info(f"📥 Response Status Code: {response.status_code}")
+
+        # Ensure response is in JSON format
+        try:
+            response_data = response.json()
+        except ValueError:
+            request_log.mark_failed({"error": "Invalid JSON response"})
+            raise Exception("Invalid JSON response received")
+
+        logger.info(
+            f"📥 Response Content: {json.dumps(response_data, indent=2)}")
+
+        # ✅ Log response before accessing `itemCodeList`
+        data_content = response_data.get("data")
+        if not isinstance(data_content, dict):
+            logger.error(
+                f"⚠️ Unexpected response format: {json.dumps(response_data, indent=2)}")
+            request_log.mark_failed({"error": "Invalid response format"})
+            raise Exception("Invalid response format")
+
+        item_tax_codes = data_content.get("clsList", [])
+        # ✅ Ensure it's a list, not a tuple or None
+        if not isinstance(item_tax_codes, list):
+            logger.error(
+                f"⚠️ Invalid item code structure: {json.dumps(data_content, indent=2)}")
+            request_log.mark_failed(
+                {"error": "Invalid item code structure"})
+            raise Exception("Invalid item code structure")
+
+        if not item_tax_codes:
+            logger.warning(
+                f"⚠️ No item code data found in response: {json.dumps(response_data, indent=2)}")
+            request_log.mark_failed({
+                "error": "No item code data found",
+                "response": response_data
+            })
+            raise Exception("No item code data received")
+
+        # ✅ Extract & format for constants update
+        item_tax_code_choices = [
+            replace_nulls({
+                "cdCls": cls["cdCls"],
+                "cdClsNm": cls["cdClsNm"],
+                "cdClsDesc": cls.get("cdClsDesc", ""),
+                "useYn": cls["useYn"],
+                "userDfnNm1": cls.get("userDfnNm1", ""),
+                "userDfnNm2": cls.get("userDfnNm2", ""),
+                "userDfnNm3": cls.get("userDfnNm3", ""),
+                "dtlList": [
+                    replace_nulls({
+                        "cd": dtl["cd"],
+                        "cdNm": dtl["cdNm"],
+                        "cdDesc": dtl.get("cdDesc", ""),
+                        "useYn": dtl["useYn"],
+                        "srtOrd": dtl["srtOrd"],
+                        "userDfnCd1": dtl.get("userDfnCd1", ""),
+                        "userDfnCd2": dtl.get("userDfnCd2", ""),
+                        "userDfnCd3": dtl.get("userDfnCd3", "")
+                    })
+                    for dtl in cls["dtlList"]
+                ]
+            })
+            for cls in item_tax_codes["data"]["clsList"]
+        ]
+
+        # ✅ Update `commons/constants.py`
+        update_tax_code_constants_file(item_tax_code_choices)
+
+        # ✅ Mark the request as successful
+        request_log.mark_success({
+            "message": "Item code updated successfully",
+            "updated_classes": len(item_tax_code_choices),
+            "response": item_tax_code_choices
+        })
+
+        return {"status": "success", "updated_classes": len(item_tax_code_choices)}
 
     except Exception as exc:
         # ✅ Save full response data in tracker model

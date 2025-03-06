@@ -338,6 +338,53 @@ def update_notices_file(notices_list):
             f"❌ Failed to update notices_constants.py: {str(e)}", exc_info=True)
 
 
+def update_tax_code_constants_file(item_tax_code):
+    """
+    Updates `commons/item_tax_code_constants.py` dynamically with the latest item classification list.
+    Ensures it is formatted correctly before writing.
+    """
+    logger.info(
+        f"📝 Attempting to update constants.py with {len(item_tax_code)} item classifications...")
+
+    # 🚨 Debugging: Check if the item_tax_code list is valid
+    if not isinstance(item_tax_code, list):
+        logger.error(
+            f"❌ Invalid data type for item classifications: {type(item_tax_code)}")
+        return
+
+    if not item_tax_code:
+        logger.warning(
+            "⚠️ No valid item classifications found. Skipping constants update.")
+        return
+
+    constants_path = os.path.join(
+        settings.BASE_DIR, "commons", "item_tax_code_constants.py")
+
+    try:
+        # ✅ Debug First 5 Items Before Writing
+        logger.info(
+            f"🔍 First 5 Items (Before Writing to File): {json.dumps(item_tax_code[:5], indent=2, ensure_ascii=False)}")
+
+        # ✅ Format list correctly
+        formatted_data = json.dumps(
+            item_tax_code, indent=4, ensure_ascii=False)
+
+        # 🚀 Debug formatted JSON before writing
+        # Show first 500 chars
+        logger.debug(f"📄 JSON Ready to Write: {formatted_data[:500]}...")
+
+        # ✅ Write to file
+        with open(constants_path, "w", encoding="utf-8") as f:
+            f.write(f"ITEM_TAX_CODE_CHOICES = {formatted_data}\n")
+
+        logger.info(
+            f"✅ Successfully updated constants.py with {len(item_tax_code)} items.")
+
+    except Exception as e:
+        logger.error(
+            f"❌ Failed to update constants.py: {str(e)}", exc_info=True)
+
+
 # Function to replace None values with an empty string
 def replace_nulls(data):
     return {key: ("" if value is None else value) for key, value in data.items()}

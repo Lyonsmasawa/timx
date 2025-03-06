@@ -34,6 +34,8 @@ urlpatterns = [
          name='initialize_device'),
     path('update-classifications/', views.fetch_classifications_view,
          name='fetchItemClassification'),
+    path('update-tax_codes/', views.fetch_tax_codes_view,
+         name='fetchTaxCodes'),
     path('update-branches/', views.update_branches_view,
          name='fetchBranches'),
     path('update-notices/', views.update_notices_view,
