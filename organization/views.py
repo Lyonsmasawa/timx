@@ -1,5 +1,6 @@
 from django.conf import settings
-from api_tracker.tasks import send_api_request
+from api_tracker.tasks import fetch_and_update_branches, fetch_and_update_notices, send_api_request
+from commons.notices_constants import NOTICES_LIST
 from .models import Organization
 from django.http import JsonResponse
 import json
@@ -38,6 +39,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from commons.branches_constants import BRANCH_LIST
 # List Organizations
 
 
@@ -59,6 +61,28 @@ def fetch_classifications_view(request):
         if success:
             return JsonResponse({"success": True, "message": "Item Classifications updated successfully!"})
         return JsonResponse({"success": False, "message": "Item Classifications update failed."})
+
+    return JsonResponse({"error": "Invalid request method."}, status=405)
+
+
+@login_required
+def update_branches_view(request):
+    if request.method == "POST":
+        success = fetch_and_update_branches()
+        if success:
+            return JsonResponse({"success": True, "message": "Branches updated successfully!"})
+        return JsonResponse({"success": False, "message": "Branches update failed."})
+
+    return JsonResponse({"error": "Invalid request method."}, status=405)
+
+
+@login_required
+def update_notices_view(request):
+    if request.method == "POST":
+        success = fetch_and_update_notices()
+        if success:
+            return JsonResponse({"success": True, "message": "Notices updated successfully!"})
+        return JsonResponse({"success": False, "message": "Notices update failed."})
 
     return JsonResponse({"error": "Invalid request method."}, status=405)
 
@@ -311,6 +335,8 @@ def organization_detail(request, pk):
             # }
         ]
 
+        branches = BRANCH_LIST
+        notices = NOTICES_LIST
         # Fetch latest API status for each item, customer, and transaction
         item_statuses = {log.item.id: {"id": log.id, "status": log.status} for log in APIRequestLog.objects.filter(
             item__organization=organization)}
@@ -368,6 +394,8 @@ def organization_detail(request, pk):
             'TAXPAYER_STATUS_CHOICES': TAXPAYER_STATUS_CHOICES,
             'TAX_TYPE_CHOICES': TAX_TYPE_CHOICES,
             'purchases': purchases,
+            "branches": branches,
+            "notices": notices,
         })
 
     except Exception as e:

@@ -7,7 +7,7 @@ from celery import shared_task
 from api_tracker.models import APIRequestLog
 from django.conf import settings
 from commons.constants import API_ENDPOINTS
-from commons.utils import process_import_data, process_purchase_data, send_vscu_request, update_constants_file
+from commons.utils import process_import_data, process_purchase_data, replace_nulls, send_vscu_request, update_branches_file, update_constants_file, update_notices_file
 from celery.exceptions import OperationalError
 
 logger = logging.getLogger("vscu_api")
@@ -176,9 +176,10 @@ def send_api_request(self, request_id):
 
     try:
         print(f"🔍 Sending request to: {url}")
-        print(f"📤 Payload: {json.dumps(request_log.request_payload, indent=2)}")
-        print(f"🖥️ Active Device Details: {vars(active_device) if active_device else 'No active device found'}")
-
+        print(
+            f"📤 Payload: {json.dumps(request_log.request_payload, indent=2)}")
+        print(
+            f"🖥️ Active Device Details: {vars(active_device) if active_device else 'No active device found'}")
 
         response = send_vscu_request(
             endpoint=url, method="POST", data=request_log.request_payload,  active_device=active_device)
@@ -467,6 +468,225 @@ def fetch_and_update_purchases(self, organization):
         })
 
         return {"status": "success", "updated_classes": len(created_purchases)}
+
+    except Exception as exc:
+        # ✅ Save full response data in tracker model
+        request_log.mark_retrying()
+
+        raise self.retry(exc=exc, countdown=60)  # Retry after 1 min
+
+
+@shared_task(bind=True, max_retries=3)
+def fetch_and_update_branches(self):
+    """
+    Celery task to fetch branch lists from the VSCU API and update constants dynamically.
+    """
+    try:
+        # Define request payload
+        request_payload = {
+            "lastReqDt": "20230118000000"
+        }
+
+        # Log API request in the tracker
+        request_log = APIRequestLog.objects.create(
+            request_type="fetchBranches",
+            request_payload=request_payload
+        )
+
+        url = API_ENDPOINTS.get(request_log.request_type)
+
+        # API Call
+        response = send_vscu_request(
+            endpoint=url,
+            method="POST",
+            data=request_payload,
+        )
+
+        # Log API Request
+        logger.info(
+            f"📤 Requesting branches with payload: {json.dumps(request_payload, indent=2)}")
+
+        # Validate response
+        if not response or response.status_code != 200:
+            error_msg = f"API Error: {response.text if response else 'No response'}"
+            request_log.mark_failed({"error": error_msg})
+            raise Exception(error_msg)
+
+        logger.info(f"📥 Response Status Code: {response.status_code}")
+
+        # Ensure response is in JSON format
+        try:
+            response_data = response.json()
+        except ValueError:
+            request_log.mark_failed({"error": "Invalid JSON response"})
+            raise Exception("Invalid JSON response received")
+
+        logger.info(
+            f"📥 Response Content: {json.dumps(response_data, indent=2)}")
+
+        # ✅ Log response before accessing `itemClsList`
+        data_content = response_data.get("data")
+        if not isinstance(data_content, dict):
+            logger.error(
+                f"⚠️ Unexpected response format: {json.dumps(response_data, indent=2)}")
+            request_log.mark_failed({"error": "Invalid response format"})
+            raise Exception("Invalid response format")
+
+        branches = data_content.get("bhfList", [])
+        # ✅ Ensure it's a list, not a tuple or None
+        if not isinstance(branches, list):
+            logger.error(
+                f"⚠️ Invalid branches structure: {json.dumps(data_content, indent=2)}")
+            request_log.mark_failed(
+                {"error": "Invalid branches structure"})
+            raise Exception("Invalid branches structure")
+
+        if not branches:
+            logger.warning(
+                f"⚠️ No branches data found in response: {json.dumps(response_data, indent=2)}")
+            request_log.mark_failed({
+                "error": "No branches data found",
+                "response": response_data
+            })
+            raise Exception("No branches data received")
+
+        # ✅ Extract & format for constants update
+        branches_list = [
+            replace_nulls({
+                "tin": item["tin"],
+                # Default to empty if not present
+                "bhfId": item.get("bhfId", ""),
+                "bhfNm": item["bhfNm"],
+                "bhfSttsCd": item.get("bhfSttsCd", ""),
+                "prvncNm": item.get("prvncNm", ""),
+                "dstrtNm": item.get("dstrtNm", ""),
+                "sctrNm": item.get("sctrNm", ""),
+                "locDesc": item.get("locDesc", None),
+                "mgrNm": item.get("mgrNm", ""),
+                "mgrTelNo": item.get("mgrTelNo", ""),
+                "mgrEmail": item.get("mgrEmail", ""),
+                "hqYn": item["hqYn"]
+            })
+            for item in branches
+        ]
+
+        # ✅ Update `commons/constants.py`
+        update_branches_file(branches_list)
+
+        # ✅ Mark the request as successful
+        request_log.mark_success({
+            "message": "Branches updated successfully",
+            "updated_branches": len(branches_list),
+            "response": branches_list
+        })
+
+        return {"status": "success", "updated_branches": len(branches_list)}
+
+    except Exception as exc:
+        # ✅ Save full response data in tracker model
+        request_log.mark_retrying()
+
+        raise self.retry(exc=exc, countdown=60)  # Retry after 1 min
+
+
+@shared_task(bind=True, max_retries=3)
+def fetch_and_update_notices(self):
+    """
+    Celery task to fetch notices from the VSCU API and update constants dynamically.
+    """
+    try:
+        # Define request payload
+        request_payload = {
+            "lastReqDt": "20231101000000"
+        }
+
+        # Log API request in the tracker
+        request_log = APIRequestLog.objects.create(
+            request_type="fetchNotices",
+            request_payload=request_payload
+        )
+
+        url = API_ENDPOINTS.get(request_log.request_type)
+
+        # API Call
+        response = send_vscu_request(
+            endpoint=url,
+            method="POST",
+            data=request_payload,
+        )
+
+        # Log API Request
+        logger.info(
+            f"📤 Requesting notices with payload: {json.dumps(request_payload, indent=2)}")
+
+        # Validate response
+        if not response or response.status_code != 200:
+            error_msg = f"API Error: {response.text if response else 'No response'}"
+            request_log.mark_failed({"error": error_msg})
+            raise Exception(error_msg)
+
+        logger.info(f"📥 Response Status Code: {response.status_code}")
+
+        # Ensure response is in JSON format
+        try:
+            response_data = response.json()
+        except ValueError:
+            request_log.mark_failed({"error": "Invalid JSON response"})
+            raise Exception("Invalid JSON response received")
+
+        logger.info(
+            f"📥 Response Content: {json.dumps(response_data, indent=2)}")
+
+        # ✅ Log response before accessing `itemClsList`
+        data_content = response_data.get("data")
+        if not isinstance(data_content, dict):
+            logger.error(
+                f"⚠️ Unexpected response format: {json.dumps(response_data, indent=2)}")
+            request_log.mark_failed({"error": "Invalid response format"})
+            raise Exception("Invalid response format")
+
+        notices = data_content.get("noticeList", [])
+        # ✅ Ensure it's a list, not a tuple or None
+        if not isinstance(notices, list):
+            logger.error(
+                f"⚠️ Invalid notices structure: {json.dumps(data_content, indent=2)}")
+            request_log.mark_failed(
+                {"error": "Invalid notices structure"})
+            raise Exception("Invalid notices structure")
+
+        if not notices:
+            logger.warning(
+                f"⚠️ No notices data found in response: {json.dumps(response_data, indent=2)}")
+            request_log.mark_failed({
+                "error": "No notices data found",
+                "response": response_data
+            })
+            raise Exception("No notices data received")
+
+        # ✅ Extract & format for constants update
+        notices_list = [
+            replace_nulls({
+                "noticeNo": item["noticeNo"],
+                "title": item["title"],
+                "content": item["cont"],
+                "detailUrl": item["dtlUrl"],
+                "registrarName": item["regrNm"],
+                "registrationDate": item["regDt"]
+            })
+            for item in notices
+        ]
+
+        # ✅ Update `commons/constants.py`
+        update_notices_file(notices_list)
+
+        # ✅ Mark the request as successful
+        request_log.mark_success({
+            "message": "Branches updated successfully",
+            "updated_notices": len(notices_list),
+            "response": notices_list
+        })
+
+        return {"status": "success", "updated_branches": len(notices_list)}
 
     except Exception as exc:
         # ✅ Save full response data in tracker model

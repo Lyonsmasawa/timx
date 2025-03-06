@@ -20,6 +20,14 @@ app.conf.beat_schedule = {
         "task": "api_tracker.tasks.fetch_and_update_item_classification",
         "schedule": crontab(hour=3, minute=0),
     },
+    "update_branch_list_daily": {
+        "task": "api_tracker.tasks.fetch_and_update_branches",
+        "schedule": crontab(hour=3, minute=0),
+    },
+     "update_branch_list_daily": {
+        "task": "api_tracker.tasks.fetch_and_update_notices",
+        "schedule": crontab(hour=3, minute=0),
+    },
     "retry_failed_requests": {
         "task": "api_tracker.tasks.retry_failed_requests",
         "schedule": 300.0,  # Every 5 minutes

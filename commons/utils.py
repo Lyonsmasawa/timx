@@ -130,13 +130,13 @@ def send_vscu_request(endpoint, method="POST", data=None, headers=None, active_d
     if active_device:
         tin = active_device.tin
         branch_id = active_device.branch_id
-        cmc_key_decrypted = cmc_key_decrypted = decrypt_value(
+        cmc_key_decrypted = decrypt_value(
             active_device.communication_key) if active_device.communication_key else None
+
     else:
         tin = settings.VSCU_TIN
         branch_id = settings.VSCU_BRANCH_ID
         cmc_key_decrypted = os.getenv("VSCU_CMC_KEY")
-
 
     cmc_key_decrypted = os.getenv("VSCU_CMC_KEY")
 
@@ -242,6 +242,107 @@ def update_constants_file(item_classifications):
     except Exception as e:
         logger.error(
             f"❌ Failed to update constants.py: {str(e)}", exc_info=True)
+
+
+def update_branches_file(branches_list):
+    """
+    Updates `commons/branches_constants.py` dynamically with the latest branches list.
+    Ensures it is formatted correctly before writing.
+    """
+    logger.info(
+        f"📝 Attempting to update constants.py with {len(branches_list)} branchess...")
+
+    # 🚨 Debugging: Check if the item_classifications list is valid
+    if not isinstance(branches_list, list):
+        logger.error(
+            f"❌ Invalid data type for branches: {type(branches_list)}")
+        return
+
+    if not branches_list:
+        logger.warning(
+            "⚠️ No valid BRANCH found. Skipping constants update.")
+        return
+
+    constants_path = os.path.join(
+        settings.BASE_DIR, "commons", "branches_constants.py")
+
+    try:
+        # ✅ Debug First 5 Items Before Writing
+        logger.info(
+            f"🔍 First 1 Item (Before Writing to File): {json.dumps(branches_list[:1], indent=2, ensure_ascii=False)}")
+
+        # ✅ Format list correctly
+        formatted_data = json.dumps(
+            branches_list, indent=4, ensure_ascii=False)
+
+        # 🚀 Debug formatted JSON before writing
+        # Show first 500 chars
+        logger.debug(f"📄 JSON Ready to Write: {formatted_data[:500]}...")
+
+        # ✅ Write to file
+        with open(constants_path, "w", encoding="utf-8") as f:
+            f.write(f"BRANCH_LIST = {formatted_data}\n")
+
+        logger.info(
+            f"✅ Successfully updated branches_constants.py with {len(branches_list)} branches.")
+
+    except Exception as e:
+        logger.error(
+            f"❌ Failed to update branches_constants.py: {str(e)}", exc_info=True)
+
+
+def update_notices_file(notices_list):
+    """
+    Updates `commons/notices_constants.py` dynamically with the latest branches list.
+    Ensures it is formatted correctly before writing.
+    """
+    logger.info(
+        f"📝 Attempting to update constants.py with {len(notices_list)} notices...")
+
+    # 🚨 Debugging: Check if the item_classifications list is valid
+    if not isinstance(notices_list, list):
+        logger.error(
+            f"❌ Invalid data type for notices: {type(notices_list)}")
+        return
+
+    if not notices_list:
+        logger.warning(
+            "⚠️ No valid notice found. Skipping constants update.")
+        return
+
+    constants_path = os.path.join(
+        settings.BASE_DIR, "commons", "notices_constants.py")
+
+    try:
+        # ✅ Debug First 5 Items Before Writing
+        logger.info(
+            f"🔍 First 1 Item (Before Writing to File): {json.dumps(notices_list[:1], indent=2, ensure_ascii=False)}")
+
+        # ✅ Format list correctly
+        formatted_data = json.dumps(
+            notices_list, indent=4, ensure_ascii=False)
+
+        # 🚀 Debug formatted JSON before writing
+        # Show first 500 chars
+        logger.debug(f"📄 JSON Ready to Write: {formatted_data[:500]}...")
+
+        # ✅ Write to file
+        with open(constants_path, "w", encoding="utf-8") as f:
+            f.write(f"NOTICES_LIST = {formatted_data}\n")
+
+        logger.info(
+            f"✅ Successfully updated notices_constants.py with {len(notices_list)} notices.")
+
+    except Exception as e:
+        logger.error(
+            f"❌ Failed to update notices_constants.py: {str(e)}", exc_info=True)
+
+
+# Function to replace None values with an empty string
+def replace_nulls(data):
+    return {key: ("" if value is None else value) for key, value in data.items()}
+
+# Extract
 
 
 def initialize_vscu_device():

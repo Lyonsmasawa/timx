@@ -16,9 +16,11 @@ API_ENDPOINTS = {
     "updateImports": "/selectImportList",
     "saveItemComposition": "/saveItemComposition",
     "fetchImports": "/selectImportItemList",
-    "initializeDevice": "/initializer/selectInitInfo"
+    "initializeDevice": "/initializer/selectInitInfo",
+    "fetchBranches": "/selectBhfList",
+    "fetchNotices": "/selectNoticeList"
 }
- 
+
 # SAR Type Codes
 SAR_TYPE_CODES = {
     "ADD": {
