@@ -255,12 +255,17 @@
                 <h3></h3>
                 <div class="d-flex justify-content-between align-items-center p-0 pt-1">
                     <h3><span style="color: #000000;">{{ items.count }}</span> Items</h3>
+                    <form id="FetchItemClassificationForm" method="POST">
+                        {% csrf_token %}
+                        <button type="button" id="FetchItemClassificationBtn" class="btn btn-primary">
+                            Update Item Classifications
+                        </button>
+                    </form>
                     <div>
                         <button type="button" class="btn add" data-toggle="modal" data-bs-toggle="modal"
                             data-bs-target="#createItemModal">
                             + New Item
                         </button>
-
                     </div>
                 </div>
                 <hr class="hr-style" />
@@ -1354,6 +1359,7 @@
                             </button>
                         </form>
                     </div>
+
                 </div>
                 <hr class="hr-style" />
                 <ul class="list-group branche-list"></ul>
@@ -1620,6 +1626,77 @@
             selectField.value = "";
         }
     }
+
+
+    document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("FetchItemClassificationBtn").addEventListener("click", function () {
+            if (confirm("Are you sure you want to Update Item Classifications?")) {
+                fetch("{% url 'organization:fetchItemClassification' %}", {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+                        "Content-Type": "application/json"
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert("✅ " + data.message);
+                            window.location.reload();
+                        } else {
+                            alert("❌ " + data.message);
+                        }
+                    })
+                    .catch(error => console.error("Error:", error));
+            }
+        });
+
+
+        document.getElementById("FetchBranchListBtn").addEventListener("click", function () {
+            console.log("Script Loaded!"); // Debugging
+            if (confirm("Are you sure you want to Update Branch List?")) {
+                fetch("{% url 'organization:fetchBranches' %}", {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+                        "Content-Type": "application/json"
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert("✅ " + data.message);
+                            window.location.reload();
+                        } else {
+                            alert("❌ " + data.message);
+                        }
+                    })
+                    .catch(error => console.error("Error:", error));
+            }
+        });
+
+        document.getElementById("FetchNoticesListBtn").addEventListener("click", function () {
+            if (confirm("Are you sure you want to Update Notices?")) {
+                fetch("{% url 'organization:fetchNotices' %}", {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+                        "Content-Type": "application/json"
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert("✅ " + data.message);
+                            window.location.reload();
+                        } else {
+                            alert("❌ " + data.message);
+                        }
+                    })
+                    .catch(error => console.error("Error:", error));
+            }
+        });
+    })
 
     document.addEventListener("DOMContentLoaded", function () {
         // Listen for modal show events
@@ -2714,70 +2791,6 @@
     document.getElementById("initializeDeviceBtn").addEventListener("click", function () {
         if (confirm("Are you sure you want to initialize the VSCU device?")) {
             fetch("{% url 'organization:initialize_device' %}", {
-                method: "POST",
-                headers: {
-                    "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
-                    "Content-Type": "application/json"
-                }
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert("✅ " + data.message);
-                    } else {
-                        alert("❌ " + data.message);
-                    }
-                })
-                .catch(error => console.error("Error:", error));
-        }
-    });
-
-    document.getElementById("FetchItemClassificationBtn").addEventListener("click", function () {
-        if (confirm("Are you sure you want to Update Item Classifications?")) {
-            fetch("{% url 'organization:fetchItemClassification' %}", {
-                method: "POST",
-                headers: {
-                    "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
-                    "Content-Type": "application/json"
-                }
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert("✅ " + data.message);
-                    } else {
-                        alert("❌ " + data.message);
-                    }
-                })
-                .catch(error => console.error("Error:", error));
-        }
-    });
-
-    document.getElementById("FetchBranchListBtn").addEventListener("click", function () {
-        console.log("Script Loaded!"); // Debugging
-        if (confirm("Are you sure you want to Update Branch List?")) {
-            fetch("{% url 'organization:fetchBranches' %}", {
-                method: "POST",
-                headers: {
-                    "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
-                    "Content-Type": "application/json"
-                }
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert("✅ " + data.message);
-                    } else {
-                        alert("❌ " + data.message);
-                    }
-                })
-                .catch(error => console.error("Error:", error));
-        }
-    });
-
-    document.getElementById("FetchNoticesListBtn").addEventListener("click", function () {
-        if (confirm("Are you sure you want to Update Notices?")) {
-            fetch("{% url 'organization:fetchNotices' %}", {
                 method: "POST",
                 headers: {
                     "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
