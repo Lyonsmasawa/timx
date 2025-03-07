@@ -263,11 +263,11 @@ def sales_items_create(request, pk):
         # invoice_number = Transaction.objects.filter(
         #     organization=organization
         # ).count() + 1
-        
-        last_transaction = Transaction.objects.filter(organization=organization).aggregate(Max('receipt_number'))['receipt_number__max']
+
+        last_transaction = Transaction.objects.filter(organization=organization).aggregate(
+            Max('receipt_number'))['receipt_number__max']
 
         invoice_number = (last_transaction or 0) + 1
-
 
         # Format the invoice number as 4 digits
         formatted_invoice_number = str(invoice_number).zfill(4)
@@ -341,11 +341,12 @@ def sales_items_create_note(request, organization_id, transaction_id):
                 # Generate Credit Note Invoice Number
                 # credit_note_number = Transaction.objects.filter(
                 #     organization=organization).count() + 1
-                    
-                last_transaction = Transaction.objects.filter(organization=organization).aggregate(Max('receipt_number'))['receipt_number__max']
+
+                last_transaction = Transaction.objects.filter(organization=organization).aggregate(
+                    Max('receipt_number'))['receipt_number__max']
 
                 credit_note_number = (last_transaction or 0) + 1
-                
+
                 formatted_credit_note_number = f"{str(credit_note_number).zfill(4)}"
 
                 # Create a new Credit Note transaction

@@ -113,7 +113,7 @@ def customer_update(request, pk):
     customer = get_object_or_404(Customer, pk=pk)
 
     if request.method == "POST":
-        # Create a dictionary to track updates 
+        # Create a dictionary to track updates
         updates = {}
 
         # Iterate through the submitted data and update only changed fields

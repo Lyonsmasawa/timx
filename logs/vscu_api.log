@@ -3792,3 +3792,75 @@ def fetch_and_update_item_classification(self):
 def debug_task(self):
     return 1
 
+[2025-03-06 04:32:08,264] DEBUG [celery.utils.functional] 
+def xstarmap(task, it):
+    return 1
+
+[2025-03-06 04:32:08,269] DEBUG [celery.utils.functional] 
+def fetch_and_update_notices(self):
+    return 1
+
+[2025-03-06 04:32:08,270] DEBUG [celery.utils.functional] 
+def chunks(task, it, n):
+    return 1
+
+[2025-03-06 04:32:08,272] DEBUG [celery.utils.functional] 
+def fetch_and_update_purchases(self, organization):
+    return 1
+
+[2025-03-06 04:32:08,274] DEBUG [celery.utils.functional] 
+def send_api_request(self, request_id):
+    return 1
+
+[2025-03-06 04:32:08,276] DEBUG [celery.utils.functional] 
+def group(self, tasks, result, group_id, partial_args, add_to_parent=0):
+    return 1
+
+[2025-03-06 04:32:08,281] DEBUG [celery.utils.functional] 
+def backend_cleanup():
+    return 1
+
+[2025-03-06 04:32:08,282] DEBUG [celery.utils.functional] 
+def fetch_and_update_item_classification(self):
+    return 1
+
+[2025-03-06 04:32:08,284] DEBUG [celery.utils.functional] 
+def chain(*args, **kwargs):
+    return 1
+
+[2025-03-06 04:32:08,286] DEBUG [celery.utils.functional] 
+def accumulate(self, *args, **kwargs):
+    return 1
+
+[2025-03-06 04:32:08,288] DEBUG [celery.utils.functional] 
+def fetch_and_update_tax_code(self):
+    return 1
+
+[2025-03-06 04:32:08,289] DEBUG [celery.utils.functional] 
+def chord(self, header, body, partial_args=0, interval=1, countdown=2, max_retries=3, eager=4, **kwargs):
+    return 1
+
+[2025-03-06 04:32:08,291] DEBUG [celery.utils.functional] 
+def fetch_and_update_branches(self):
+    return 1
+
+[2025-03-06 04:32:08,293] DEBUG [celery.utils.functional] 
+def unlock_chord(self, group_id, callback, interval=0, max_retries=1, result=2, Result=3, GroupResult=4, result_from_tuple=5, **kwargs):
+    return 1
+
+[2025-03-06 04:32:08,302] DEBUG [celery.utils.functional] 
+def async_initialize_vscu_device(self):
+    return 1
+
+[2025-03-06 04:32:08,303] DEBUG [celery.utils.functional] 
+def xmap(task, it):
+    return 1
+
+[2025-03-06 04:32:08,306] DEBUG [celery.utils.functional] 
+def retry_failed_requests():
+    return 1
+
+[2025-03-06 04:32:08,307] DEBUG [celery.utils.functional] 
+def debug_task(self):
+    return 1
+

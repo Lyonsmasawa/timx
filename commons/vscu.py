@@ -38,7 +38,6 @@ def initialize_vscu_device():
         request_type="initializeDevice",
         request_payload=payload
     )
-    
 
     url = API_ENDPOINTS.get(request_log.request_type)
 
@@ -48,12 +47,12 @@ def initialize_vscu_device():
         method="POST",
         data=request_log.request_payload,
     )
-    
+
     # # Send request to VSCU API
     # response = send_vscu_request(url, payload)
 
     if response and response.get("resultCd") == "000":
-        print (response)
+        print(response)
         device, created = Device.objects.get_or_create(
             tin=tin, branch_id=branch_id, device_serial_number=device_serial_number
         )
@@ -74,8 +73,9 @@ def initialize_vscu_device():
     # Log failed response
     request_log.mark_failed(response)
     logger.error(f"❌ VSCU Device initialization failed: {response}")
-    print (response)
+    print(response)
     return False
+
 
 def register_item_with_vscu(self, item_id):
     """
