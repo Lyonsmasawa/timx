@@ -4,24 +4,44 @@ from django.conf import settings
 from commons.tax_code_constants import ITEM_TAX_CODE_CHOICES
 
 # API Endpoints
+# API_ENDPOINTS = {
+#     "saveItem": "/saveItem",
+#     "saveCustomer": "/saveBhfCustomer",
+#     "saveTransaction": "/saveTransaction",
+#     "fetchItemClassification": "/selectItemClsList",
+#     "fetchTaxCode": "/selectCodeList",
+#     "saveStockMovement": "/insertStockIO",
+#     "saveSalesTransaction": "/saveTrnsSalesOsdc",
+#     "saveCreditNote": "/saveTrnsSalesOsdc",
+#     "selectTrnsPurchaseSalesList": "/selectTrnsPurchaseSalesList",
+#     "updatePurchases": "/selectTrnsPurchaseSalesList",
+#     "verifyPurchase": "/selectImportItemList",
+#     "updateImports": "/selectImportList",
+#     "saveItemComposition": "/saveItemComposition",
+#     "fetchImports": "/selectImportItemList",
+#     "initializeDevice": "/initializer/selectInitInfo",
+#     "fetchBranches": "/selectBhfList",
+#     "fetchNotices": "/selectNoticeList"
+# }
+
+# constants.py
+
 API_ENDPOINTS = {
-    "saveItem": "/saveItem",
-    "saveCustomer": "/saveBhfCustomer",
-    "saveTransaction": "/saveTransaction",
-    "fetchItemClassification": "/selectItemClsList",
-    "fetchTaxCode": "/selectCodeList",
-    "saveStockMovement": "/insertStockIO",
-    "saveSalesTransaction": "/saveTrnsSalesOsdc",
-    "saveCreditNote": "/saveTrnsSalesOsdc",
-    "selectTrnsPurchaseSalesList": "/selectTrnsPurchaseSalesList",
-    "updatePurchases": "/selectTrnsPurchaseSalesList",
-    "verifyPurchase": "/selectImportItemList",
-    "updateImports": "/selectImportList",
-    "saveItemComposition": "/saveItemComposition",
-    "fetchImports": "/selectImportItemList",
-    "initializeDevice": "/initializer/selectInitInfo",
-    "fetchBranches": "/selectBhfList",
-    "fetchNotices": "/selectNoticeList"
+    "initializeDevice": "/initiolises",
+    "saveItem": "/items/saveItems",
+    "saveCustomer": "/branches/saveBrancheCustomers",
+    "saveTransaction": "/transactions",
+    "fetchItemClassification": "/itemClass/selectItemsClass",
+    "fetchTaxCode": "/code/selectCodes",
+    "saveStockMovement": "/stock/saveStockItems",
+    "saveSalesTransaction": "/trnsSales/saveSales",
+    "saveCreditNote": "/trnsSales/saveSales",
+    "updatePurchases": "/trnsPurchase/selectTrnsPurchaseSales",
+    "verifyPurchase": "/trnsPurchase/savePurchases",
+    "updateImports": "/imports/updateImportItems ",
+    "fetchImports": "/imports/selectImportItems",
+    "fetchBranches": "/branches/selectBranches",
+    "fetchNotices": "/notices/selectNotices"
 }
 
 # SAR Type Codes

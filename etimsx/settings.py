@@ -48,10 +48,10 @@ VSCU_CMC_KEY = env("VSCU_CMC_KEY")
 
 # API Configuration
 API_BASE_URL = env(
-    "API_BASE_URL", default="https://etims-api-sbx.kra.go.ke/etims-api")
+    "API_BASE_URL", default="http://localhost:8088")
 
 VSCU_API_BASE_URL = env(
-    "API_BASE_URL", default="https://etims-api-sbx.kra.go.ke/etims-api")
+    "API_BASE_URL", default="http://localhost:8088")
 
 # Installed apps
 INSTALLED_APPS = [

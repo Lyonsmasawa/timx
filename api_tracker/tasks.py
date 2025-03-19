@@ -792,7 +792,7 @@ def fetch_and_update_tax_code(self):
                     for dtl in cls["dtlList"]
                 ]
             })
-            for cls in item_tax_codes["data"]["clsList"]
+            for cls in item_tax_codes
         ]
 
         # ✅ Update `commons/constants.py`

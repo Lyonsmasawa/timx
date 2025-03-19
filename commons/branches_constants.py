@@ -1,16 +1,16 @@
 BRANCH_LIST = [
     {
-        "tin": "P600001413A",
+        "tin": "P051109817X",
         "bhfId": "00",
         "bhfNm": "Headquarter",
         "bhfSttsCd": "01",
-        "prvncNm": "Turkana",
-        "dstrtNm": "Turkana Central District",
-        "sctrNm": "Lodwar",
+        "prvncNm": "Nairobi",
+        "dstrtNm": "Starehe District",
+        "sctrNm": "Parklands",
         "locDesc": "",
-        "mgrNm": "Interactive Ltd",
-        "mgrTelNo": "0700532106",
-        "mgrEmail": "interactive@gmail.com",
+        "mgrNm": "INTERACTIVE TECHNOLOGY LIMITED",
+        "mgrTelNo": "0722695000",
+        "mgrEmail": "INFO@ITLWEB.COM",
         "hqYn": "Y"
     }
 ]

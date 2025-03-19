@@ -139,13 +139,22 @@ def send_vscu_request(endpoint, method="POST", data=None, headers=None, active_d
         cmc_key_decrypted = os.getenv("VSCU_CMC_KEY")
 
     cmc_key_decrypted = os.getenv("VSCU_CMC_KEY")
+    
+    # Ensure `tin` and `bhfId` are always included in the payload
+    if data is None:
+        data = {}
+
+    data.update({
+        "tin": tin,
+        "bhfId": branch_id
+    })
 
     # Default headers
     default_headers = {
         "Content-Type": "application/json",
-        "tin": tin,
-        "bhfid": branch_id,
-        "cmcKey": cmc_key_decrypted,
+        # "tin": tin,
+        # "bhfid": branch_id,
+        # "cmcKey": cmc_key_decrypted,
     }
 
     # Merge headers if provided
